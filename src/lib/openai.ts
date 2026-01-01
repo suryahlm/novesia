@@ -1,8 +1,18 @@
 import OpenAI from "openai"
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
+let openaiClient: OpenAI | null = null
+
+function getOpenAIClient(): OpenAI {
+    if (!openaiClient) {
+        if (!process.env.OPENAI_API_KEY) {
+            throw new Error("OPENAI_API_KEY is not configured")
+        }
+        openaiClient = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        })
+    }
+    return openaiClient
+}
 
 export interface TranslationResult {
     success: boolean
@@ -33,7 +43,7 @@ export async function translateContent(
 ${context?.novelTitle ? `Novel: ${context.novelTitle}` : ""}
 ${context?.chapterNumber ? `Chapter: ${context.chapterNumber}` : ""}`
 
-        const response = await openai.chat.completions.create({
+        const response = await getOpenAIClient().chat.completions.create({
             model: "gpt-4o-mini",
             messages: [
                 { role: "system", content: systemPrompt },
@@ -109,4 +119,4 @@ export async function translateLongContent(
     }
 }
 
-export default openai
+export { getOpenAIClient }
