@@ -1,5 +1,5 @@
 import "dotenv/config"
-import { PrismaClient, NovelStatus } from "../src/generated/prisma"
+import { PrismaClient, NovelStatus } from "@prisma/client"
 
 const prisma = new PrismaClient({
     datasourceUrl: process.env.DIRECT_URL || process.env.DATABASE_URL,
