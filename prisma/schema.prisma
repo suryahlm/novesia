@@ -1,0 +1,414 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?   // null if OAuth
+  name          String?
+  image         String?
+  role          Role      @default(USER)
+  locale        String    @default("id")
+  
+  // Monetization
+  coins         Int       @default(0)
+  isVip         Boolean   @default(false)
+  vipExpiresAt  DateTime?
+  
+  // Engagement
+  readingStreak Int       @default(0)
+  lastCheckIn   DateTime?
+  totalReadTime Int       @default(0) // in minutes
+  
+  // Auth relations
+  accounts      Account[]
+  sessions      Session[]
+  
+  // App relations
+  readingHistory  ReadingHistory[]
+  bookmarks       Bookmark[]
+  comments        Comment[]
+  ratings         Rating[]
+  collections     Collection[]
+  transactions    Transaction[]
+  referrals       Referral[]      @relation("referrer")
+  referredBy      Referral?       @relation("referred")
+  notifications   Notification[]
+  unlockedChapters UnlockedChapter[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ==================== NOVEL & CHAPTER ====================
+
+model Novel {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  synopsis    String   @db.Text
+  cover       String?  // URL to cover image
+  author      String?
+  status      NovelStatus @default(ONGOING)
+  
+  // Source info
+  sourceUrl   String?  // Original URL if scraped
+  isManual    Boolean  @default(false)
+  
+  // Stats
+  totalViews  Int      @default(0)
+  avgRating   Float    @default(0)
+  ratingCount Int      @default(0)
+  
+  // Premium
+  isPremium   Boolean  @default(false)
+  
+  // Relations
+  genres      Genre[]
+  chapters    Chapter[]
+  bookmarks   Bookmark[]
+  comments    Comment[]
+  ratings     Rating[]
+  collections CollectionNovel[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum NovelStatus {
+  ONGOING
+  COMPLETED
+  HIATUS
+  DROPPED
+}
+
+model Chapter {
+  id              String   @id @default(cuid())
+  novelId         String
+  novel           Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  
+  chapterNumber   Int
+  title           String
+  
+  // Content
+  contentOriginal String?  @db.Text // Original content (if scraped)
+  contentTranslated String @db.Text // Translated/final content
+  wordCount       Int      @default(0)
+  
+  // Premium
+  isPremium       Boolean  @default(false)
+  coinCost        Int      @default(0)
+  
+  // Stats
+  views           Int      @default(0)
+  
+  // Source
+  sourceUrl       String?
+  
+  // Relations
+  readingHistory  ReadingHistory[]
+  comments        Comment[]
+  unlockedBy      UnlockedChapter[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([novelId, chapterNumber])
+  @@index([novelId])
+}
+
+model Genre {
+  id      String  @id @default(cuid())
+  name    String  @unique
+  slug    String  @unique
+  icon    String? // Lucide icon name
+  novels  Novel[]
+}
+
+// ==================== USER INTERACTIONS ====================
+
+model ReadingHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapterId String
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  
+  progress  Int      @default(0) // scroll percentage 0-100
+  readAt    DateTime @default(now())
+  
+  @@unique([userId, chapterId])
+  @@index([userId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novelId   String
+  novel     Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, novelId])
+  @@index([userId])
+}
+
+model UnlockedChapter {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapterId String
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  
+  unlockedAt DateTime @default(now())
+  
+  @@unique([userId, chapterId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novelId   String?
+  novel     Novel?   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  chapterId String?
+  chapter   Chapter? @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  
+  content   String   @db.Text
+  likes     Int      @default(0)
+  
+  // Reply support
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([novelId])
+  @@index([chapterId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novelId   String
+  novel     Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  
+  score     Int      // 1-5 stars
+  review    String?  @db.Text
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, novelId])
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?
+  isPublic    Boolean  @default(false)
+  
+  novels      CollectionNovel[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+model CollectionNovel {
+  id           String     @id @default(cuid())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  novelId      String
+  novel        Novel      @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  
+  addedAt      DateTime   @default(now())
+  
+  @@unique([collectionId, novelId])
+}
+
+// ==================== MONETIZATION ====================
+
+model Transaction {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      TransactionType
+  amount    Int             // coins or rupiah
+  
+  // Payment info
+  paymentId String?         // from payment gateway
+  status    PaymentStatus   @default(PENDING)
+  
+  // Context
+  description String?
+  metadata    Json?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+}
+
+enum TransactionType {
+  COIN_PURCHASE      // Buy coins with real money
+  COIN_EARNED        // Earned from ads/check-in
+  COIN_SPENT         // Spent on premium chapter
+  VIP_SUBSCRIPTION   // Monthly subscription
+  REFERRAL_BONUS     // Bonus from referring
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model CoinPackage {
+  id          String   @id @default(cuid())
+  name        String
+  coins       Int
+  priceIdr    Int      // Price in Rupiah
+  bonus       Int      @default(0) // Bonus coins
+  isPopular   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referrer    User     @relation("referrer", fields: [referrerId], references: [id])
+  referredId  String   @unique
+  referred    User     @relation("referred", fields: [referredId], references: [id])
+  
+  bonusGiven  Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+}
+
+enum NotificationType {
+  NEW_CHAPTER
+  SYSTEM
+  REWARD
+  COMMENT_REPLY
+}
+
+// ==================== SCRAPER ====================
+
+model ScrapeJob {
+  id          String       @id @default(cuid())
+  novelUrl    String
+  status      ScrapeStatus @default(PENDING)
+  
+  // Progress
+  totalChapters   Int      @default(0)
+  scrapedChapters Int      @default(0)
+  
+  // Result
+  novelId     String?
+  error       String?      @db.Text
+  logs        String?      @db.Text
+  
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+}
+
+enum ScrapeStatus {
+  PENDING
+  SCRAPING
+  TRANSLATING
+  COMPLETED
+  FAILED
+}
+
+// ==================== SETTINGS ====================
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String @db.Text
+  
+  updatedAt DateTime @updatedAt
+}
