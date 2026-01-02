@@ -68,16 +68,23 @@ export default function AdminUsersPage() {
 
         setActionLoading(id)
         try {
+            console.log("Deleting user:", id)
             const res = await fetch(`/api/admin/users/${id}`, {
                 method: "DELETE",
+                credentials: "include",
             })
+            console.log("Delete response status:", res.status)
+
             if (res.ok) {
+                console.log("Delete successful")
                 fetchUsers()
             } else {
                 const data = await res.json()
+                console.error("Delete error:", data)
                 alert(data.error || "Gagal menghapus user")
             }
         } catch (error) {
+            console.error("Delete exception:", error)
             alert("Terjadi kesalahan")
         } finally {
             setActionLoading(null)
@@ -90,10 +97,14 @@ export default function AdminUsersPage() {
             const res = await fetch(`/api/admin/users/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ isVip: !currentVip }),
             })
             if (res.ok) {
                 fetchUsers()
+            } else {
+                const data = await res.json()
+                alert(data.error || "Gagal mengubah status VIP")
             }
         } catch (error) {
             alert("Gagal mengubah status VIP")
@@ -110,12 +121,16 @@ export default function AdminUsersPage() {
             const res = await fetch(`/api/admin/users/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ addCoins: coinsToAdd }),
             })
             if (res.ok) {
                 fetchUsers()
                 setShowAddCoinsModal(null)
                 setCoinsToAdd(100)
+            } else {
+                const data = await res.json()
+                alert(data.error || "Gagal menambah koin")
             }
         } catch (error) {
             alert("Gagal menambah koin")
