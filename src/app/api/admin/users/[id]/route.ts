@@ -11,7 +11,7 @@ async function verifyAdmin(userId: string) {
     return user?.role === "ADMIN"
 }
 
-// Delete user
+// Delete user and all related records
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -39,15 +39,37 @@ export async function DELETE(
             )
         }
 
-        await prisma.user.delete({
-            where: { id },
+        // Delete in transaction to ensure all related records are deleted
+        await prisma.$transaction(async (tx) => {
+            // Delete related records first
+            await tx.readingHistory.deleteMany({ where: { userId: id } })
+            await tx.bookmark.deleteMany({ where: { userId: id } })
+            await tx.comment.deleteMany({ where: { userId: id } })
+            await tx.rating.deleteMany({ where: { userId: id } })
+            await tx.notification.deleteMany({ where: { userId: id } })
+            await tx.unlockedChapter.deleteMany({ where: { userId: id } })
+            await tx.transaction.deleteMany({ where: { userId: id } })
+
+            // Delete collections (and their items)
+            const collections = await tx.collection.findMany({ where: { userId: id } })
+            for (const collection of collections) {
+                await tx.collectionItem.deleteMany({ where: { collectionId: collection.id } })
+            }
+            await tx.collection.deleteMany({ where: { userId: id } })
+
+            // Delete referrals
+            await tx.referral.deleteMany({ where: { referrerId: id } })
+            await tx.referral.deleteMany({ where: { referredId: id } })
+
+            // Finally delete the user (accounts and sessions have cascade)
+            await tx.user.delete({ where: { id } })
         })
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, message: "User berhasil dihapus" })
     } catch (error) {
         console.error("Error deleting user:", error)
         return NextResponse.json(
-            { error: "Gagal menghapus user" },
+            { error: `Gagal menghapus user: ${error instanceof Error ? error.message : "Unknown error"}` },
             { status: 500 }
         )
     }
