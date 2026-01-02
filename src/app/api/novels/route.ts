@@ -1,136 +1,92 @@
 import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { generateSlug } from "@/lib/utils"
 
-// GET /api/novels - Get all novels
-export async function GET(request: NextRequest) {
+// GET - Get all novels
+export async function GET() {
     try {
-        const { searchParams } = new URL(request.url)
-        const page = parseInt(searchParams.get("page") || "1")
-        const limit = parseInt(searchParams.get("limit") || "20")
-        const sort = searchParams.get("sort") || "newest"
-        const genre = searchParams.get("genre")
-        const status = searchParams.get("status")
-        const search = searchParams.get("search")
-
-        const skip = (page - 1) * limit
-
-        // Build where clause
-        const where: Record<string, unknown> = {}
-
-        if (genre) {
-            where.genres = { some: { slug: genre } }
-        }
-        if (status) {
-            where.status = status
-        }
-        if (search) {
-            where.OR = [
-                { title: { contains: search, mode: "insensitive" } },
-                { author: { contains: search, mode: "insensitive" } },
-            ]
-        }
-
-        // Build order by
-        let orderBy: Record<string, string> = {}
-        switch (sort) {
-            case "trending":
-                orderBy = { totalViews: "desc" }
-                break
-            case "rating":
-                orderBy = { avgRating: "desc" }
-                break
-            case "oldest":
-                orderBy = { createdAt: "asc" }
-                break
-            default:
-                orderBy = { createdAt: "desc" }
-        }
-
-        const [novels, total] = await Promise.all([
-            prisma.novel.findMany({
-                where,
-                orderBy,
-                skip,
-                take: limit,
-                include: {
-                    genres: true,
-                    _count: { select: { chapters: true } },
-                },
-            }),
-            prisma.novel.count({ where }),
-        ])
-
-        return NextResponse.json({
-            novels,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
+        const novels = await prisma.novel.findMany({
+            orderBy: { createdAt: "desc" },
+            include: {
+                genres: true,
+                _count: { select: { chapters: true } },
             },
         })
+        return NextResponse.json(novels)
     } catch (error) {
         console.error("Error fetching novels:", error)
-        return NextResponse.json(
-            { error: "Failed to fetch novels" },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: "Failed to fetch novels" }, { status: 500 })
     }
 }
 
-// POST /api/novels - Create new novel
+// POST - Create new novel
 export async function POST(request: NextRequest) {
     try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
+
+        // Check if user is admin
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { role: true },
+        })
+        if (user?.role !== "ADMIN") {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        }
+
         const body = await request.json()
-        const { title, synopsis, author, genres, status, isPremium, cover } = body
+        const { title, author, synopsis, status, isPremium, freeChapterLimit, coinCost, genres, cover } = body
 
         if (!title || !synopsis) {
-            return NextResponse.json(
-                { error: "Title and synopsis are required" },
-                { status: 400 }
-            )
+            return NextResponse.json({ error: "Title and synopsis are required" }, { status: 400 })
         }
 
-        const slug = generateSlug(title)
+        // Generate slug from title
+        const slug = title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
+            .trim()
 
         // Check if slug already exists
-        const existing = await prisma.novel.findUnique({ where: { slug } })
-        if (existing) {
-            return NextResponse.json(
-                { error: "Novel with similar title already exists" },
-                { status: 400 }
-            )
-        }
+        const existingNovel = await prisma.novel.findUnique({ where: { slug } })
+        const finalSlug = existingNovel ? `${slug}-${Date.now()}` : slug
 
-        // Create or connect genres
-        if (genres && genres.length > 0) {
-            for (const genreName of genres) {
-                await prisma.genre.upsert({
-                    where: { slug: generateSlug(genreName) },
-                    create: { name: genreName, slug: generateSlug(genreName) },
-                    update: {},
-                })
-            }
-        }
-
+        // Create novel
         const novel = await prisma.novel.create({
             data: {
                 title,
-                slug,
-                synopsis,
+                slug: finalSlug,
                 author: author || null,
-                cover: cover || null,
+                synopsis,
                 status: status || "ONGOING",
                 isPremium: isPremium || false,
-                isManual: true,
-                genres: genres?.length
-                    ? {
-                        connect: genres.map((name: string) => ({
-                            slug: generateSlug(name),
-                        })),
-                    }
-                    : undefined,
+                freeChapterLimit: freeChapterLimit || 0,
+                coinCost: coinCost || 5,
+                cover: cover || null,
+                genres: genres?.length > 0 ? {
+                    connect: await Promise.all(
+                        genres.map(async (genreName: string) => {
+                            const genre = await prisma.genre.findFirst({
+                                where: { name: { equals: genreName, mode: "insensitive" } },
+                            })
+                            if (genre) {
+                                return { id: genre.id }
+                            }
+                            // Create genre if not exists
+                            const newGenre = await prisma.genre.create({
+                                data: {
+                                    name: genreName,
+                                    slug: genreName.toLowerCase().replace(/\s+/g, "-"),
+                                },
+                            })
+                            return { id: newGenre.id }
+                        })
+                    ),
+                } : undefined,
             },
             include: { genres: true },
         })
@@ -138,9 +94,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(novel, { status: 201 })
     } catch (error) {
         console.error("Error creating novel:", error)
-        return NextResponse.json(
-            { error: "Failed to create novel" },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: "Failed to create novel" }, { status: 500 })
     }
 }

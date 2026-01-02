@@ -101,3 +101,40 @@ export async function GET(
         )
     }
 }
+
+// DELETE - Delete chapter
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { auth } = await import("@/lib/auth")
+        const session = await auth()
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { role: true },
+        })
+        if (user?.role !== "ADMIN") {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        }
+
+        const { id } = await params
+
+        await prisma.chapter.delete({
+            where: { id },
+        })
+
+        return NextResponse.json({ success: true })
+    } catch (error) {
+        console.error("Error deleting chapter:", error)
+        return NextResponse.json(
+            { error: "Failed to delete chapter" },
+            { status: 500 }
+        )
+    }
+}

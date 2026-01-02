@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
     ArrowLeft,
@@ -9,6 +10,7 @@ import {
     Save,
     Plus,
     X,
+    AlertCircle,
 } from "lucide-react"
 
 const genres = [
@@ -20,7 +22,9 @@ const genres = [
 ]
 
 export default function NewNovelPage() {
+    const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [error, setError] = useState("")
     const [selectedGenres, setSelectedGenres] = useState<string[]>([])
     const [formData, setFormData] = useState({
         title: "",
@@ -32,6 +36,7 @@ export default function NewNovelPage() {
         coinCost: 5,
     })
     const [coverPreview, setCoverPreview] = useState<string | null>(null)
+    const [coverFile, setCoverFile] = useState<File | null>(null)
 
     const handleGenreToggle = (genre: string) => {
         setSelectedGenres((prev) =>
@@ -44,6 +49,7 @@ export default function NewNovelPage() {
     const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
+            setCoverFile(file)
             const reader = new FileReader()
             reader.onloadend = () => {
                 setCoverPreview(reader.result as string)
@@ -55,18 +61,48 @@ export default function NewNovelPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmitting(true)
+        setError("")
 
-        // TODO: Submit to API
-        const data = {
-            ...formData,
-            genres: selectedGenres,
-        }
-        console.log("Submitting:", data)
+        try {
+            // Upload cover if exists
+            let coverUrl = null
+            if (coverFile) {
+                const uploadFormData = new FormData()
+                uploadFormData.append("file", coverFile)
+                const uploadRes = await fetch("/api/upload", {
+                    method: "POST",
+                    body: uploadFormData,
+                })
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json()
+                    coverUrl = uploadData.url
+                }
+            }
 
-        setTimeout(() => {
-            setIsSubmitting(false)
+            // Create novel
+            const response = await fetch("/api/novels", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...formData,
+                    genres: selectedGenres,
+                    cover: coverUrl,
+                }),
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || "Gagal menyimpan novel")
+            }
+
             // Redirect to novel list
-        }, 1500)
+            router.push("/admin/novels")
+            router.refresh()
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Terjadi kesalahan")
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (

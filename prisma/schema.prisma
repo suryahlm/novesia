@@ -112,7 +112,9 @@ model Novel {
   ratingCount Int      @default(0)
   
   // Premium
-  isPremium   Boolean  @default(false)
+  isPremium        Boolean  @default(false)
+  freeChapterLimit Int      @default(0)   // Chapters 1-N are free, N+1 onwards are premium
+  coinCost         Int      @default(5)   // Cost in coins to unlock premium chapter
   
   // Relations
   genres      Genre[]

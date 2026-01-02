@@ -1,7 +1,8 @@
 import Link from "next/link"
-import { Plus, Edit, Trash2, Eye, BookOpen } from "lucide-react"
+import { Plus, Edit, Eye, BookOpen } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
+import DeleteNovelButton from "@/components/admin/DeleteNovelButton"
 
 async function getNovels() {
     const novels = await prisma.novel.findMany({
@@ -135,12 +136,7 @@ export default async function AdminNovelsPage() {
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </Link>
-                                                <button
-                                                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors"
-                                                    title="Hapus"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                <DeleteNovelButton novelId={novel.id} novelTitle={novel.title} />
                                             </div>
                                         </td>
                                     </tr>

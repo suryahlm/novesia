@@ -1,7 +1,8 @@
 import Link from "next/link"
-import { FileText, BookOpen, Eye, Edit, Trash2, Plus } from "lucide-react"
+import { FileText, BookOpen, Eye, Edit, Plus } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
+import DeleteChapterButton from "@/components/admin/DeleteChapterButton"
 
 async function getChapters() {
     const chapters = await prisma.chapter.findMany({
@@ -156,12 +157,10 @@ export default async function AdminChaptersPage() {
                                             >
                                                 <Edit className="w-4 h-4" />
                                             </button>
-                                            <button
-                                                className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors"
-                                                title="Hapus"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            <DeleteChapterButton
+                                                chapterId={chapter.id}
+                                                chapterTitle={`Chapter ${chapter.chapterNumber}: ${chapter.title}`}
+                                            />
                                         </div>
                                     </div>
                                 ))}
