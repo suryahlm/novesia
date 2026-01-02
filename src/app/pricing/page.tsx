@@ -114,10 +114,10 @@ export default function PricingPage() {
     }
 
     return (
-        <div className="py-4 sm:py-8">
+        <div className="pt-2 pb-4 sm:py-8">
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
-                <div className="text-center mb-6 sm:mb-10">
+                <div className="text-center mb-4 sm:mb-10">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-600 mb-4">
                         <Crown className="w-5 h-5" />
                         <span className="font-medium">VIP Membership</span>

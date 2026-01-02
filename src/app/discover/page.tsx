@@ -20,9 +20,9 @@ export default async function DiscoverPage() {
     const novels = await getNovels()
 
     return (
-        <div className="min-h-screen py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="mb-8">
+        <div className="pt-2 pb-4 sm:py-8">
+            <div className="max-w-7xl mx-auto">
+                <div className="mb-4 sm:mb-8">
                     <h1 className="text-3xl font-bold mb-2">Jelajahi Novel</h1>
                     <p className="text-[var(--text-muted)]">
                         Temukan cerita menarik dari berbagai genre

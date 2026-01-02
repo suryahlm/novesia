@@ -89,7 +89,7 @@ export default async function HomePage() {
   ])
 
   return (
-    <div className="py-4 sm:py-6 space-y-8 sm:space-y-10">
+    <div className="pt-2 pb-4 sm:py-6 space-y-6 sm:space-y-10">
       {/* Hero Section */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--color-primary)] via-purple-600 to-[var(--color-secondary)] p-6 sm:p-10 text-white">
         <div className="absolute inset-0 bg-black/20" />
