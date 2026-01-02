@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, use } from "react"
 import Link from "next/link"
 import {
     ChevronLeft,
@@ -12,94 +12,40 @@ import {
     Share2,
     Crown,
     Coins,
+    Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import ReaderSettingsPanel, {
     useReaderSettings,
-    type ReaderTheme,
 } from "@/components/reader/ReaderSettings"
 
-// Demo data - akan diganti dengan fetch dari database
-const chapter = {
-    id: "ch4",
-    novelId: "1",
-    novelTitle: "The Beginning After The End",
-    novelSlug: "the-beginning-after-the-end",
-    number: 447,
-    title: "The Calm Before Storm",
-    content: `Matahari pagi menyinari lembah yang tenang, memancarkan kehangatan lembut yang menembus dedaunan pepohonan kuno. Arthur berdiri di tepi tebing, menatap pemandangan yang membentang di hadapannya dengan tatapan yang sulit dibaca.
-
-"Kau sudah bangun sejak fajar," suara familiar terdengar dari belakangnya. Sylvie mendarat dengan anggun di bahunya, sisik-sisik emasnya berkilauan tertimpa sinar matahari.
-
-Arthur mengangguk pelan. "Tidak bisa tidur. Sesuatu terasa... berbeda. Seperti keheningan sebelum badai."
-
-Naga kecil itu meringkuk di lehernya, mencoba memberikan kenyamanan. "Entah apa yang akan terjadi, kita akan menghadapinya bersama."
-
-Senyum tipis tersungging di bibir Arthur. Meski telah melewati dua kehidupan, ada saat-saat seperti ini yang membuatnya bersyukur. Bukan kekuatan atau kehormatan - tapi ikatan dengan mereka yang dicintainya.
-
-"Kau tahu, Sylv," ujarnya pelan, "dulu aku mengira kekuatan adalah segalanya. Bahwa menjadi yang terkuat adalah tujuan akhir. Tapi sekarang..."
-
-Ia menoleh ke belakang, dimana tenda-tenda perkemahan mulai menunjukkan tanda-tanda kehidupan. Suara tawa dan obrolan pagi mulai terdengar. Curtis sedang meregangkan tubuhnya, sementara Kathyln tampak sibuk dengan buku tebalnya seperti biasa.
-
-"Sekarang aku mengerti bahwa kekuatan sejati terletak pada apa yang ingin kita lindungi," lanjutnya.
-
-Sylvie mendengkur pelan, seolah menyetujui.
-
-Tiba-tiba, udara di sekitar mereka bergetar. Arthur langsung waspada, instingnya yang diasah selama puluhan tahun pertempuran meneriakkan peringatan.
-
-"Kau merasakannya juga?" tanyanya.
-
-"Ya," jawab Sylvie, mata emasnya menyipit. "Mana di udara... tidak stabil. Sesuatu besar akan terjadi."
-
-Arthur menghela napas. Ketenangan tidak pernah bertahan lama dalam hidupnya. Tapi kali ini, ia siap. Lebih siap dari sebelumnya.
-
-"Kalau begitu," katanya sambil mengaktifkan aura pertempurannya, energi biru keemasan mulai menyelimuti tubuhnya, "sebaiknya kita bersiap untuk menyambutnya."
-
-Dengan langkah mantap, ia berjalan menuju perkemahan. Ada banyak yang harus dipersiapkan, dan waktu semakin menipis.
-
-Di kejauhan, awan gelap mulai berkumpul di cakrawala - pertanda badai yang akan datang. Badai yang mungkin akan mengubah segalanya.
-
-Tapi Arthur Leywin tidak gentar. Karena dalam kegelapan, dialah yang akan menjadi cahaya.
-
----
-
-Sore harinya, semua orang berkumpul di tenda komando. Wajah-wajah serius menghiasi ruangan ketika Arthur membuka gulungan peta.
-
-"Laporan terakhir menunjukkan pergerakan pasukan Alacryans di tiga titik utama," jelasnya sambil menunjuk lokasi-lokasi di peta. "Mereka tidak bergerak secara acak. Ada koordinasi."
-
-Virion, kakeknya yang masih gagah meski usianya sudah lanjut, mengangguk. "Pola penyerangan terorganisir. Mereka merencanakan sesuatu yang besar."
-
-"Pertanyaannya adalah apa," timpal Varay, suaranya dingin seperti esnya.
-
-Arthur menutup matanya sejenak, mencoba merasakan aliran mana di sekitarnya. Ada sesuatu yang familiar... sesuatu yang membuatnya merinding.
-
-"Bukan apa," ujarnya akhirnya, membuka mata dengan ekspresi serius. "Tapi siapa."
-
-"Apa maksudmu?" tanya Tessia, kekhawatiran jelas tergambar di wajah cantiknya.
-
-Arthur menatapnya lembut sebelum menjawab, "Asura. Mereka akhirnya turun tangan langsung."
-
-Keheningan mencekam menguasai ruangan. Semua orang tahu apa artinya itu.
-
-"Kalau begitu," Virion berkata, memecah kesunyian, "ini bukan lagi pertempuran biasa. Ini perang."
-
-Arthur mengangguk. "Dan kita harus siap untuk menang."
-
-Ia menatap satu per satu wajah orang-orang di ruangan itu - keluarga, teman, sekutu. Mereka semua bergantung padanya. Dan ia tidak akan mengecewakan mereka.
-
-"Besok pagi, kita bergerak. Istirahatlah malam ini. Karena mulai fajar..." ia menarik napas dalam, "tidak ada jalan kembali."
-
-Satu per satu mereka bubar, masing-masing membawa beban di pundaknya. Tapi juga tekad yang sama kuatnya.
-
-Arthur adalah yang terakhir meninggalkan tenda. Langit malam berbintang menyapanya, indah namun dingin.
-
-"Apa pun yang terjadi besok," bisiknya pada bintang-bintang, "aku akan melindungi mereka semua."
-
-Dan di kedalaman jiwanya, kekuatan kuno yang tertidur mulai menggeliat. Bersiap untuk kebangkitan.`,
-    isPremium: false,
-    views: 5400,
-    prevChapter: { id: "ch5", number: 446, title: "Training Arc Ends" },
-    nextChapter: { id: "ch3", number: 448, title: "Secrets Revealed", isPremium: true, coinCost: 10 },
+interface ChapterData {
+    id: string
+    novelId: string
+    novelTitle: string
+    novelSlug: string
+    novelCover?: string
+    number: number
+    title: string
+    content: string
+    isPremium: boolean
+    coinCost: number
+    views: number
+    wordCount: number
+    prevChapter: {
+        id: string
+        number: number
+        title: string
+        isPremium: boolean
+        coinCost: number
+    } | null
+    nextChapter: {
+        id: string
+        number: number
+        title: string
+        isPremium: boolean
+        coinCost: number
+    } | null
 }
 
 const fonts = {
@@ -108,13 +54,42 @@ const fonts = {
     mono: "JetBrains Mono, monospace",
 }
 
-export default function ReaderPage({ params }: { params: { chapterId: string } }) {
+export default function ReaderPage({ params }: { params: Promise<{ chapterId: string }> }) {
+    const resolvedParams = use(params)
     const { settings, setSettings } = useReaderSettings()
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [isHeaderVisible, setIsHeaderVisible] = useState(true)
     const [progress, setProgress] = useState(0)
     const lastScrollY = useRef(0)
     const contentRef = useRef<HTMLDivElement>(null)
+
+    const [chapter, setChapter] = useState<ChapterData | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    // Fetch chapter data
+    useEffect(() => {
+        const fetchChapter = async () => {
+            setIsLoading(true)
+            setError(null)
+
+            try {
+                const res = await fetch(`/api/chapters/${resolvedParams.chapterId}`)
+                if (!res.ok) {
+                    const data = await res.json()
+                    throw new Error(data.error || "Failed to fetch chapter")
+                }
+                const data = await res.json()
+                setChapter(data)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to load chapter")
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchChapter()
+    }, [resolvedParams.chapterId])
 
     // Auto-hide header on scroll
     useEffect(() => {
@@ -151,6 +126,32 @@ export default function ReaderPage({ params }: { params: { chapterId: string } }
         light: "bg-white/95",
         sepia: "bg-[#f5f0e6]/95",
         dark: "bg-[#1a1a2e]/95",
+    }
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className={cn("min-h-screen flex items-center justify-center", themeClasses[settings.theme])}>
+                <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p>Memuat chapter...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // Error state
+    if (error || !chapter) {
+        return (
+            <div className={cn("min-h-screen flex items-center justify-center", themeClasses[settings.theme])}>
+                <div className="text-center">
+                    <p className="text-red-500 mb-4">{error || "Chapter tidak ditemukan"}</p>
+                    <Link href="/" className="btn btn-primary">
+                        Kembali ke Beranda
+                    </Link>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -221,6 +222,7 @@ export default function ReaderPage({ params }: { params: { chapterId: string } }
                 <div className="mb-8 text-center">
                     <p className="text-sm opacity-70 mb-2">Chapter {chapter.number}</p>
                     <h1 className="text-2xl font-bold">{chapter.title}</h1>
+                    <p className="text-sm opacity-50 mt-2">{chapter.wordCount} kata • {chapter.views} views</p>
                 </div>
 
                 {/* Chapter Content */}
