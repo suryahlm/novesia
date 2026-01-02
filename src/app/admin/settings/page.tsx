@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { Settings, Save, Globe, Bell, Shield, Palette, RefreshCw } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Settings, Save, Globe, Bell, Shield, Palette, RefreshCw, Loader2, CheckCircle } from "lucide-react"
 
 export default function AdminSettingsPage() {
+    const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
+    const [saveSuccess, setSaveSuccess] = useState(false)
     const [settings, setSettings] = useState({
         siteName: "Novesia",
         siteDescription: "Platform novel terbaik Indonesia",
@@ -20,12 +22,52 @@ export default function AdminSettingsPage() {
         translationEnabled: true,
     })
 
+    useEffect(() => {
+        async function loadSettings() {
+            try {
+                const response = await fetch("/api/settings")
+                if (response.ok) {
+                    const data = await response.json()
+                    setSettings(data)
+                }
+            } catch (error) {
+                console.error("Error loading settings:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        loadSettings()
+    }, [])
+
     const handleSave = async () => {
         setIsSaving(true)
-        // TODO: Save settings to database
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setIsSaving(false)
-        alert("Pengaturan berhasil disimpan!")
+        setSaveSuccess(false)
+        try {
+            const response = await fetch("/api/settings", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(settings),
+            })
+            if (response.ok) {
+                setSaveSuccess(true)
+                setTimeout(() => setSaveSuccess(false), 3000)
+            } else {
+                alert("Gagal menyimpan pengaturan")
+            }
+        } catch (error) {
+            console.error("Error saving settings:", error)
+            alert("Terjadi kesalahan")
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="py-6 flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+            </div>
+        )
     }
 
     return (
@@ -40,10 +82,15 @@ export default function AdminSettingsPage() {
                 <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="btn btn-primary"
+                    className={`btn ${saveSuccess ? "bg-green-500 hover:bg-green-600" : "btn-primary"}`}
                 >
                     {isSaving ? (
                         <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : saveSuccess ? (
+                        <>
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            Tersimpan!
+                        </>
                     ) : (
                         <>
                             <Save className="w-5 h-5 mr-2" />
