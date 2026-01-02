@@ -113,12 +113,36 @@ export default function ScraperPage() {
         try {
             const res = await fetch(`/api/scraper/jobs/${id}`, {
                 method: "DELETE",
+                credentials: "include",
             })
             if (res.ok) {
                 fetchJobs()
             }
         } catch (error) {
             console.error("Failed to delete job:", error)
+        }
+    }
+
+    const handleCancel = async (id: string) => {
+        if (!confirm("Batalkan job ini?")) return
+
+        try {
+            const res = await fetch(`/api/scraper/jobs/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ action: "cancel" }),
+            })
+            if (res.ok) {
+                alert("✅ Job dibatalkan")
+                fetchJobs()
+            } else {
+                const data = await res.json()
+                alert(`❌ Error: ${data.error}`)
+            }
+        } catch (error) {
+            console.error("Failed to cancel job:", error)
+            alert("❌ Gagal membatalkan job")
         }
     }
 
@@ -230,6 +254,12 @@ export default function ScraperPage() {
                                                 <span className="text-xs text-[var(--text-muted)]">
                                                     Dimulai: {new Date(job.createdAt).toLocaleString("id-ID")}
                                                 </span>
+                                                <button
+                                                    onClick={() => handleCancel(job.id)}
+                                                    className="btn btn-secondary text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-1 text-sm"
+                                                >
+                                                    ✕ Batalkan
+                                                </button>
                                             </div>
                                         </div>
                                     )
