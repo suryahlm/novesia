@@ -63,25 +63,36 @@ export default function ScraperPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!newUrl.trim()) return
+        if (!newUrl.trim()) {
+            alert("Masukkan URL novel terlebih dahulu")
+            return
+        }
 
         setIsSubmitting(true)
+        console.log("Starting scrape for:", newUrl)
+
         try {
             const res = await fetch("/api/scraper", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ novelUrl: newUrl }),
             })
 
+            console.log("Scraper API response status:", res.status)
+            const data = await res.json()
+            console.log("Scraper API response:", data)
+
             if (res.ok) {
+                alert(`✅ Job scraping dimulai!\nJob ID: ${data.jobId}\n\nProses berjalan di background. Refresh untuk melihat progress.`)
                 setNewUrl("")
                 fetchJobs()
             } else {
-                const data = await res.json()
-                alert(data.error || "Gagal memulai scraping")
+                alert(`❌ Error: ${data.error || "Gagal memulai scraping"}`)
             }
         } catch (error) {
-            alert("Terjadi kesalahan")
+            console.error("Scraper error:", error)
+            alert(`❌ Terjadi kesalahan: ${error instanceof Error ? error.message : "Unknown error"}`)
         } finally {
             setIsSubmitting(false)
         }
