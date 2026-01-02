@@ -28,6 +28,8 @@ export default function NewNovelPage() {
         synopsis: "",
         status: "ONGOING",
         isPremium: false,
+        freeChapterLimit: 0,
+        coinCost: 5,
     })
     const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
@@ -172,17 +174,85 @@ export default function NewNovelPage() {
                         </div>
 
                         {/* Premium Toggle */}
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="checkbox"
-                                id="isPremium"
-                                checked={formData.isPremium}
-                                onChange={(e) => setFormData({ ...formData, isPremium: e.target.checked })}
-                                className="w-4 h-4 rounded border-[var(--text-muted)]"
-                            />
-                            <label htmlFor="isPremium" className="text-sm font-medium">
-                                Novel Premium (VIP Only)
-                            </label>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    id="isPremium"
+                                    checked={formData.isPremium}
+                                    onChange={(e) => setFormData({ ...formData, isPremium: e.target.checked })}
+                                    className="w-4 h-4 rounded border-[var(--text-muted)]"
+                                />
+                                <label htmlFor="isPremium" className="text-sm font-medium">
+                                    Novel Premium (VIP Only)
+                                </label>
+                            </div>
+
+                            {/* Premium Chapter Settings */}
+                            {formData.isPremium && (
+                                <div className="ml-7 p-4 bg-[var(--bg-tertiary)] rounded-lg space-y-4">
+                                    <p className="text-xs text-[var(--text-muted)] mb-3">
+                                        Atur chapter mana yang gratis dan mana yang premium
+                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* Free Chapter Limit */}
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2">
+                                                Chapter Gratis
+                                            </label>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm text-[var(--text-muted)]">1 -</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={formData.freeChapterLimit}
+                                                    onChange={(e) => setFormData({ ...formData, freeChapterLimit: parseInt(e.target.value) || 0 })}
+                                                    className="input w-20 text-center"
+                                                    placeholder="59"
+                                                />
+                                            </div>
+                                            <p className="text-xs text-[var(--text-muted)] mt-1">
+                                                Chapter setelahnya = Premium
+                                            </p>
+                                        </div>
+
+                                        {/* Coin Cost */}
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2">
+                                                Harga per Chapter
+                                            </label>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={formData.coinCost}
+                                                    onChange={(e) => setFormData({ ...formData, coinCost: parseInt(e.target.value) || 5 })}
+                                                    className="input w-20 text-center"
+                                                    placeholder="5"
+                                                />
+                                                <span className="text-sm text-[var(--text-muted)]">koin</span>
+                                            </div>
+                                            <p className="text-xs text-[var(--text-muted)] mt-1">
+                                                Untuk unlock chapter premium
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Preview */}
+                                    {formData.freeChapterLimit > 0 && (
+                                        <div className="text-sm p-3 bg-[var(--bg-secondary)] rounded-lg">
+                                            <p className="font-medium mb-1">📖 Preview:</p>
+                                            <p className="text-[var(--text-muted)]">
+                                                • Chapter 1-{formData.freeChapterLimit}: <span className="text-green-500">Gratis</span>
+                                            </p>
+                                            <p className="text-[var(--text-muted)]">
+                                                • Chapter {formData.freeChapterLimit + 1}+: <span className="text-amber-500">{formData.coinCost} koin/chapter</span>
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -213,8 +283,8 @@ export default function NewNovelPage() {
                                 type="button"
                                 onClick={() => handleGenreToggle(genre)}
                                 className={`badge transition-colors ${selectedGenres.includes(genre)
-                                        ? "badge-primary"
-                                        : "badge-secondary hover:bg-[var(--bg-secondary)]"
+                                    ? "badge-primary"
+                                    : "badge-secondary hover:bg-[var(--bg-secondary)]"
                                     }`}
                             >
                                 {selectedGenres.includes(genre) && (
