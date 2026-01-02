@@ -79,25 +79,21 @@ export default function CoinsPage() {
                         {coinPackages.map((pkg) => (
                             <div
                                 key={pkg.id}
-                                className={`card overflow-hidden ${pkg.isPopular
+                                className={`card p-6 ${pkg.isPopular
                                     ? "ring-2 ring-[var(--color-primary)]"
                                     : ""
                                     }`}
                             >
-                                {/* Popular Badge - Inside card flow */}
-                                {pkg.isPopular && (
-                                    <div className="bg-[var(--color-primary)] text-white text-center py-2 text-sm font-medium">
-                                        ⭐ Paling Populer
-                                    </div>
-                                )}
-
-                                <div className="p-6 text-center">
-                                    <h3 className="font-bold text-lg mb-2">{pkg.name}</h3>
+                                <div className="text-center">
+                                    <h3 className="font-bold text-lg mb-2 flex items-center justify-center gap-1">
+                                        {pkg.isPopular && <span className="text-amber-500">⭐</span>}
+                                        {pkg.name}
+                                    </h3>
                                     <div className="flex items-center justify-center gap-1 text-3xl font-bold text-amber-500 mb-1">
                                         <Coins className="w-6 h-6" />
                                         {pkg.coins}
                                     </div>
-                                    <p className={`text-sm mb-3 ${pkg.bonus > 0 ? "text-green-500" : "text-transparent"}`}>
+                                    <p className={`text-sm mb-3 h-5 ${pkg.bonus > 0 ? "text-green-500" : "text-transparent"}`}>
                                         {pkg.bonus > 0 ? `+${pkg.bonus} bonus koin` : "-"}
                                     </p>
                                     <p className="text-2xl font-bold mb-4">
