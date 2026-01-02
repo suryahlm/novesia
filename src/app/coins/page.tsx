@@ -71,22 +71,22 @@ export default function CoinsPage() {
 
                 {/* Coin Packages */}
                 <div className="mb-12">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                         <Coins className="w-5 h-5 text-amber-500" />
                         Paket Koin
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {coinPackages.map((pkg) => (
                             <div
                                 key={pkg.id}
                                 className={`card p-6 relative ${pkg.isPopular
-                                    ? "ring-2 ring-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                                    ? "ring-2 ring-[var(--color-primary)] bg-[var(--color-primary)]/5 mt-3"
                                     : ""
                                     }`}
                             >
                                 {pkg.isPopular && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--color-primary)] text-white text-xs font-medium rounded-full">
-                                        Paling Populer
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--color-primary)] text-white text-xs font-medium rounded-full whitespace-nowrap">
+                                        ⭐ Paling Populer
                                     </div>
                                 )}
                                 <div className="text-center">
@@ -95,10 +95,12 @@ export default function CoinsPage() {
                                         <Coins className="w-6 h-6" />
                                         {pkg.coins}
                                     </div>
-                                    {pkg.bonus > 0 && (
+                                    {pkg.bonus > 0 ? (
                                         <p className="text-sm text-green-500 mb-3">
                                             +{pkg.bonus} bonus koin
                                         </p>
+                                    ) : (
+                                        <p className="text-sm text-[var(--text-muted)] mb-3">&nbsp;</p>
                                     )}
                                     <p className="text-2xl font-bold mb-4">
                                         Rp {pkg.price.toLocaleString("id-ID")}
