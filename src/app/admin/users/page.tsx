@@ -32,17 +32,28 @@ export default function AdminUsersPage() {
     const [actionLoading, setActionLoading] = useState<string | null>(null)
     const [showAddCoinsModal, setShowAddCoinsModal] = useState<string | null>(null)
     const [coinsToAdd, setCoinsToAdd] = useState(100)
+    const [error, setError] = useState<string | null>(null)
 
     const fetchUsers = async () => {
+        setError(null)
         try {
-            const res = await fetch("/api/admin/users")
-            if (res.ok) {
-                const data = await res.json()
-                setUsers(data.users)
-                setStats(data.stats)
+            const res = await fetch("/api/admin/users", {
+                credentials: "include",
+            })
+
+            if (!res.ok) {
+                const errorData = await res.json()
+                setError(errorData.error || `Error ${res.status}`)
+                console.error("API Error:", errorData)
+                return
             }
-        } catch (error) {
-            console.error("Error fetching users:", error)
+
+            const data = await res.json()
+            setUsers(data.users || [])
+            setStats(data.stats || { total: 0, vipCount: 0, adminCount: 0 })
+        } catch (err) {
+            console.error("Fetch error:", err)
+            setError("Gagal mengambil data user")
         } finally {
             setIsLoading(false)
         }
@@ -131,7 +142,21 @@ export default function AdminUsersPage() {
                         Total: {stats.total} user
                     </p>
                 </div>
+                <button
+                    onClick={() => { setIsLoading(true); fetchUsers(); }}
+                    className="btn btn-secondary"
+                >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                </button>
             </div>
+
+            {error && (
+                <div className="card p-4 mb-6 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                    <p className="font-medium">Error: {error}</p>
+                    <p className="text-sm mt-1">Coba refresh halaman atau cek console untuk detail.</p>
+                </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
