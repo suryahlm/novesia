@@ -5,10 +5,11 @@ import Link from "next/link"
 import { Coins, Crown, Gift, Zap, LogIn, Check } from "lucide-react"
 
 const coinPackages = [
-    { id: 1, name: "Starter", coins: 50, price: 10000, bonus: 0 },
-    { id: 2, name: "Popular", coins: 120, price: 20000, bonus: 20, isPopular: true },
-    { id: 3, name: "Best Value", coins: 350, price: 50000, bonus: 100 },
-    { id: 4, name: "Premium", coins: 800, price: 100000, bonus: 300 },
+    { id: 1, name: "Coba Dulu", coins: 15, price: 5000, bonus: 0 },
+    { id: 2, name: "Starter", coins: 50, price: 15000, bonus: 5 },
+    { id: 3, name: "Popular", coins: 150, price: 35000, bonus: 30, isPopular: true },
+    { id: 4, name: "Best Value", coins: 400, price: 75000, bonus: 100 },
+    { id: 5, name: "Ultimate", coins: 1000, price: 150000, bonus: 350 },
 ]
 
 const vipBenefits = [
@@ -79,8 +80,8 @@ export default function CoinsPage() {
                             <div
                                 key={pkg.id}
                                 className={`card p-6 relative ${pkg.isPopular
-                                        ? "ring-2 ring-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                                        : ""
+                                    ? "ring-2 ring-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                                    : ""
                                     }`}
                             >
                                 {pkg.isPopular && (
