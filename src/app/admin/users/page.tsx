@@ -1,42 +1,126 @@
-import { Users, Crown, Coins, Shield, Mail } from "lucide-react"
+"use client"
+
+import { useState, useEffect } from "react"
+import { Users, Crown, Coins, Shield, Mail, Trash2, Plus, RefreshCw } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
-import { prisma } from "@/lib/prisma"
 
-async function getUsers() {
-    const users = await prisma.user.findMany({
-        orderBy: { createdAt: "desc" },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            role: true,
-            isVip: true,
-            coins: true,
-            createdAt: true,
-            _count: {
-                select: {
-                    readingHistory: true,
-                    bookmarks: true,
-                },
-            },
-        },
-    })
-    return users
+interface User {
+    id: string
+    name: string | null
+    email: string
+    image: string | null
+    role: string
+    isVip: boolean
+    coins: number
+    createdAt: string
+    _count: {
+        readingHistory: number
+        bookmarks: number
+    }
 }
 
-async function getUserStats() {
-    const [total, vipCount, adminCount] = await Promise.all([
-        prisma.user.count(),
-        prisma.user.count({ where: { isVip: true } }),
-        prisma.user.count({ where: { role: "ADMIN" } }),
-    ])
-    return { total, vipCount, adminCount }
+interface Stats {
+    total: number
+    vipCount: number
+    adminCount: number
 }
 
-export default async function AdminUsersPage() {
-    const users = await getUsers()
-    const stats = await getUserStats()
+export default function AdminUsersPage() {
+    const [users, setUsers] = useState<User[]>([])
+    const [stats, setStats] = useState<Stats>({ total: 0, vipCount: 0, adminCount: 0 })
+    const [isLoading, setIsLoading] = useState(true)
+    const [actionLoading, setActionLoading] = useState<string | null>(null)
+    const [showAddCoinsModal, setShowAddCoinsModal] = useState<string | null>(null)
+    const [coinsToAdd, setCoinsToAdd] = useState(100)
+
+    const fetchUsers = async () => {
+        try {
+            const res = await fetch("/api/admin/users")
+            if (res.ok) {
+                const data = await res.json()
+                setUsers(data.users)
+                setStats(data.stats)
+            }
+        } catch (error) {
+            console.error("Error fetching users:", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchUsers()
+    }, [])
+
+    const handleDelete = async (id: string, email: string) => {
+        if (!confirm(`Hapus user ${email}? Aksi ini tidak bisa dibatalkan.`)) return
+
+        setActionLoading(id)
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: "DELETE",
+            })
+            if (res.ok) {
+                fetchUsers()
+            } else {
+                const data = await res.json()
+                alert(data.error || "Gagal menghapus user")
+            }
+        } catch (error) {
+            alert("Terjadi kesalahan")
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
+    const handleToggleVip = async (id: string, currentVip: boolean) => {
+        setActionLoading(id)
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isVip: !currentVip }),
+            })
+            if (res.ok) {
+                fetchUsers()
+            }
+        } catch (error) {
+            alert("Gagal mengubah status VIP")
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
+    const handleAddCoins = async (id: string) => {
+        if (coinsToAdd <= 0) return
+
+        setActionLoading(id)
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ addCoins: coinsToAdd }),
+            })
+            if (res.ok) {
+                fetchUsers()
+                setShowAddCoinsModal(null)
+                setCoinsToAdd(100)
+            }
+        } catch (error) {
+            alert("Gagal menambah koin")
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="py-6 text-center">
+                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-[var(--color-primary)]" />
+                <p className="text-[var(--text-muted)]">Memuat data...</p>
+            </div>
+        )
+    }
 
     return (
         <div className="py-6">
@@ -98,9 +182,8 @@ export default async function AdminUsersPage() {
                                     <th className="text-left p-4 font-medium text-[var(--text-muted)]">Role</th>
                                     <th className="text-center p-4 font-medium text-[var(--text-muted)]">Status</th>
                                     <th className="text-center p-4 font-medium text-[var(--text-muted)]">Koin</th>
-                                    <th className="text-center p-4 font-medium text-[var(--text-muted)]">Baca</th>
-                                    <th className="text-center p-4 font-medium text-[var(--text-muted)]">Bookmark</th>
                                     <th className="text-left p-4 font-medium text-[var(--text-muted)]">Bergabung</th>
+                                    <th className="text-right p-4 font-medium text-[var(--text-muted)]">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--bg-tertiary)]">
@@ -136,23 +219,36 @@ export default async function AdminUsersPage() {
                                             )}
                                         </td>
                                         <td className="p-4 text-center">
-                                            {user.isVip ? (
-                                                <span className="badge badge-vip">VIP</span>
-                                            ) : (
-                                                <span className="text-[var(--text-muted)]">Free</span>
-                                            )}
+                                            <button
+                                                onClick={() => handleToggleVip(user.id, user.isVip)}
+                                                disabled={actionLoading === user.id}
+                                                className={`badge cursor-pointer transition-all hover:scale-105 ${user.isVip ? "badge-vip" : "badge-secondary"
+                                                    }`}
+                                                title={user.isVip ? "Klik untuk hapus VIP" : "Klik untuk jadikan VIP"}
+                                            >
+                                                {actionLoading === user.id ? (
+                                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                                ) : user.isVip ? (
+                                                    "VIP"
+                                                ) : (
+                                                    "Free"
+                                                )}
+                                            </button>
                                         </td>
                                         <td className="p-4 text-center">
-                                            <div className="flex items-center justify-center gap-1 text-[var(--color-accent)]">
-                                                <Coins className="w-4 h-4" />
-                                                <span>{formatNumber(user.coins)}</span>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <div className="flex items-center gap-1 text-[var(--color-accent)]">
+                                                    <Coins className="w-4 h-4" />
+                                                    <span>{formatNumber(user.coins)}</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => setShowAddCoinsModal(user.id)}
+                                                    className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors"
+                                                    title="Tambah Koin"
+                                                >
+                                                    <Plus className="w-4 h-4 text-green-500" />
+                                                </button>
                                             </div>
-                                        </td>
-                                        <td className="p-4 text-center text-[var(--text-secondary)]">
-                                            {user._count.readingHistory}
-                                        </td>
-                                        <td className="p-4 text-center text-[var(--text-secondary)]">
-                                            {user._count.bookmarks}
                                         </td>
                                         <td className="p-4 text-[var(--text-secondary)]">
                                             {new Date(user.createdAt).toLocaleDateString("id-ID", {
@@ -161,10 +257,64 @@ export default async function AdminUsersPage() {
                                                 year: "numeric",
                                             })}
                                         </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => handleDelete(user.id, user.email)}
+                                                    disabled={actionLoading === user.id}
+                                                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors"
+                                                    title="Hapus User"
+                                                >
+                                                    {actionLoading === user.id ? (
+                                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Trash2 className="w-4 h-4" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Coins Modal */}
+            {showAddCoinsModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="card p-6 w-full max-w-sm mx-4">
+                        <h3 className="font-semibold mb-4">Tambah Koin</h3>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Jumlah Koin</label>
+                            <input
+                                type="number"
+                                value={coinsToAdd}
+                                onChange={(e) => setCoinsToAdd(parseInt(e.target.value) || 0)}
+                                min="1"
+                                className="input"
+                            />
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowAddCoinsModal(null)}
+                                className="btn btn-secondary flex-1"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => handleAddCoins(showAddCoinsModal)}
+                                disabled={actionLoading === showAddCoinsModal || coinsToAdd <= 0}
+                                className="btn btn-primary flex-1"
+                            >
+                                {actionLoading === showAddCoinsModal ? (
+                                    <RefreshCw className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    "Tambah"
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
