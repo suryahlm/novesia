@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
-import { BookOpen, Mail, Lock, User, Chrome, ArrowRight, Eye, EyeOff, Check, AlertCircle } from "lucide-react"
+import { BookOpen, Mail, Lock, User, Chrome, ArrowRight, Eye, EyeOff, Check, AlertCircle, Gift } from "lucide-react"
 
 export default function RegisterPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
@@ -18,6 +19,14 @@ export default function RegisterPage() {
         password: "",
         referralCode: "",
     })
+
+    // Auto-populate referral code from URL
+    useEffect(() => {
+        const refCode = searchParams.get("ref")
+        if (refCode) {
+            setFormData(prev => ({ ...prev, referralCode: refCode }))
+        }
+    }, [searchParams])
 
     const passwordRequirements = [
         { text: "Minimal 8 karakter", met: formData.password.length >= 8 },
@@ -107,6 +116,12 @@ export default function RegisterPage() {
                         <div className="flex items-center gap-2 p-3 mb-4 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm">
                             <Check className="w-5 h-5 flex-shrink-0" />
                             <span>Registrasi berhasil! Mengalihkan...</span>
+                        </div>
+                    )}
+                    {formData.referralCode && !success && (
+                        <div className="flex items-center gap-2 p-3 mb-4 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-sm">
+                            <Gift className="w-5 h-5 flex-shrink-0" />
+                            <span>🎉 Kamu akan dapat <strong>bonus 50 koin</strong> saat mendaftar!</span>
                         </div>
                     )}
                     <form onSubmit={handleSubmit} className="space-y-5">

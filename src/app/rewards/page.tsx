@@ -1,11 +1,36 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { Gift, Coins, Crown, CheckCircle, LogIn, Star, Zap } from "lucide-react"
+import { Gift, Coins, Crown, CheckCircle, LogIn, Star, Zap, Users, Copy, Check, Loader2 } from "lucide-react"
+
+interface UserStats {
+    coins: number
+    readingStreak: number
+    referralCount: number
+}
 
 export default function RewardsPage() {
     const { data: session, status } = useSession()
+    const [userStats, setUserStats] = useState<UserStats | null>(null)
+    const [copied, setCopied] = useState(false)
+
+    useEffect(() => {
+        if (session) {
+            fetch("/api/user/stats")
+                .then(res => res.json())
+                .then(data => setUserStats(data))
+                .catch(() => setUserStats({ coins: 50, readingStreak: 0, referralCount: 0 }))
+        }
+    }, [session])
+
+    const handleCopyReferral = () => {
+        const referralLink = `${window.location.origin}/register?ref=${session?.user?.id}`
+        navigator.clipboard.writeText(referralLink)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
 
     if (status === "loading") {
         return (
@@ -50,16 +75,68 @@ export default function RewardsPage() {
                 </div>
 
                 {/* User Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-3 gap-4 mb-8">
                     <div className="card p-6 text-center">
                         <Coins className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-                        <p className="text-2xl font-bold">50</p>
+                        {userStats ? (
+                            <p className="text-2xl font-bold">{userStats.coins}</p>
+                        ) : (
+                            <Loader2 className="w-6 h-6 mx-auto animate-spin" />
+                        )}
                         <p className="text-sm text-[var(--text-muted)]">Koin</p>
                     </div>
                     <div className="card p-6 text-center">
                         <Crown className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                        <p className="text-2xl font-bold">0</p>
+                        {userStats ? (
+                            <p className="text-2xl font-bold">{userStats.readingStreak}</p>
+                        ) : (
+                            <Loader2 className="w-6 h-6 mx-auto animate-spin" />
+                        )}
                         <p className="text-sm text-[var(--text-muted)]">Hari Streak</p>
+                    </div>
+                    <div className="card p-6 text-center">
+                        <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                        {userStats ? (
+                            <p className="text-2xl font-bold">{userStats.referralCount}</p>
+                        ) : (
+                            <Loader2 className="w-6 h-6 mx-auto animate-spin" />
+                        )}
+                        <p className="text-sm text-[var(--text-muted)]">Referral</p>
+                    </div>
+                </div>
+
+                {/* Referral Section */}
+                <div className="card p-6 mb-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
+                    <h2 className="font-bold text-lg mb-2 flex items-center gap-2">
+                        <Users className="w-5 h-5 text-blue-500" />
+                        Ajak Teman, Dapat Koin!
+                    </h2>
+                    <p className="text-sm text-[var(--text-muted)] mb-4">
+                        Bagikan link referral kamu dan dapatkan <span className="text-amber-500 font-bold">50 koin</span> untuk setiap teman yang mendaftar!
+                    </p>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            readOnly
+                            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/register?ref=${session?.user?.id?.slice(0, 8)}...`}
+                            className="input flex-1 text-sm bg-[var(--bg-tertiary)]"
+                        />
+                        <button
+                            onClick={handleCopyReferral}
+                            className={`btn ${copied ? "bg-green-500 hover:bg-green-600" : "btn-primary"}`}
+                        >
+                            {copied ? (
+                                <>
+                                    <Check className="w-4 h-4 mr-1" />
+                                    Tersalin!
+                                </>
+                            ) : (
+                                <>
+                                    <Copy className="w-4 h-4 mr-1" />
+                                    Salin
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
 
@@ -74,8 +151,8 @@ export default function RewardsPage() {
                             <div
                                 key={day}
                                 className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm ${day === 1
-                                        ? "bg-[var(--color-primary)] text-white"
-                                        : "bg-[var(--bg-tertiary)]"
+                                    ? "bg-[var(--color-primary)] text-white"
+                                    : "bg-[var(--bg-tertiary)]"
                                     }`}
                             >
                                 <span className="text-xs">Hari</span>
@@ -97,8 +174,8 @@ export default function RewardsPage() {
                             <div
                                 key={index}
                                 className={`flex items-center justify-between p-4 rounded-lg ${task.completed
-                                        ? "bg-green-500/10 border border-green-500/20"
-                                        : "bg-[var(--bg-tertiary)]"
+                                    ? "bg-green-500/10 border border-green-500/20"
+                                    : "bg-[var(--bg-tertiary)]"
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
