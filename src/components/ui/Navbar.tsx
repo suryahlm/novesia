@@ -255,25 +255,25 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
             {isSearchOpen && (
                 <div className="fixed inset-0 z-[100]" onClick={() => setIsSearchOpen(false)}>
                     {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-black/40" />
 
                     {/* Search Container */}
                     <div
-                        className="absolute top-0 left-0 right-0 bg-white dark:bg-[#1a1a2e] border-b border-gray-200 dark:border-gray-800 shadow-2xl"
+                        className="absolute top-0 left-0 right-0 bg-[var(--bg-primary)] border-b border-[var(--bg-tertiary)] shadow-lg"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="max-w-2xl mx-auto p-6">
+                        <div className="max-w-2xl mx-auto p-4">
                             <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
                                 <input
                                     type="text"
                                     placeholder={t({ id: "Cari novel...", en: "Search novels..." })}
-                                    className="w-full pl-12 pr-12 py-4 text-lg bg-gray-100 dark:bg-gray-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                                    className="w-full pl-12 pr-12 py-3 text-lg bg-[var(--bg-secondary)] border border-[var(--bg-tertiary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-[var(--text-primary)]"
                                     autoFocus
                                 />
                                 <button
                                     onClick={() => setIsSearchOpen(false)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
