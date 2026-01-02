@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { BookOpen, Mail, Lock, User, Chrome, ArrowRight, Eye, EyeOff, Check, AlertCircle, Gift } from "lucide-react"
 
-export default function RegisterPage() {
+function RegisterForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [showPassword, setShowPassword] = useState(false)
@@ -289,5 +289,17 @@ export default function RegisterPage() {
                 </p>
             </div>
         </div>
+    )
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+                <div className="animate-spin w-8 h-8 border-4 border-[var(--color-primary)] border-t-transparent rounded-full" />
+            </div>
+        }>
+            <RegisterForm />
+        </Suspense>
     )
 }
