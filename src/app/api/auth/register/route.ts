@@ -71,14 +71,33 @@ export async function POST(request: NextRequest) {
                     },
                 })
 
-                // Give bonus to both users
+                // Calculate VIP expiry (extend 3 days from now or from current expiry)
+                const now = new Date()
+                const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+
+                // For referrer: extend VIP if already VIP, or set new expiry
+                const referrerNewExpiry = referrer.vipExpiresAt && referrer.vipExpiresAt > now
+                    ? new Date(referrer.vipExpiresAt.getTime() + 3 * 24 * 60 * 60 * 1000)
+                    : threeDaysLater
+
+                // Give bonus to referrer: 50 coins + 3 days VIP
                 await prisma.user.update({
                     where: { id: referrer.id },
-                    data: { coins: { increment: 50 } },
+                    data: {
+                        coins: { increment: 50 },
+                        isVip: true,
+                        vipExpiresAt: referrerNewExpiry,
+                    },
                 })
+
+                // Give bonus to referred user: 50 coins + 3 days VIP
                 await prisma.user.update({
                     where: { id: user.id },
-                    data: { coins: { increment: 50 } }, // Extra 50 coins for using referral
+                    data: {
+                        coins: { increment: 50 },
+                        isVip: true,
+                        vipExpiresAt: threeDaysLater,
+                    },
                 })
 
                 // Log transactions
@@ -89,14 +108,14 @@ export async function POST(request: NextRequest) {
                             type: "REFERRAL_BONUS",
                             amount: 50,
                             status: "SUCCESS",
-                            description: `Referral bonus for inviting ${user.email}`,
+                            description: `Referral bonus (50 koin + 3 hari VIP) for inviting ${user.email}`,
                         },
                         {
                             userId: user.id,
                             type: "REFERRAL_BONUS",
                             amount: 50,
                             status: "SUCCESS",
-                            description: "Bonus for using referral code",
+                            description: "Bonus pendaftaran dengan referral (50 koin + 3 hari VIP)",
                         },
                     ],
                 })

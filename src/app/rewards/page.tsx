@@ -109,10 +109,10 @@ export default function RewardsPage() {
                 <div className="card p-6 mb-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
                     <h2 className="font-bold text-lg mb-2 flex items-center gap-2">
                         <Users className="w-5 h-5 text-blue-500" />
-                        Ajak Teman, Dapat Koin!
+                        Ajak Teman, Dapat Bonus!
                     </h2>
                     <p className="text-sm text-[var(--text-muted)] mb-4">
-                        Bagikan link referral kamu dan dapatkan <span className="text-amber-500 font-bold">50 koin</span> untuk setiap teman yang mendaftar!
+                        Bagikan link referral kamu dan dapatkan <span className="text-amber-500 font-bold">50 koin</span> + <span className="text-purple-500 font-bold">3 hari VIP</span> untuk setiap teman yang mendaftar!
                     </p>
                     <div className="flex gap-2">
                         <input

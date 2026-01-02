@@ -119,9 +119,9 @@ function RegisterForm() {
                         </div>
                     )}
                     {formData.referralCode && !success && (
-                        <div className="flex items-center gap-2 p-3 mb-4 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-sm">
+                        <div className="flex items-center gap-2 p-3 mb-4 bg-gradient-to-r from-amber-100 to-purple-100 dark:from-amber-900/30 dark:to-purple-900/30 text-amber-700 dark:text-amber-300 rounded-lg text-sm border border-amber-200 dark:border-amber-800">
                             <Gift className="w-5 h-5 flex-shrink-0" />
-                            <span>🎉 Kamu akan dapat <strong>bonus 50 koin</strong> saat mendaftar!</span>
+                            <span>🎉 Kamu akan dapat <strong>50 koin</strong> + <strong>3 hari VIP</strong> saat mendaftar!</span>
                         </div>
                     )}
                     <form onSubmit={handleSubmit} className="space-y-5">
