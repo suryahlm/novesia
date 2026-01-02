@@ -1,10 +1,10 @@
-import { chromium, Browser, Page } from "playwright"
+import * as cheerio from "cheerio"
 import { translateLongContent } from "./openai"
 import { prisma } from "./prisma"
 import { generateSlug, sleep, countWords } from "./utils"
 
 const RATE_LIMIT_MS = parseInt(process.env.SCRAPER_RATE_LIMIT_MS || "2000")
-const MAX_CHAPTERS = parseInt(process.env.SCRAPER_MAX_CHAPTERS_PER_RUN || "50")
+const MAX_CHAPTERS = parseInt(process.env.SCRAPER_MAX_CHAPTERS_PER_RUN || "10")
 
 interface NovelInfo {
     title: string
@@ -29,58 +29,88 @@ interface ScrapeResult {
 }
 
 /**
- * Initialize browser instance
+ * Fetch HTML content from URL
  */
-async function initBrowser(): Promise<Browser> {
-    return await chromium.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    })
+async function fetchHTML(url: string): Promise<string | null> {
+    try {
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            },
+        })
+        if (!response.ok) {
+            console.error(`HTTP error: ${response.status}`)
+            return null
+        }
+        return await response.text()
+    } catch (error) {
+        console.error("Fetch error:", error)
+        return null
+    }
 }
 
 /**
  * Scrape novel info from AsianNovel
  */
-async function scrapeNovelInfo(page: Page, url: string): Promise<NovelInfo | null> {
+async function scrapeNovelInfo(url: string): Promise<NovelInfo | null> {
     try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 })
-        await page.waitForSelector(".post-title h1", { timeout: 10000 })
+        const html = await fetchHTML(url)
+        if (!html) return null
+
+        const $ = cheerio.load(html)
 
         // Extract title
-        const title = await page.$eval(".post-title h1", (el) =>
-            el.textContent?.trim() || ""
-        )
+        const title = $(".post-title h1").text().trim() ||
+            $("h1.entry-title").text().trim() ||
+            $("h1").first().text().trim()
+
+        if (!title) {
+            console.error("Could not find title")
+            return null
+        }
 
         // Extract synopsis
-        const synopsis = await page.$eval(".summary__content p", (el) =>
-            el.textContent?.trim() || ""
-        ).catch(() => "")
+        const synopsis = $(".summary__content p").first().text().trim() ||
+            $(".description-summary").text().trim() ||
+            $(".summary").text().trim() ||
+            ""
 
         // Extract cover
-        const cover = await page.$eval(".summary_image img", (el) =>
-            el.getAttribute("data-src") || el.getAttribute("src") || ""
-        ).catch(() => "")
+        const cover = $(".summary_image img").attr("data-src") ||
+            $(".summary_image img").attr("src") ||
+            $("img.wp-post-image").attr("src") ||
+            ""
 
         // Extract author
-        const author = await page.$eval(".author-content a", (el) =>
-            el.textContent?.trim() || ""
-        ).catch(() => "Unknown")
+        const author = $(".author-content a").text().trim() ||
+            $(".author a").text().trim() ||
+            "Unknown"
 
         // Extract genres
-        const genres = await page.$$eval(".genres-content a", (elements) =>
-            elements.map((el) => el.textContent?.trim() || "").filter(Boolean)
-        ).catch(() => [])
+        const genres: string[] = []
+        $(".genres-content a, .wp-manga-genre a").each((_, el) => {
+            const genre = $(el).text().trim()
+            if (genre) genres.push(genre)
+        })
 
         // Extract chapter list
-        const chapters = await page.$$eval(
-            ".wp-manga-chapter a",
-            (elements) =>
-                elements.map((el, index, arr) => ({
-                    number: arr.length - index,
-                    title: el.textContent?.trim() || `Chapter ${arr.length - index}`,
-                    url: el.getAttribute("href") || "",
-                }))
-        ).catch(() => [])
+        const chapters: ChapterInfo[] = []
+        $(".wp-manga-chapter a, .chapter-item a").each((index, el) => {
+            const chapterUrl = $(el).attr("href") || ""
+            const chapterTitle = $(el).text().trim()
+            if (chapterUrl) {
+                chapters.push({
+                    number: index + 1, // Will be reversed later
+                    title: chapterTitle || `Chapter ${index + 1}`,
+                    url: chapterUrl,
+                })
+            }
+        })
+
+        // Reverse to get correct order (newest first in HTML, we want oldest first)
+        chapters.reverse()
+        chapters.forEach((ch, i) => { ch.number = i + 1 })
 
         return { title, synopsis, cover, author, genres, chapters }
     } catch (error) {
@@ -92,17 +122,29 @@ async function scrapeNovelInfo(page: Page, url: string): Promise<NovelInfo | nul
 /**
  * Scrape chapter content
  */
-async function scrapeChapterContent(page: Page, url: string): Promise<string | null> {
+async function scrapeChapterContent(url: string): Promise<string | null> {
     try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 })
-        await page.waitForSelector(".text-left", { timeout: 10000 })
+        const html = await fetchHTML(url)
+        if (!html) return null
+
+        const $ = cheerio.load(html)
 
         // Extract content paragraphs
-        const content = await page.$$eval(".text-left p", (elements) =>
-            elements.map((el) => el.textContent?.trim() || "").join("\n\n")
-        )
+        const paragraphs: string[] = []
+        $(".text-left p, .reading-content p, .entry-content p").each((_, el) => {
+            const text = $(el).text().trim()
+            if (text) paragraphs.push(text)
+        })
 
-        return content
+        if (paragraphs.length === 0) {
+            // Try alternative selectors
+            $(".chapter-content p, #chapter-content p, .content p").each((_, el) => {
+                const text = $(el).text().trim()
+                if (text) paragraphs.push(text)
+            })
+        }
+
+        return paragraphs.join("\n\n")
     } catch (error) {
         console.error("Error scraping chapter content:", error)
         return null
@@ -116,7 +158,6 @@ export async function runScrapePipeline(
     jobId: string,
     novelUrl: string
 ): Promise<ScrapeResult> {
-    let browser: Browser | null = null
     const logs: string[] = []
 
     const log = (message: string) => {
@@ -133,15 +174,13 @@ export async function runScrapePipeline(
         })
 
         log(`Starting scrape for: ${novelUrl}`)
-        browser = await initBrowser()
-        const page = await browser.newPage()
 
         // Scrape novel info
         log("Scraping novel information...")
-        const novelInfo = await scrapeNovelInfo(page, novelUrl)
+        const novelInfo = await scrapeNovelInfo(novelUrl)
 
         if (!novelInfo || !novelInfo.title) {
-            throw new Error("Failed to scrape novel information")
+            throw new Error("Failed to scrape novel information. Site may be blocking requests or URL is invalid.")
         }
 
         log(`Found novel: ${novelInfo.title}`)
@@ -165,16 +204,16 @@ export async function runScrapePipeline(
                 data: {
                     title: novelInfo.title,
                     slug,
-                    synopsis: novelInfo.synopsis,
+                    synopsis: novelInfo.synopsis || "No synopsis available",
                     cover: novelInfo.cover,
                     author: novelInfo.author,
                     sourceUrl: novelUrl,
                     isManual: false,
-                    genres: {
+                    genres: novelInfo.genres.length > 0 ? {
                         connect: novelInfo.genres.map((name) => ({
                             slug: generateSlug(name),
                         })),
-                    },
+                    } : undefined,
                 },
             })
             log(`Created novel in database: ${novel.id}`)
@@ -183,11 +222,12 @@ export async function runScrapePipeline(
         }
 
         // Update job with total chapters
+        const chaptersToScrape = Math.min(novelInfo.chapters.length, MAX_CHAPTERS)
         await prisma.scrapeJob.update({
             where: { id: jobId },
             data: {
                 novelId: novel.id,
-                totalChapters: Math.min(novelInfo.chapters.length, MAX_CHAPTERS),
+                totalChapters: chaptersToScrape,
                 status: "TRANSLATING",
             },
         })
@@ -199,7 +239,7 @@ export async function runScrapePipeline(
         })
         const existingNumbers = new Set(existingChapters.map((c) => c.chapterNumber))
 
-        // Process chapters (newest first, limited by MAX_CHAPTERS)
+        // Process chapters (limited by MAX_CHAPTERS)
         const chaptersToProcess = novelInfo.chapters
             .filter((c) => !existingNumbers.has(c.number))
             .slice(0, MAX_CHAPTERS)
@@ -212,22 +252,28 @@ export async function runScrapePipeline(
                 log(`Processing Chapter ${chapterInfo.number}: ${chapterInfo.title}`)
 
                 // Scrape content
-                const originalContent = await scrapeChapterContent(page, chapterInfo.url)
-                if (!originalContent) {
+                const originalContent = await scrapeChapterContent(chapterInfo.url)
+                if (!originalContent || originalContent.length < 100) {
                     log(`Failed to scrape chapter ${chapterInfo.number}, skipping...`)
                     continue
                 }
 
-                // Translate content
-                log(`Translating Chapter ${chapterInfo.number}...`)
-                const translation = await translateLongContent(originalContent, 3000, {
-                    novelTitle: novel.title,
-                    chapterNumber: chapterInfo.number,
-                })
+                // Translate content (if OpenAI is configured)
+                let translatedContent = originalContent
+                try {
+                    log(`Translating Chapter ${chapterInfo.number}...`)
+                    const translation = await translateLongContent(originalContent, 3000, {
+                        novelTitle: novel.title,
+                        chapterNumber: chapterInfo.number,
+                    })
 
-                if (!translation.success || !translation.translatedText) {
-                    log(`Translation failed for chapter ${chapterInfo.number}: ${translation.error}`)
-                    continue
+                    if (translation.success && translation.translatedText) {
+                        translatedContent = translation.translatedText
+                    } else {
+                        log(`Translation failed, using original: ${translation.error}`)
+                    }
+                } catch (translateError) {
+                    log(`Translation error, using original content`)
                 }
 
                 // Save to database
@@ -237,8 +283,8 @@ export async function runScrapePipeline(
                         chapterNumber: chapterInfo.number,
                         title: chapterInfo.title,
                         contentOriginal: originalContent,
-                        contentTranslated: translation.translatedText,
-                        wordCount: countWords(translation.translatedText),
+                        contentTranslated: translatedContent,
+                        wordCount: countWords(translatedContent),
                         sourceUrl: chapterInfo.url,
                     },
                 })
@@ -291,10 +337,6 @@ export async function runScrapePipeline(
         })
 
         return { success: false, error: errorMessage }
-    } finally {
-        if (browser) {
-            await browser.close()
-        }
     }
 }
 
