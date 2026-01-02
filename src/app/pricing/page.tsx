@@ -114,7 +114,7 @@ export default function PricingPage() {
     }
 
     return (
-        <div className="pt-2 pb-4 sm:py-8">
+        <div className="pb-4 sm:py-8">
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-4 sm:mb-10">
