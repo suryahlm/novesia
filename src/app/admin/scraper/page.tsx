@@ -70,7 +70,7 @@ export default function ScraperPage() {
             const res = await fetch("/api/scraper", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url: newUrl }),
+                body: JSON.stringify({ novelUrl: newUrl }),
             })
 
             if (res.ok) {
