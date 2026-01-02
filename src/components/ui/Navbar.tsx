@@ -253,9 +253,9 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
 
             {/* Search Overlay */}
             {isSearchOpen && (
-                <div className="fixed inset-0 z-50 bg-black/50 animate-fade-in" onClick={() => setIsSearchOpen(false)}>
+                <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setIsSearchOpen(false)}>
                     <div
-                        className="absolute top-0 left-0 right-0 bg-[var(--bg-primary)] p-4 animate-slide-up"
+                        className="absolute top-0 left-0 right-0 bg-[var(--bg-primary)] p-4 pt-6 shadow-xl animate-slide-up"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="max-w-2xl mx-auto">
@@ -264,7 +264,7 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
                                 <input
                                     type="text"
                                     placeholder={t({ id: "Cari novel...", en: "Search novels..." })}
-                                    className="input pl-12 pr-12 py-3 text-lg"
+                                    className="input pl-12 pr-12 py-3 text-lg w-full"
                                     autoFocus
                                 />
                                 <button
