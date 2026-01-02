@@ -1,0 +1,205 @@
+"use client"
+
+import { useState } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import {
+    User,
+    Mail,
+    Coins,
+    Crown,
+    BookOpen,
+    Heart,
+    Settings,
+    LogIn,
+    Loader2,
+    Save,
+    CheckCircle,
+} from "lucide-react"
+
+export default function ProfilePage() {
+    const { data: session, status, update } = useSession()
+    const router = useRouter()
+    const [isEditing, setIsEditing] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+    const [saveSuccess, setSaveSuccess] = useState(false)
+    const [formData, setFormData] = useState({
+        name: "",
+    })
+
+    if (status === "loading") {
+        return (
+            <div className="min-h-screen py-8 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+            </div>
+        )
+    }
+
+    if (!session) {
+        return (
+            <div className="min-h-screen py-8 flex items-center justify-center">
+                <div className="text-center">
+                    <User className="w-16 h-16 text-[var(--text-muted)] mx-auto mb-4" />
+                    <h1 className="text-2xl font-bold mb-2">Profil Kamu</h1>
+                    <p className="text-[var(--text-muted)] mb-6">
+                        Masuk untuk melihat profil
+                    </p>
+                    <Link href="/login" className="btn btn-primary">
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Masuk
+                    </Link>
+                </div>
+            </div>
+        )
+    }
+
+    const user = session.user
+
+    const handleEdit = () => {
+        setFormData({ name: user?.name || "" })
+        setIsEditing(true)
+    }
+
+    const handleSave = async () => {
+        setIsSaving(true)
+        try {
+            const response = await fetch("/api/user/profile", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            })
+
+            if (response.ok) {
+                await update({ name: formData.name })
+                setSaveSuccess(true)
+                setIsEditing(false)
+                setTimeout(() => setSaveSuccess(false), 3000)
+            }
+        } catch (error) {
+            console.error("Error updating profile:", error)
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    return (
+        <div className="min-h-screen py-8">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold mb-2">Profil Saya</h1>
+                    <p className="text-[var(--text-muted)]">
+                        Kelola informasi profil kamu
+                    </p>
+                </div>
+
+                {/* Profile Card */}
+                <div className="card p-6 mb-6">
+                    <div className="flex items-start gap-6">
+                        {/* Avatar */}
+                        <div className="flex-shrink-0">
+                            {user?.image ? (
+                                <img
+                                    src={user.image}
+                                    alt={user.name || "User"}
+                                    className="w-24 h-24 rounded-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-24 h-24 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white text-3xl font-bold">
+                                    {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1">
+                            {isEditing ? (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">Nama</label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="input"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={handleSave} disabled={isSaving} className="btn btn-primary">
+                                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                                            Simpan
+                                        </button>
+                                        <button onClick={() => setIsEditing(false)} className="btn btn-secondary">
+                                            Batal
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <h2 className="text-xl font-bold">{user?.name || "User"}</h2>
+                                        {saveSuccess && <CheckCircle className="w-5 h-5 text-green-500" />}
+                                    </div>
+                                    <p className="text-[var(--text-muted)] flex items-center gap-2 mb-4">
+                                        <Mail className="w-4 h-4" />
+                                        {user?.email}
+                                    </p>
+                                    <button onClick={handleEdit} className="btn btn-secondary">
+                                        <Settings className="w-4 h-4 mr-2" />
+                                        Edit Profil
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="card p-4 text-center">
+                        <Coins className="w-6 h-6 text-amber-500 mx-auto mb-2" />
+                        <p className="text-xl font-bold">{(user as unknown as { coins?: number })?.coins || 50}</p>
+                        <p className="text-sm text-[var(--text-muted)]">Koin</p>
+                    </div>
+                    <div className="card p-4 text-center">
+                        <BookOpen className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                        <p className="text-xl font-bold">0</p>
+                        <p className="text-sm text-[var(--text-muted)]">Dibaca</p>
+                    </div>
+                    <div className="card p-4 text-center">
+                        <Heart className="w-6 h-6 text-red-500 mx-auto mb-2" />
+                        <p className="text-xl font-bold">0</p>
+                        <p className="text-sm text-[var(--text-muted)]">Bookmark</p>
+                    </div>
+                    <div className="card p-4 text-center">
+                        <Crown className="w-6 h-6 text-purple-500 mx-auto mb-2" />
+                        <p className="text-xl font-bold">0</p>
+                        <p className="text-sm text-[var(--text-muted)]">Streak</p>
+                    </div>
+                </div>
+
+                {/* Quick Links */}
+                <div className="card divide-y divide-[var(--bg-tertiary)]">
+                    <Link href="/library" className="flex items-center justify-between p-4 hover:bg-[var(--bg-tertiary)] transition-colors">
+                        <div className="flex items-center gap-3">
+                            <BookOpen className="w-5 h-5 text-[var(--color-primary)]" />
+                            <span>Pustaka Saya</span>
+                        </div>
+                    </Link>
+                    <Link href="/coins" className="flex items-center justify-between p-4 hover:bg-[var(--bg-tertiary)] transition-colors">
+                        <div className="flex items-center gap-3">
+                            <Coins className="w-5 h-5 text-amber-500" />
+                            <span>Beli Koin</span>
+                        </div>
+                    </Link>
+                    <Link href="/rewards" className="flex items-center justify-between p-4 hover:bg-[var(--bg-tertiary)] transition-colors">
+                        <div className="flex items-center gap-3">
+                            <Crown className="w-5 h-5 text-purple-500" />
+                            <span>Hadiah & Reward</span>
+                        </div>
+                    </Link>
+                </div>
+            </div>
+        </div>
+    )
+}

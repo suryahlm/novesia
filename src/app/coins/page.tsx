@@ -1,8 +1,9 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { Coins, Crown, Gift, Zap, LogIn, Check } from "lucide-react"
+import { Coins, Crown, Gift, Zap, LogIn, Check, Loader2 } from "lucide-react"
 
 const coinPackages = [
     { id: 1, name: "Coba Dulu", coins: 15, price: 5000, bonus: 0 },
@@ -22,6 +23,16 @@ const vipBenefits = [
 
 export default function CoinsPage() {
     const { data: session, status } = useSession()
+    const [userCoins, setUserCoins] = useState<number | null>(null)
+
+    useEffect(() => {
+        if (session) {
+            fetch("/api/user/profile")
+                .then(res => res.json())
+                .then(data => setUserCoins(data.coins))
+                .catch(() => setUserCoins(50))
+        }
+    }, [session])
 
     if (status === "loading") {
         return (
@@ -65,7 +76,11 @@ export default function CoinsPage() {
                     <p className="text-sm text-[var(--text-muted)] mb-1">Saldo Koin Kamu</p>
                     <div className="flex items-center justify-center gap-2">
                         <Coins className="w-8 h-8 text-amber-500" />
-                        <span className="text-4xl font-bold">50</span>
+                        {userCoins !== null ? (
+                            <span className="text-4xl font-bold">{userCoins}</span>
+                        ) : (
+                            <Loader2 className="w-8 h-8 animate-spin" />
+                        )}
                     </div>
                 </div>
 
