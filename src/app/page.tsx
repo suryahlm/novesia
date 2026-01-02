@@ -116,7 +116,7 @@ export default async function HomePage() {
               Mulai Baca
             </Link>
             <Link
-              href="/register"
+              href="/rewards"
               className="btn border-2 border-white/50 hover:bg-white/10"
             >
               <Crown className="w-4 h-4 mr-2" />
