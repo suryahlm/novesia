@@ -42,10 +42,19 @@ export default function ScraperPage() {
     // Fetch jobs from API
     const fetchJobs = async () => {
         try {
-            const res = await fetch("/api/scraper/jobs")
+            console.log("Fetching jobs...")
+            const res = await fetch("/api/scraper/jobs", {
+                credentials: "include",
+            })
+            console.log("Jobs fetch status:", res.status)
+
             if (res.ok) {
                 const data = await res.json()
+                console.log("Jobs fetched:", data)
                 setJobs(data)
+            } else {
+                const error = await res.json()
+                console.error("Jobs fetch error:", error)
             }
         } catch (error) {
             console.error("Failed to fetch jobs:", error)
