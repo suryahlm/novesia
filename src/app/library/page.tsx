@@ -18,7 +18,7 @@ interface ReadingHistoryItem {
     novel: Novel
     chapter: { chapterNumber: number; title: string }
     progress: number
-    updatedAt: string
+    readAt: string
 }
 
 interface BookmarkItem {
@@ -110,8 +110,8 @@ export default function LibraryPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`pb-3 font-medium flex items-center gap-2 transition-colors ${activeTab === tab.id
-                                    ? "text-[var(--color-primary)] border-b-2 border-[var(--color-primary)]"
-                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                ? "text-[var(--color-primary)] border-b-2 border-[var(--color-primary)]"
+                                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                 }`}
                         >
                             <tab.icon className="w-4 h-4" />

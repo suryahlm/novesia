@@ -12,30 +12,41 @@ export async function GET() {
 
         const history = await prisma.readingHistory.findMany({
             where: { userId: session.user.id },
-            orderBy: { updatedAt: "desc" },
+            orderBy: { readAt: "desc" },
             take: 50,
             include: {
-                novel: {
-                    select: {
-                        id: true,
-                        title: true,
-                        slug: true,
-                        cover: true,
-                        author: true,
-                        _count: { select: { chapters: true } },
-                    },
-                },
                 chapter: {
                     select: {
                         id: true,
                         chapterNumber: true,
                         title: true,
+                        novel: {
+                            select: {
+                                id: true,
+                                title: true,
+                                slug: true,
+                                cover: true,
+                                author: true,
+                                _count: { select: { chapters: true } },
+                            },
+                        },
                     },
                 },
             },
         })
 
-        return NextResponse.json(history)
+        // Transform to include novel at top level for easier consumption
+        const transformed = history.map(item => ({
+            ...item,
+            novel: item.chapter.novel,
+            chapter: {
+                id: item.chapter.id,
+                chapterNumber: item.chapter.chapterNumber,
+                title: item.chapter.title,
+            },
+        }))
+
+        return NextResponse.json(transformed)
     } catch (error) {
         console.error("Error fetching reading history:", error)
         return NextResponse.json({ error: "Failed to fetch history" }, { status: 500 })
