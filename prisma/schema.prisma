@@ -46,6 +46,7 @@ model User {
   referredBy      Referral?       @relation("referred")
   notifications   Notification[]
   unlockedChapters UnlockedChapter[]
+  novelRequests   NovelRequest[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -412,4 +413,30 @@ model Setting {
   value String @db.Text
   
   updatedAt DateTime @updatedAt
+}
+
+// ==================== NOVEL REQUEST ====================
+
+model NovelRequest {
+  id          String              @id @default(cuid())
+  title       String
+  author      String?
+  
+  // Status
+  status      NovelRequestStatus  @default(PENDING)
+  adminNote   String?             @db.Text
+  
+  // Relation
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+enum NovelRequestStatus {
+  PENDING     // Menunggu review
+  APPROVED    // Disetujui, akan diproses
+  REJECTED    // Ditolak
+  COMPLETED   // Sudah ada di platform
 }

@@ -65,6 +65,21 @@ export default async function DiscoverPage({ searchParams }: DiscoverPageProps) 
                     </div>
                 </form>
 
+                {/* Request Novel Link */}
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-[var(--color-primary)]/10 to-purple-500/10 rounded-lg border border-[var(--color-primary)]/20">
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <p className="text-sm font-medium">Tidak menemukan novel?</p>
+                            <p className="text-xs text-[var(--text-muted)]">Request novel favoritmu!</p>
+                        </div>
+                        <a
+                            href="/request"
+                            className="btn btn-primary text-sm py-2 px-3"
+                        >
+                            Request
+                        </a>
+                    </div>
+                </div>
                 {/* Novel Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                     {novels.map((novel) => (
