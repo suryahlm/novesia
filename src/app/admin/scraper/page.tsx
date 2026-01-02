@@ -111,15 +111,24 @@ export default function ScraperPage() {
         if (!confirm("Hapus job ini?")) return
 
         try {
+            console.log("Deleting job:", id)
             const res = await fetch(`/api/scraper/jobs/${id}`, {
                 method: "DELETE",
                 credentials: "include",
             })
+            console.log("Delete response:", res.status)
+
             if (res.ok) {
+                alert("✅ Job dihapus")
                 fetchJobs()
+            } else {
+                const data = await res.json()
+                console.error("Delete error:", data)
+                alert(`❌ Error: ${data.error || "Gagal menghapus job"}`)
             }
         } catch (error) {
             console.error("Failed to delete job:", error)
+            alert("❌ Terjadi kesalahan saat menghapus")
         }
     }
 
