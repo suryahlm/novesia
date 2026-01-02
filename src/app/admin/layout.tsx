@@ -26,14 +26,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     return (
         <div className="flex min-h-screen -mx-4 sm:-mx-6 lg:-mx-8">
             {/* Sidebar */}
-            <aside className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--bg-tertiary)] hidden lg:block">
+            <aside className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--bg-tertiary)] hidden lg:flex lg:flex-col sticky top-0 h-screen">
                 <div className="p-4 border-b border-[var(--bg-tertiary)]">
                     <Link href="/" className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                         <ChevronLeft className="w-4 h-4" />
                         <span className="text-sm">Kembali ke Website</span>
                     </Link>
                 </div>
-                <div className="p-4">
+                <div className="p-4 flex-1 overflow-y-auto">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-purple-600 flex items-center justify-center text-white font-bold">
                             N
@@ -58,8 +58,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     </nav>
                 </div>
 
-                {/* Logout */}
-                <div className="absolute bottom-4 left-4 right-4">
+                {/* Logout - always at bottom */}
+                <div className="p-4 border-t border-[var(--bg-tertiary)]">
                     <LogoutButton />
                 </div>
             </aside>
