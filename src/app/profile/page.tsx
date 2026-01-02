@@ -95,7 +95,7 @@ export default function ProfilePage() {
 
                 {/* Profile Card */}
                 <div className="card p-6 mb-6">
-                    <div className="flex items-start gap-6">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                         {/* Avatar */}
                         <div className="flex-shrink-0">
                             {user?.image ? (
@@ -112,7 +112,7 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Info */}
-                        <div className="flex-1">
+                        <div className="flex-1 text-center sm:text-left">
                             {isEditing ? (
                                 <div className="space-y-4">
                                     <div>
@@ -140,7 +140,7 @@ export default function ProfilePage() {
                                         <h2 className="text-xl font-bold">{user?.name || "User"}</h2>
                                         {saveSuccess && <CheckCircle className="w-5 h-5 text-green-500" />}
                                     </div>
-                                    <p className="text-[var(--text-muted)] flex items-center gap-2 mb-4">
+                                    <p className="text-[var(--text-muted)] flex items-center justify-center sm:justify-start gap-2 mb-4">
                                         <Mail className="w-4 h-4" />
                                         {user?.email}
                                     </p>

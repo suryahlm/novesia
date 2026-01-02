@@ -41,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`${inter.variable} ${merriweather.variable} ${jetbrainsMono.variable}`}>
-      <body className="antialiased min-h-screen pb-20 md:pb-0">
+      <body className="antialiased min-h-screen pt-16 pb-24 md:pb-0">
         <SessionProvider>
           <Navbar />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

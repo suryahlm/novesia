@@ -75,55 +75,55 @@ export default function RewardsPage() {
                 </div>
 
                 {/* User Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                    <div className="card p-6 text-center">
-                        <Coins className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
+                    <div className="card p-3 sm:p-6 text-center">
+                        <Coins className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500 mx-auto mb-1 sm:mb-2" />
                         {userStats ? (
                             <p className="text-2xl font-bold">{userStats.coins}</p>
                         ) : (
                             <Loader2 className="w-6 h-6 mx-auto animate-spin" />
                         )}
-                        <p className="text-sm text-[var(--text-muted)]">Koin</p>
+                        <p className="text-xs sm:text-sm text-[var(--text-muted)]">Koin</p>
                     </div>
-                    <div className="card p-6 text-center">
-                        <Crown className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                    <div className="card p-3 sm:p-6 text-center">
+                        <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 mx-auto mb-1 sm:mb-2" />
                         {userStats ? (
-                            <p className="text-2xl font-bold">{userStats.readingStreak}</p>
+                            <p className="text-lg sm:text-2xl font-bold">{userStats.readingStreak}</p>
                         ) : (
-                            <Loader2 className="w-6 h-6 mx-auto animate-spin" />
+                            <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 mx-auto animate-spin" />
                         )}
-                        <p className="text-sm text-[var(--text-muted)]">Hari Streak</p>
+                        <p className="text-xs sm:text-sm text-[var(--text-muted)]">Streak</p>
                     </div>
-                    <div className="card p-6 text-center">
-                        <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                    <div className="card p-3 sm:p-6 text-center">
+                        <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mx-auto mb-1 sm:mb-2" />
                         {userStats ? (
-                            <p className="text-2xl font-bold">{userStats.referralCount}</p>
+                            <p className="text-lg sm:text-2xl font-bold">{userStats.referralCount}</p>
                         ) : (
-                            <Loader2 className="w-6 h-6 mx-auto animate-spin" />
+                            <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 mx-auto animate-spin" />
                         )}
-                        <p className="text-sm text-[var(--text-muted)]">Referral</p>
+                        <p className="text-xs sm:text-sm text-[var(--text-muted)]">Referral</p>
                     </div>
                 </div>
 
                 {/* Referral Section */}
-                <div className="card p-6 mb-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
-                    <h2 className="font-bold text-lg mb-2 flex items-center gap-2">
+                <div className="card p-4 sm:p-6 mb-4 sm:mb-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
+                    <h2 className="font-bold text-base sm:text-lg mb-2 flex items-center gap-2">
                         <Users className="w-5 h-5 text-blue-500" />
                         Ajak Teman, Dapat Bonus!
                     </h2>
-                    <p className="text-sm text-[var(--text-muted)] mb-4">
-                        Bagikan link referral kamu dan dapatkan <span className="text-amber-500 font-bold">50 koin</span> + <span className="text-purple-500 font-bold">3 hari VIP</span> untuk setiap teman yang mendaftar!
+                    <p className="text-xs sm:text-sm text-[var(--text-muted)] mb-3 sm:mb-4">
+                        Dapat <span className="text-amber-500 font-bold">50 koin</span> + <span className="text-purple-500 font-bold">3 hari VIP</span> per teman!
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                         <input
                             type="text"
                             readOnly
                             value={`${typeof window !== 'undefined' ? window.location.origin : ''}/register?ref=${session?.user?.id?.slice(0, 8)}...`}
-                            className="input flex-1 text-sm bg-[var(--bg-tertiary)]"
+                            className="input flex-1 text-xs sm:text-sm bg-[var(--bg-tertiary)]"
                         />
                         <button
                             onClick={handleCopyReferral}
-                            className={`btn ${copied ? "bg-green-500 hover:bg-green-600" : "btn-primary"}`}
+                            className={`btn text-sm ${copied ? "bg-green-500 hover:bg-green-600" : "btn-primary"}`}
                         >
                             {copied ? (
                                 <>
@@ -133,7 +133,7 @@ export default function RewardsPage() {
                             ) : (
                                 <>
                                     <Copy className="w-4 h-4 mr-1" />
-                                    Salin
+                                    Salin Link
                                 </>
                             )}
                         </button>
