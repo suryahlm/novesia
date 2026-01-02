@@ -8,34 +8,74 @@ import {
     Crown,
     Clock,
     ArrowUpRight,
-    ArrowDownRight,
 } from "lucide-react"
 import { formatNumber, formatRupiah } from "@/lib/utils"
+import { prisma } from "@/lib/prisma"
 
-// Demo stats - akan diganti dengan data dari database
-const stats = {
-    totalNovels: 245,
-    totalChapters: 12450,
-    totalUsers: 8920,
-    totalViews: 1250000,
-    activeReaders: 342,
-    vipUsers: 156,
-    totalCoins: 458000,
-    revenue: 2340000,
+// Fetch real stats from database
+async function getStats() {
+    const [
+        totalNovels,
+        totalChapters,
+        totalUsers,
+        totalViews,
+        vipUsers,
+        totalCoins,
+    ] = await Promise.all([
+        prisma.novel.count(),
+        prisma.chapter.count(),
+        prisma.user.count(),
+        prisma.novel.aggregate({ _sum: { totalViews: true } }),
+        prisma.user.count({ where: { isVip: true } }),
+        prisma.user.aggregate({ _sum: { coins: true } }),
+    ])
+
+    return {
+        totalNovels,
+        totalChapters,
+        totalUsers,
+        totalViews: totalViews._sum.totalViews || 0,
+        vipUsers,
+        totalCoins: totalCoins._sum.coins || 0,
+        activeReaders: totalUsers, // Simplified - could track active sessions
+        revenue: 0, // Will be calculated from transactions later
+    }
 }
 
-const recentNovels = [
-    { id: "1", title: "The Beginning After The End", chapters: 450, views: 125000, status: "Published" },
-    { id: "2", title: "Solo Leveling", chapters: 270, views: 98000, status: "Published" },
-    { id: "3", title: "Omniscient Reader's Viewpoint", chapters: 551, views: 87000, status: "Published" },
-    { id: "4", title: "Lord of Mysteries", chapters: 1432, views: 78000, status: "Scraping" },
-]
+async function getRecentNovels() {
+    const novels = await prisma.novel.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: {
+            _count: { select: { chapters: true } },
+        },
+    })
 
-const recentUsers = [
-    { id: "1", name: "John Doe", email: "john@example.com", isVip: true, coins: 250 },
-    { id: "2", name: "Jane Smith", email: "jane@example.com", isVip: false, coins: 50 },
-    { id: "3", name: "Bob Wilson", email: "bob@example.com", isVip: true, coins: 420 },
-]
+    return novels.map((novel) => ({
+        id: novel.id,
+        title: novel.title,
+        chapters: novel._count.chapters,
+        views: novel.totalViews,
+        status: novel.status,
+    }))
+}
+
+async function getRecentUsers() {
+    const users = await prisma.user.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            isVip: true,
+            coins: true,
+            role: true,
+        },
+    })
+
+    return users
+}
 
 function StatCard({
     title,
@@ -59,11 +99,7 @@ function StatCard({
                     {change && (
                         <div className={`flex items-center gap-1 mt-2 text-sm ${changeType === "positive" ? "text-green-500" : "text-red-500"
                             }`}>
-                            {changeType === "positive" ? (
-                                <ArrowUpRight className="w-4 h-4" />
-                            ) : (
-                                <ArrowDownRight className="w-4 h-4" />
-                            )}
+                            <ArrowUpRight className="w-4 h-4" />
                             {change}
                         </div>
                     )}
@@ -76,7 +112,24 @@ function StatCard({
     )
 }
 
-export default function AdminDashboard() {
+function getStatusBadge(status: string) {
+    switch (status) {
+        case "COMPLETED":
+            return "bg-green-500 text-white"
+        case "ONGOING":
+            return "badge-primary"
+        case "HIATUS":
+            return "bg-yellow-500 text-white"
+        default:
+            return "badge-secondary"
+    }
+}
+
+export default async function AdminDashboard() {
+    const stats = await getStats()
+    const recentNovels = await getRecentNovels()
+    const recentUsers = await getRecentUsers()
+
     return (
         <div className="py-6">
             <div className="flex items-center justify-between mb-6">
@@ -97,38 +150,30 @@ export default function AdminDashboard() {
                     title="Total Novel"
                     value={formatNumber(stats.totalNovels)}
                     icon={BookOpen}
-                    change="+12 minggu ini"
-                    changeType="positive"
                 />
                 <StatCard
                     title="Total User"
                     value={formatNumber(stats.totalUsers)}
                     icon={Users}
-                    change="+245 minggu ini"
-                    changeType="positive"
                 />
                 <StatCard
                     title="Total Views"
                     value={formatNumber(stats.totalViews)}
                     icon={Eye}
-                    change="+18.2%"
-                    changeType="positive"
                 />
                 <StatCard
                     title="User VIP"
                     value={stats.vipUsers}
                     icon={Crown}
-                    change="+23 bulan ini"
-                    changeType="positive"
                 />
             </div>
 
             {/* Secondary Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                 <StatCard
-                    title="Pembaca Aktif"
-                    value={stats.activeReaders}
-                    icon={TrendingUp}
+                    title="Total Chapter"
+                    value={formatNumber(stats.totalChapters)}
+                    icon={BookOpen}
                 />
                 <StatCard
                     title="Total Koin"
@@ -136,11 +181,9 @@ export default function AdminDashboard() {
                     icon={Coins}
                 />
                 <StatCard
-                    title="Pendapatan (bulan ini)"
-                    value={formatRupiah(stats.revenue)}
-                    icon={Crown}
-                    change="+15.3%"
-                    changeType="positive"
+                    title="Pembaca Aktif"
+                    value={stats.activeReaders}
+                    icon={TrendingUp}
                 />
             </div>
 
@@ -154,20 +197,25 @@ export default function AdminDashboard() {
                         </Link>
                     </div>
                     <div className="divide-y divide-[var(--bg-tertiary)]">
-                        {recentNovels.map((novel) => (
-                            <div key={novel.id} className="flex items-center justify-between p-4">
-                                <div>
-                                    <p className="font-medium">{novel.title}</p>
-                                    <p className="text-sm text-[var(--text-muted)]">
-                                        {novel.chapters} chapters • {formatNumber(novel.views)} views
-                                    </p>
-                                </div>
-                                <span className={`badge ${novel.status === "Published" ? "badge-primary" : "bg-yellow-500 text-white"
-                                    }`}>
-                                    {novel.status}
-                                </span>
+                        {recentNovels.length === 0 ? (
+                            <div className="p-4 text-center text-[var(--text-muted)]">
+                                Belum ada novel
                             </div>
-                        ))}
+                        ) : (
+                            recentNovels.map((novel) => (
+                                <div key={novel.id} className="flex items-center justify-between p-4">
+                                    <div>
+                                        <p className="font-medium">{novel.title}</p>
+                                        <p className="text-sm text-[var(--text-muted)]">
+                                            {novel.chapters} chapters • {formatNumber(novel.views)} views
+                                        </p>
+                                    </div>
+                                    <span className={`badge ${getStatusBadge(novel.status)}`}>
+                                        {novel.status}
+                                    </span>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
 
@@ -180,28 +228,37 @@ export default function AdminDashboard() {
                         </Link>
                     </div>
                     <div className="divide-y divide-[var(--bg-tertiary)]">
-                        {recentUsers.map((user) => (
-                            <div key={user.id} className="flex items-center justify-between p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white font-medium">
-                                        {user.name[0]}
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-medium">{user.name}</p>
-                                            {user.isVip && (
-                                                <span className="badge badge-vip text-xs">VIP</span>
-                                            )}
-                                        </div>
-                                        <p className="text-sm text-[var(--text-muted)]">{user.email}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-1 text-[var(--color-accent)]">
-                                    <Coins className="w-4 h-4" />
-                                    <span className="font-medium">{user.coins}</span>
-                                </div>
+                        {recentUsers.length === 0 ? (
+                            <div className="p-4 text-center text-[var(--text-muted)]">
+                                Belum ada user
                             </div>
-                        ))}
+                        ) : (
+                            recentUsers.map((user) => (
+                                <div key={user.id} className="flex items-center justify-between p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white font-medium">
+                                            {(user.name || user.email)?.[0]?.toUpperCase() || "?"}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-medium">{user.name || "User"}</p>
+                                                {user.isVip && (
+                                                    <span className="badge badge-vip text-xs">VIP</span>
+                                                )}
+                                                {user.role === "ADMIN" && (
+                                                    <span className="badge badge-primary text-xs">Admin</span>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-[var(--text-muted)]">{user.email}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-[var(--color-accent)]">
+                                        <Coins className="w-4 h-4" />
+                                        <span className="font-medium">{user.coins}</span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
