@@ -1,12 +1,24 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { BookOpen, Eye, Star } from "lucide-react"
+import { BookOpen, Eye, Search } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
-async function getNovels() {
+interface DiscoverPageProps {
+    searchParams: Promise<{ q?: string }>
+}
+
+async function getNovels(query?: string) {
     const novels = await prisma.novel.findMany({
+        where: query
+            ? {
+                OR: [
+                    { title: { contains: query, mode: "insensitive" } },
+                    { author: { contains: query, mode: "insensitive" } },
+                ],
+            }
+            : undefined,
         orderBy: { totalViews: "desc" },
         include: {
             genres: { take: 2 },
@@ -16,21 +28,45 @@ async function getNovels() {
     return novels
 }
 
-export default async function DiscoverPage() {
-    const novels = await getNovels()
+export default async function DiscoverPage({ searchParams }: DiscoverPageProps) {
+    const params = await searchParams
+    const query = params.q
+    const novels = await getNovels(query)
 
     return (
         <div className="pb-4 sm:py-8">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-4 sm:mb-8">
-                    <h1 className="text-3xl font-bold mb-2">Jelajahi Novel</h1>
-                    <p className="text-[var(--text-muted)]">
-                        Temukan cerita menarik dari berbagai genre
+                    <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
+                        {query ? `Hasil Pencarian: "${query}"` : "Jelajahi Novel"}
+                    </h1>
+                    <p className="text-sm sm:text-base text-[var(--text-muted)]">
+                        {query
+                            ? `Ditemukan ${novels.length} novel`
+                            : "Temukan cerita menarik dari berbagai genre"}
                     </p>
                 </div>
 
+                {/* Search Bar for Mobile */}
+                <form
+                    action="/discover"
+                    method="GET"
+                    className="mb-4 sm:mb-6"
+                >
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                        <input
+                            type="text"
+                            name="q"
+                            defaultValue={query}
+                            placeholder="Cari judul novel..."
+                            className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--bg-tertiary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-sm"
+                        />
+                    </div>
+                </form>
+
                 {/* Novel Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                     {novels.map((novel) => (
                         <Link
                             key={novel.id}
@@ -60,11 +96,11 @@ export default async function DiscoverPage() {
                                     ))}
                                 </div>
                             </div>
-                            <div className="p-3">
+                            <div className="p-2 sm:p-3">
                                 <h3 className="font-medium text-sm line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">
                                     {novel.title}
                                 </h3>
-                                <div className="mt-2 flex items-center gap-3 text-xs text-[var(--text-muted)]">
+                                <div className="mt-1.5 sm:mt-2 flex items-center gap-2 sm:gap-3 text-xs text-[var(--text-muted)]">
                                     <span className="flex items-center gap-1">
                                         <BookOpen className="w-3 h-3" />
                                         {novel._count.chapters}
@@ -81,7 +117,9 @@ export default async function DiscoverPage() {
 
                 {novels.length === 0 && (
                     <div className="text-center py-12 text-[var(--text-muted)]">
-                        Belum ada novel tersedia
+                        {query
+                            ? `Tidak ada novel yang cocok dengan "${query}"`
+                            : "Belum ada novel tersedia"}
                     </div>
                 )}
             </div>

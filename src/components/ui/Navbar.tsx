@@ -40,6 +40,7 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
     const pathname = usePathname()
 
     const user = session?.user
@@ -49,6 +50,15 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
 
     const handleSignOut = async () => {
         await signOut({ callbackUrl: "/" })
+    }
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (searchQuery.trim()) {
+            window.location.href = `/discover?q=${encodeURIComponent(searchQuery.trim())}`
+            setIsSearchOpen(false)
+            setSearchQuery("")
+        }
     }
 
     return (
@@ -262,23 +272,26 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
                         className="absolute top-0 left-0 right-0 bg-[var(--bg-primary)] border-b border-[var(--bg-tertiary)] shadow-lg"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="max-w-2xl mx-auto p-4">
+                        <form onSubmit={handleSearch} className="max-w-2xl mx-auto p-4">
                             <div className="relative">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
                                 <input
                                     type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder={t({ id: "Cari novel...", en: "Search novels..." })}
                                     className="w-full pl-12 pr-12 py-3 text-lg bg-[var(--bg-secondary)] border border-[var(--bg-tertiary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-[var(--text-primary)]"
                                     autoFocus
                                 />
                                 <button
+                                    type="button"
                                     onClick={() => setIsSearchOpen(false)}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             )}
@@ -290,9 +303,6 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
                     onClick={() => setIsProfileMenuOpen(false)}
                 />
             )}
-
-            {/* Spacer for fixed navbar */}
-            <div className="h-16" />
         </>
     )
 }
