@@ -132,19 +132,19 @@ export default function PricingPage() {
                 </div>
 
                 {/* Pricing Cards */}
-                <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 mb-12">
+                <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 mb-12 pt-4">
                     {pricingPlans.map((plan) => (
                         <div
                             key={plan.id}
-                            className={`card p-5 sm:p-6 relative ${plan.popular
-                                    ? "ring-2 ring-[var(--color-primary)] scale-[1.02]"
-                                    : ""
+                            className={`card p-5 sm:p-6 relative flex flex-col ${plan.popular
+                                    ? "ring-2 ring-[var(--color-primary)] mt-0 sm:scale-[1.02]"
+                                    : "mt-4 sm:mt-0"
                                 }`}
                         >
                             {plan.popular && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                    <span className="badge badge-primary px-3 py-1">
-                                        Paling Populer
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                                    <span className="badge badge-primary px-3 py-1 whitespace-nowrap shadow-md">
+                                        ⭐ Paling Populer
                                     </span>
                                 </div>
                             )}
@@ -157,10 +157,10 @@ export default function PricingPage() {
                                 </div>
                             )}
 
-                            <div className="text-center mb-4">
+                            <div className="text-center mb-4 pt-2">
                                 <h3 className="font-bold text-lg mb-2">{plan.name}</h3>
                                 <div className="flex items-baseline justify-center gap-1">
-                                    <span className="text-3xl font-bold">
+                                    <span className="text-2xl sm:text-3xl font-bold">
                                         {formatPrice(plan.price)}
                                     </span>
                                     <span className="text-sm text-[var(--text-muted)]">
@@ -169,7 +169,7 @@ export default function PricingPage() {
                                 </div>
                             </div>
 
-                            <ul className="space-y-2 mb-6">
+                            <ul className="space-y-2 mb-6 flex-1">
                                 {plan.features.map((feature, idx) => (
                                     <li key={idx} className="flex items-start gap-2 text-sm">
                                         <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
