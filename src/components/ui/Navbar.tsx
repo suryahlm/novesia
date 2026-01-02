@@ -253,23 +253,27 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
 
             {/* Search Overlay */}
             {isSearchOpen && (
-                <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setIsSearchOpen(false)}>
+                <div className="fixed inset-0 z-[100]" onClick={() => setIsSearchOpen(false)}>
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+                    {/* Search Container */}
                     <div
-                        className="absolute top-0 left-0 right-0 bg-[var(--bg-primary)] p-4 pt-6 shadow-xl animate-slide-up"
+                        className="absolute top-0 left-0 right-0 bg-white dark:bg-[#1a1a2e] border-b border-gray-200 dark:border-gray-800 shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="max-w-2xl mx-auto">
+                        <div className="max-w-2xl mx-auto p-6">
                             <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder={t({ id: "Cari novel...", en: "Search novels..." })}
-                                    className="input pl-12 pr-12 py-3 text-lg w-full"
+                                    className="w-full pl-12 pr-12 py-4 text-lg bg-gray-100 dark:bg-gray-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                                     autoFocus
                                 />
                                 <button
                                     onClick={() => setIsSearchOpen(false)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[var(--bg-tertiary)]"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
