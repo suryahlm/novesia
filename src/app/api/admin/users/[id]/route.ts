@@ -11,7 +11,7 @@ async function verifyAdmin(userId: string) {
     return user?.role === "ADMIN"
 }
 
-// Delete user and all related records
+// Delete user - most relations have onDelete: Cascade so just delete the user
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -39,37 +39,33 @@ export async function DELETE(
             )
         }
 
-        // Delete in transaction to ensure all related records are deleted
-        await prisma.$transaction(async (tx) => {
-            // Delete related records first
-            await tx.readingHistory.deleteMany({ where: { userId: id } })
-            await tx.bookmark.deleteMany({ where: { userId: id } })
-            await tx.comment.deleteMany({ where: { userId: id } })
-            await tx.rating.deleteMany({ where: { userId: id } })
-            await tx.notification.deleteMany({ where: { userId: id } })
-            await tx.unlockedChapter.deleteMany({ where: { userId: id } })
-            await tx.transaction.deleteMany({ where: { userId: id } })
-
-            // Delete collections (and their items)
-            const collections = await tx.collection.findMany({ where: { userId: id } })
-            for (const collection of collections) {
-                await tx.collectionItem.deleteMany({ where: { collectionId: collection.id } })
-            }
-            await tx.collection.deleteMany({ where: { userId: id } })
-
-            // Delete referrals
-            await tx.referral.deleteMany({ where: { referrerId: id } })
-            await tx.referral.deleteMany({ where: { referredId: id } })
-
-            // Finally delete the user (accounts and sessions have cascade)
-            await tx.user.delete({ where: { id } })
+        // Check if user exists
+        const userToDelete = await prisma.user.findUnique({
+            where: { id },
+            select: { id: true, email: true },
         })
 
-        return NextResponse.json({ success: true, message: "User berhasil dihapus" })
+        if (!userToDelete) {
+            return NextResponse.json(
+                { error: "User tidak ditemukan" },
+                { status: 404 }
+            )
+        }
+
+        // Delete user - cascade will handle related records
+        await prisma.user.delete({
+            where: { id },
+        })
+
+        return NextResponse.json({
+            success: true,
+            message: `User ${userToDelete.email} berhasil dihapus`
+        })
     } catch (error) {
         console.error("Error deleting user:", error)
+        const errorMessage = error instanceof Error ? error.message : "Unknown error"
         return NextResponse.json(
-            { error: `Gagal menghapus user: ${error instanceof Error ? error.message : "Unknown error"}` },
+            { error: `Gagal menghapus user: ${errorMessage}` },
             { status: 500 }
         )
     }
