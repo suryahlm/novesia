@@ -333,8 +333,13 @@ export default function ScraperPage() {
                                                     </td>
                                                     <td className="p-4 text-right">
                                                         <button
-                                                            onClick={() => handleDelete(job.id)}
-                                                            className="btn btn-ghost text-sm text-red-500"
+                                                            type="button"
+                                                            onClick={() => {
+                                                                console.log("Delete clicked for:", job.id);
+                                                                handleDelete(job.id);
+                                                            }}
+                                                            className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors"
+                                                            title="Hapus Job"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
