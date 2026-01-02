@@ -12,6 +12,10 @@ import {
 import { formatNumber, formatRupiah } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
 
+// Force dynamic rendering - don't cache dashboard data
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 // Fetch real stats from database
 async function getStats() {
     const [
