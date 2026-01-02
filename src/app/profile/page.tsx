@@ -84,9 +84,9 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen py-8">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="mb-8">
+        <div className="py-4 sm:py-8">
+            <div className="max-w-3xl mx-auto">
+                <div className="mb-6 sm:mb-8">
                     <h1 className="text-3xl font-bold mb-2">Profil Saya</h1>
                     <p className="text-[var(--text-muted)]">
                         Kelola informasi profil kamu
