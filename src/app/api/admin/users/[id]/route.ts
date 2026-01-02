@@ -2,6 +2,15 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
+// Helper to verify admin from database
+async function verifyAdmin(userId: string) {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+    })
+    return user?.role === "ADMIN"
+}
+
 // Delete user
 export async function DELETE(
     request: Request,
@@ -10,8 +19,14 @@ export async function DELETE(
     try {
         const session = await auth()
 
-        if (!session?.user || session.user.role !== "ADMIN") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized - No session" }, { status: 401 })
+        }
+
+        // Verify admin from database
+        const isAdmin = await verifyAdmin(session.user.id)
+        if (!isAdmin) {
+            return NextResponse.json({ error: "Unauthorized - Not admin" }, { status: 401 })
         }
 
         const { id } = await params
@@ -46,8 +61,14 @@ export async function PATCH(
     try {
         const session = await auth()
 
-        if (!session?.user || session.user.role !== "ADMIN") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized - No session" }, { status: 401 })
+        }
+
+        // Verify admin from database
+        const isAdmin = await verifyAdmin(session.user.id)
+        if (!isAdmin) {
+            return NextResponse.json({ error: "Unauthorized - Not admin" }, { status: 401 })
         }
 
         const { id } = await params
