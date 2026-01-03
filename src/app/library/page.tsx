@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { Library, BookOpen, Heart, Folder, LogIn, Loader2 } from "lucide-react"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 
 interface Novel {
     id: string
@@ -148,7 +149,7 @@ export default function LibraryPage() {
                                     <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg">
                                         {item.novel.cover ? (
                                             <img
-                                                src={item.novel.cover}
+                                                src={getProxiedImageUrl(item.novel.cover) || item.novel.cover}
                                                 alt={item.novel.title}
                                                 className="w-full h-full object-cover"
                                             />
@@ -200,7 +201,7 @@ export default function LibraryPage() {
                                     <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg">
                                         {item.novel.cover ? (
                                             <img
-                                                src={item.novel.cover}
+                                                src={getProxiedImageUrl(item.novel.cover) || item.novel.cover}
                                                 alt={item.novel.title}
                                                 className="w-full h-full object-cover"
                                             />

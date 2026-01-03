@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { BookOpen, Eye, ChevronLeft } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -63,7 +64,7 @@ export default async function GenreDetailPage({
                                 <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg">
                                     {novel.cover ? (
                                         <img
-                                            src={novel.cover}
+                                            src={getProxiedImageUrl(novel.cover) || novel.cover}
                                             alt={novel.title}
                                             className="w-full h-full object-cover"
                                         />

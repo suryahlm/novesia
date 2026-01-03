@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { notFound } from "next/navigation"
 import {
     Star,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 import NovelActions from "@/components/novel/NovelActions"
 import CommentSection from "@/components/novel/CommentSection"
 
@@ -83,12 +83,10 @@ export default async function NovelDetailPage({ params }: PageProps) {
                     <div className="card overflow-hidden">
                         <div className="relative aspect-book">
                             {novel.cover ? (
-                                <Image
-                                    src={novel.cover}
+                                <img
+                                    src={getProxiedImageUrl(novel.cover) || novel.cover}
                                     alt={novel.title}
-                                    fill
-                                    priority
-                                    className="object-cover"
+                                    className="w-full h-full object-cover"
                                 />
                             ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center">

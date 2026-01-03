@@ -11,6 +11,7 @@ import {
     AlertCircle,
     Loader2,
 } from "lucide-react"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 
 const genres = [
     "Action", "Adventure", "Comedy", "Drama", "Fantasy",
@@ -182,7 +183,7 @@ export default function EditNovelPage({ params }: PageProps) {
                                 {coverPreview ? (
                                     <div className="relative aspect-book group">
                                         <img
-                                            src={coverPreview}
+                                            src={coverFile ? coverPreview! : (getProxiedImageUrl(coverPreview) || coverPreview!)}
                                             alt="Cover preview"
                                             className="w-full h-full object-cover"
                                         />

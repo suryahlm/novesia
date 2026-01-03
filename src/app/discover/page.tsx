@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { BookOpen, Eye, Search } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -91,7 +92,7 @@ export default async function DiscoverPage({ searchParams }: DiscoverPageProps) 
                             <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg">
                                 {novel.cover ? (
                                     <img
-                                        src={novel.cover}
+                                        src={getProxiedImageUrl(novel.cover) || novel.cover}
                                         alt={novel.title}
                                         className="w-full h-full object-cover"
                                     />
