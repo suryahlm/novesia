@@ -68,12 +68,16 @@ export async function GET(
         return NextResponse.json({
             id: chapter.id,
             novelId: chapter.novelId,
+            chapterNumber: chapter.chapterNumber,
+            novel: { title: chapter.novel.title },
             novelTitle: chapter.novel.title,
             novelSlug: chapter.novel.slug,
             novelCover: chapter.novel.cover,
             number: chapter.chapterNumber,
             title: chapter.title,
             content: chapter.contentTranslated || chapter.contentOriginal,
+            contentTranslated: chapter.contentTranslated,
+            contentOriginal: chapter.contentOriginal,
             isPremium: chapter.isPremium,
             coinCost: chapter.coinCost,
             views: chapter.views,
@@ -134,6 +138,61 @@ export async function DELETE(
         console.error("Error deleting chapter:", error)
         return NextResponse.json(
             { error: "Failed to delete chapter" },
+            { status: 500 }
+        )
+    }
+}
+
+// PATCH - Update chapter
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { auth } = await import("@/lib/auth")
+        const session = await auth()
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { role: true },
+        })
+        if (user?.role !== "ADMIN") {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        }
+
+        const { id } = await params
+        const body = await request.json()
+        const { chapterNumber, title, contentTranslated, isPremium, coinCost } = body
+
+        // Calculate word count if content provided
+        const wordCount = contentTranslated
+            ? contentTranslated.split(/\s+/).filter(Boolean).length
+            : undefined
+
+        const chapter = await prisma.chapter.update({
+            where: { id },
+            data: {
+                ...(chapterNumber !== undefined && { chapterNumber }),
+                ...(title && { title }),
+                ...(contentTranslated !== undefined && { contentTranslated }),
+                ...(wordCount !== undefined && { wordCount }),
+                ...(isPremium !== undefined && { isPremium }),
+                ...(coinCost !== undefined && { coinCost }),
+            },
+            include: {
+                novel: { select: { title: true } },
+            },
+        })
+
+        return NextResponse.json(chapter)
+    } catch (error) {
+        console.error("Error updating chapter:", error)
+        return NextResponse.json(
+            { error: "Failed to update chapter" },
             { status: 500 }
         )
     }

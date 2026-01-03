@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Plus, Edit, Eye, BookOpen } from "lucide-react"
+import { Plus, Edit, Eye, BookOpen, FileText } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
 import DeleteNovelButton from "@/components/admin/DeleteNovelButton"
@@ -121,7 +121,14 @@ export default async function AdminNovelsPage() {
                                             )}
                                         </td>
                                         <td className="p-4">
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Link
+                                                    href={`/admin/novels/${novel.id}/chapters/new`}
+                                                    className="p-2 hover:bg-green-500/10 text-green-600 rounded-lg transition-colors"
+                                                    title="Tambah Chapter"
+                                                >
+                                                    <FileText className="w-4 h-4" />
+                                                </Link>
                                                 <Link
                                                     href={`/novel/${novel.slug}`}
                                                     className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
