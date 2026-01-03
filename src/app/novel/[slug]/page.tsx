@@ -16,6 +16,9 @@ import { getProxiedImageUrl } from "@/lib/image-utils"
 import NovelActions from "@/components/novel/NovelActions"
 import CommentSection from "@/components/novel/CommentSection"
 
+// Disable caching - always fetch fresh data
+export const dynamic = "force-dynamic"
+
 interface PageProps {
     params: Promise<{ slug: string }>
 }

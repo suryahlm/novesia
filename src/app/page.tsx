@@ -11,6 +11,9 @@ import {
 import BookCard from "@/components/novel/BookCard"
 import { prisma } from "@/lib/prisma"
 
+// Disable caching - always fetch fresh data
+export const dynamic = "force-dynamic"
+
 async function getFeaturedNovels() {
   return prisma.novel.findMany({
     orderBy: { totalViews: "desc" },
