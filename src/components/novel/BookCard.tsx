@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { Star, Eye, BookOpen, Crown, Sparkles } from "lucide-react"
 import { cn, formatNumber } from "@/lib/utils"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 
 interface BookCardProps {
     id: string
@@ -46,6 +46,7 @@ export default function BookCard({
     size = "md",
 }: BookCardProps) {
     const t = (key: { id: string; en: string }) => key[locale]
+    const coverUrl = getProxiedImageUrl(cover)
 
     const sizeClasses = {
         sm: "w-24",
@@ -61,13 +62,11 @@ export default function BookCard({
             <div className="card overflow-hidden">
                 {/* Cover Image */}
                 <div className="relative aspect-book bg-[var(--bg-tertiary)] overflow-hidden">
-                    {cover ? (
-                        <Image
-                            src={cover}
+                    {coverUrl ? (
+                        <img
+                            src={coverUrl}
                             alt={title}
-                            fill
-                            sizes="(max-width: 640px) 128px, 160px"
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">

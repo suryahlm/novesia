@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
@@ -45,6 +45,21 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
 
     const user = session?.user
     const isLoading = status === "loading"
+    const [userCoins, setUserCoins] = useState<number | null>(null)
+
+    // Fetch user coins when logged in
+    useEffect(() => {
+        if (user?.id) {
+            fetch("/api/user/profile")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.coins !== undefined) {
+                        setUserCoins(data.coins)
+                    }
+                })
+                .catch(() => setUserCoins(0))
+        }
+    }, [user?.id])
 
     const t = (key: { id: string; en: string }) => key[locale]
 
@@ -135,7 +150,7 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
                                         className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-full bg-[var(--bg-tertiary)] text-sm font-medium"
                                     >
                                         <Coins className="w-4 h-4 text-[var(--color-accent)]" />
-                                        <span>50</span>
+                                        <span>{userCoins !== null ? userCoins.toLocaleString() : "..."}</span>
                                     </Link>
 
                                     {/* Profile Dropdown */}
