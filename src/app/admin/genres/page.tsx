@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Tag, Upload, Loader2, Image as ImageIcon, X } from "lucide-react"
+import { Tag, Upload, Loader2, Image as ImageIcon, X, Plus } from "lucide-react"
 import { getProxiedImageUrl } from "@/lib/image-utils"
 
 interface Genre {
@@ -15,6 +15,7 @@ interface Genre {
 export default function AdminGenresPage() {
     const [genres, setGenres] = useState<Genre[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [isSeeding, setIsSeeding] = useState(false)
     const [savingId, setSavingId] = useState<string | null>(null)
     const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
 
@@ -93,6 +94,30 @@ export default function AdminGenresPage() {
         }
     }
 
+    const seedGenres = async () => {
+        setIsSeeding(true)
+        try {
+            const res = await fetch("/api/admin/genres/seed", {
+                method: "POST",
+            })
+            const data = await res.json()
+
+            if (res.ok) {
+                if (data.added > 0) {
+                    alert(`Berhasil menambahkan ${data.added} genre baru!`)
+                    fetchGenres()
+                } else {
+                    alert("Semua genre sudah ada")
+                }
+            }
+        } catch (error) {
+            console.error("Error seeding genres:", error)
+            alert("Gagal menambahkan genre")
+        } finally {
+            setIsSeeding(false)
+        }
+    }
+
     const isImageUrl = (icon: string | null) => {
         return icon && (icon.startsWith("http") || icon.startsWith("/"))
     }
@@ -118,6 +143,18 @@ export default function AdminGenresPage() {
                         </p>
                     </div>
                 </div>
+                <button
+                    onClick={seedGenres}
+                    disabled={isSeeding}
+                    className="btn btn-primary"
+                >
+                    {isSeeding ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                        <Plus className="w-4 h-4 mr-2" />
+                    )}
+                    Tambah Semua Genre
+                </button>
             </div>
 
             {/* Genre Grid */}
