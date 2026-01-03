@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import bcrypt from "bcryptjs"
 
 // Helper to verify admin from database
 async function verifyAdmin(userId: string) {
@@ -71,7 +72,7 @@ export async function DELETE(
     }
 }
 
-// Update user (VIP status, coins, etc.)
+// Update user (VIP status, coins, password, etc.)
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -118,6 +119,12 @@ export async function PATCH(
         // Update role
         if (body.role === "ADMIN" || body.role === "USER") {
             updateData.role = body.role
+        }
+
+        // Change password
+        if (typeof body.newPassword === "string" && body.newPassword.length >= 8) {
+            const hashedPassword = await bcrypt.hash(body.newPassword, 12)
+            updateData.password = hashedPassword
         }
 
         if (Object.keys(updateData).length === 0) {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Users, Crown, Coins, Shield, Mail, Trash2, Plus, RefreshCw } from "lucide-react"
+import { Users, Crown, Coins, Shield, Mail, Trash2, Plus, RefreshCw, Key } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 
 interface User {
@@ -31,7 +31,9 @@ export default function AdminUsersPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [actionLoading, setActionLoading] = useState<string | null>(null)
     const [showAddCoinsModal, setShowAddCoinsModal] = useState<string | null>(null)
+    const [showPasswordModal, setShowPasswordModal] = useState<string | null>(null)
     const [coinsToAdd, setCoinsToAdd] = useState(100)
+    const [newPassword, setNewPassword] = useState("")
     const [error, setError] = useState<string | null>(null)
 
     const fetchUsers = async () => {
@@ -134,6 +136,35 @@ export default function AdminUsersPage() {
             }
         } catch (error) {
             alert("Gagal menambah koin")
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
+    const handleChangePassword = async (id: string) => {
+        if (newPassword.length < 8) {
+            alert("Password minimal 8 karakter")
+            return
+        }
+
+        setActionLoading(id)
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ newPassword }),
+            })
+            if (res.ok) {
+                alert("Password berhasil diubah!")
+                setShowPasswordModal(null)
+                setNewPassword("")
+            } else {
+                const data = await res.json()
+                alert(data.error || "Gagal mengubah password")
+            }
+        } catch (error) {
+            alert("Gagal mengubah password")
         } finally {
             setActionLoading(null)
         }
@@ -300,6 +331,14 @@ export default function AdminUsersPage() {
                                         <td className="p-4">
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
+                                                    onClick={() => setShowPasswordModal(user.id)}
+                                                    disabled={actionLoading === user.id}
+                                                    className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-500 rounded-lg transition-colors"
+                                                    title="Ubah Password"
+                                                >
+                                                    <Key className="w-4 h-4" />
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(user.id, user.email)}
                                                     disabled={actionLoading === user.id}
                                                     className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors"
@@ -352,6 +391,53 @@ export default function AdminUsersPage() {
                                     <RefreshCw className="w-5 h-5 animate-spin" />
                                 ) : (
                                     "Tambah"
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Change Password Modal */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="card p-6 w-full max-w-sm mx-4">
+                        <h3 className="font-semibold mb-4 flex items-center gap-2">
+                            <Key className="w-5 h-5 text-blue-500" />
+                            Ubah Password
+                        </h3>
+                        <p className="text-sm text-[var(--text-muted)] mb-4">
+                            Masukkan password baru untuk user ini.
+                        </p>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Password Baru</label>
+                            <input
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="Minimal 8 karakter"
+                                className="input"
+                            />
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowPasswordModal(null)
+                                    setNewPassword("")
+                                }}
+                                className="btn btn-secondary flex-1"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => handleChangePassword(showPasswordModal)}
+                                disabled={actionLoading === showPasswordModal || newPassword.length < 8}
+                                className="btn btn-primary flex-1"
+                            >
+                                {actionLoading === showPasswordModal ? (
+                                    <RefreshCw className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    "Simpan"
                                 )}
                             </button>
                         </div>
