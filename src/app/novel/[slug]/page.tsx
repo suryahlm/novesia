@@ -206,6 +206,26 @@ export default async function NovelDetailPage({ params }: PageProps) {
                         Daftar Chapter ({novel._count.chapters})
                     </h2>
                 </div>
+
+                {/* Chapter Number Buttons */}
+                {novel.chapters.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {novel.chapters
+                            .slice()
+                            .sort((a, b) => a.chapterNumber - b.chapterNumber)
+                            .map((chapter) => (
+                                <Link
+                                    key={chapter.id}
+                                    href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
+                                    className="w-10 h-10 flex items-center justify-center rounded-lg border border-[var(--bg-tertiary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-colors text-sm font-medium"
+                                    title={chapter.title}
+                                >
+                                    {chapter.chapterNumber}
+                                </Link>
+                            ))}
+                    </div>
+                )}
+
                 <div className="card divide-y divide-[var(--bg-tertiary)]">
                     {novel.chapters.length === 0 ? (
                         <div className="p-8 text-center text-[var(--text-muted)]">
