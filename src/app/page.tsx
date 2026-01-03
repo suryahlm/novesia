@@ -7,9 +7,11 @@ import {
   Sparkles,
   BookOpen,
   Crown,
+  ImageIcon,
 } from "lucide-react"
 import BookCard from "@/components/novel/BookCard"
 import { prisma } from "@/lib/prisma"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 
 // Disable caching - always fetch fresh data
 export const dynamic = "force-dynamic"
@@ -195,19 +197,34 @@ export default async function HomePage() {
           href="/genre"
         />
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-          {genres.map((genre) => (
-            <Link
-              key={genre.slug}
-              href={`/genre/${genre.slug}`}
-              className="card p-4 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
-            >
-              <span className="text-2xl mb-2 block">{genre.icon}</span>
-              <span className="font-medium text-sm block">{genre.name}</span>
-              <span className="text-xs text-[var(--text-muted)]">
-                {genre._count.novels} novel
-              </span>
-            </Link>
-          ))}
+          {genres.map((genre) => {
+            const isImageUrl = genre.icon && (genre.icon.startsWith("http") || genre.icon.startsWith("/"))
+            return (
+              <Link
+                key={genre.slug}
+                href={`/genre/${genre.slug}`}
+                className="card p-4 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
+              >
+                <div className="w-12 h-12 mx-auto mb-2 rounded-lg overflow-hidden flex items-center justify-center bg-[var(--bg-tertiary)]">
+                  {isImageUrl ? (
+                    <img
+                      src={getProxiedImageUrl(genre.icon) || genre.icon!}
+                      alt={genre.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : genre.icon ? (
+                    <span className="text-2xl">{genre.icon}</span>
+                  ) : (
+                    <BookOpen className="w-6 h-6 text-[var(--text-muted)]" />
+                  )}
+                </div>
+                <span className="font-medium text-sm block">{genre.name}</span>
+                <span className="text-xs text-[var(--text-muted)]">
+                  {genre._count.novels} novel
+                </span>
+              </Link>
+            )
+          })}
         </div>
       </section>
 

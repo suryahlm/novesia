@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Tag, Save, Loader2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Tag, Upload, Loader2, Image as ImageIcon, X } from "lucide-react"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 
 interface Genre {
     id: string
@@ -11,17 +12,11 @@ interface Genre {
     _count: { novels: number }
 }
 
-const defaultIcons = [
-    "⚔️", "❤️", "✨", "🌾", "🚀", "👻", "🔍", "🌸",
-    "😂", "🎭", "🏫", "⚡", "🌏", "💀", "🎯", "🐉",
-    "👑", "🗡️", "💫", "🌙", "🔮", "🎪", "🎠", "🌈"
-]
-
 export default function AdminGenresPage() {
     const [genres, setGenres] = useState<Genre[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [savingId, setSavingId] = useState<string | null>(null)
-    const [editingId, setEditingId] = useState<string | null>(null)
+    const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
 
     useEffect(() => {
         fetchGenres()
@@ -39,26 +34,67 @@ export default function AdminGenresPage() {
         }
     }
 
-    const updateGenreIcon = async (genreId: string, icon: string) => {
+    const handleFileSelect = async (genreId: string, file: File) => {
+        setSavingId(genreId)
+        try {
+            // Upload file first
+            const formData = new FormData()
+            formData.append("file", file)
+
+            const uploadRes = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            })
+
+            if (!uploadRes.ok) {
+                throw new Error("Upload failed")
+            }
+
+            const { url } = await uploadRes.json()
+
+            // Update genre with new icon URL
+            const res = await fetch(`/api/admin/genres/${genreId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ icon: url }),
+            })
+
+            if (res.ok) {
+                setGenres(prev =>
+                    prev.map(g => g.id === genreId ? { ...g, icon: url } : g)
+                )
+            }
+        } catch (error) {
+            console.error("Error updating genre:", error)
+            alert("Gagal mengupload gambar")
+        } finally {
+            setSavingId(null)
+        }
+    }
+
+    const removeIcon = async (genreId: string) => {
         setSavingId(genreId)
         try {
             const res = await fetch(`/api/admin/genres/${genreId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ icon }),
+                body: JSON.stringify({ icon: null }),
             })
 
             if (res.ok) {
                 setGenres(prev =>
-                    prev.map(g => g.id === genreId ? { ...g, icon } : g)
+                    prev.map(g => g.id === genreId ? { ...g, icon: null } : g)
                 )
-                setEditingId(null)
             }
         } catch (error) {
-            console.error("Error updating genre:", error)
+            console.error("Error removing icon:", error)
         } finally {
             setSavingId(null)
         }
+    }
+
+    const isImageUrl = (icon: string | null) => {
+        return icon && (icon.startsWith("http") || icon.startsWith("/"))
     }
 
     if (isLoading) {
@@ -88,8 +124,21 @@ export default function AdminGenresPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {genres.map((genre) => (
                     <div key={genre.id} className="card p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                            <span className="text-3xl">{genre.icon || "📖"}</span>
+                        <div className="flex items-center gap-3 mb-4">
+                            {/* Icon Preview */}
+                            <div className="w-16 h-16 rounded-xl bg-[var(--bg-tertiary)] flex items-center justify-center overflow-hidden">
+                                {isImageUrl(genre.icon) ? (
+                                    <img
+                                        src={getProxiedImageUrl(genre.icon) || genre.icon!}
+                                        alt={genre.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : genre.icon ? (
+                                    <span className="text-3xl">{genre.icon}</span>
+                                ) : (
+                                    <ImageIcon className="w-8 h-8 text-[var(--text-muted)]" />
+                                )}
+                            </div>
                             <div>
                                 <h3 className="font-semibold">{genre.name}</h3>
                                 <p className="text-sm text-[var(--text-muted)]">
@@ -98,44 +147,46 @@ export default function AdminGenresPage() {
                             </div>
                         </div>
 
-                        {editingId === genre.id ? (
-                            <div>
-                                <p className="text-sm text-[var(--text-muted)] mb-2">
-                                    Pilih icon:
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {defaultIcons.map((icon) => (
-                                        <button
-                                            key={icon}
-                                            onClick={() => updateGenreIcon(genre.id, icon)}
-                                            disabled={savingId === genre.id}
-                                            className={`w-10 h-10 text-xl rounded-lg border hover:bg-[var(--bg-tertiary)] transition-colors ${genre.icon === icon ? "border-[var(--color-primary)] bg-[var(--bg-tertiary)]" : "border-[var(--bg-tertiary)]"
-                                                }`}
-                                        >
-                                            {savingId === genre.id ? (
-                                                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                                            ) : (
-                                                icon
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                                <button
-                                    onClick={() => setEditingId(null)}
-                                    className="mt-2 text-sm text-[var(--text-muted)] hover:text-[var(--color-primary)]"
-                                >
-                                    Batal
-                                </button>
-                            </div>
-                        ) : (
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                            <input
+                                type="file"
+                                ref={(el) => { fileInputRefs.current[genre.id] = el }}
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) {
+                                        handleFileSelect(genre.id, file)
+                                        e.target.value = ""
+                                    }
+                                }}
+                                accept="image/*"
+                                className="hidden"
+                            />
                             <button
-                                onClick={() => setEditingId(genre.id)}
-                                className="btn btn-secondary w-full justify-center"
+                                onClick={() => fileInputRefs.current[genre.id]?.click()}
+                                disabled={savingId === genre.id}
+                                className="btn btn-primary flex-1 justify-center"
                             >
-                                <Save className="w-4 h-4 mr-2" />
-                                Ganti Icon
+                                {savingId === genre.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <Upload className="w-4 h-4 mr-2" />
+                                        Upload Gambar
+                                    </>
+                                )}
                             </button>
-                        )}
+                            {genre.icon && (
+                                <button
+                                    onClick={() => removeIcon(genre.id)}
+                                    disabled={savingId === genre.id}
+                                    className="btn btn-secondary px-3"
+                                    title="Hapus icon"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 ))}
             </div>
