@@ -13,6 +13,7 @@ import {
     BarChart3,
     ChevronLeft,
     ShieldAlert,
+    Tag,
 } from "lucide-react"
 import { LogoutButton } from "@/components/admin/LogoutButton"
 
@@ -20,6 +21,7 @@ const sidebarItems = [
     { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/admin/novels", icon: BookOpen, label: "Novel" },
     { href: "/admin/chapters", icon: FileText, label: "Chapter" },
+    { href: "/admin/genres", icon: Tag, label: "Genre" },
     { href: "/admin/scraper", icon: Download, label: "Scraper" },
     { href: "/admin/users", icon: Users, label: "Users" },
     { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
