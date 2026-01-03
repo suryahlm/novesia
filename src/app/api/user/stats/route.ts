@@ -15,6 +15,7 @@ export async function GET() {
             select: {
                 coins: true,
                 readingStreak: true,
+                lastCheckIn: true,
             },
         })
 
@@ -30,6 +31,7 @@ export async function GET() {
         return NextResponse.json({
             coins: user.coins,
             readingStreak: user.readingStreak,
+            lastCheckIn: user.lastCheckIn,
             referralCount,
         })
     } catch (error) {

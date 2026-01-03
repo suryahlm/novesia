@@ -9,21 +9,63 @@ interface UserStats {
     coins: number
     readingStreak: number
     referralCount: number
+    lastCheckIn: string | null
 }
 
 export default function RewardsPage() {
     const { data: session, status } = useSession()
     const [userStats, setUserStats] = useState<UserStats | null>(null)
     const [copied, setCopied] = useState(false)
+    const [claiming, setClaiming] = useState(false)
+    const [claimMessage, setClaimMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
     useEffect(() => {
         if (session) {
-            fetch("/api/user/stats")
-                .then(res => res.json())
-                .then(data => setUserStats(data))
-                .catch(() => setUserStats({ coins: 50, readingStreak: 0, referralCount: 0 }))
+            fetchStats()
         }
     }, [session])
+
+    const fetchStats = async () => {
+        try {
+            const res = await fetch("/api/user/stats")
+            const data = await res.json()
+            setUserStats(data)
+        } catch {
+            setUserStats({ coins: 0, readingStreak: 0, referralCount: 0, lastCheckIn: null })
+        }
+    }
+
+    const claimDaily = async () => {
+        setClaiming(true)
+        setClaimMessage(null)
+        try {
+            const res = await fetch("/api/rewards/claim", { method: "POST" })
+            const data = await res.json()
+
+            if (res.ok) {
+                setClaimMessage({ type: "success", text: `+${data.reward} koin! Streak: ${data.streak} hari` })
+                fetchStats() // Refresh stats
+            } else {
+                if (data.alreadyClaimed) {
+                    setClaimMessage({ type: "error", text: "Sudah klaim hari ini! Kembali besok." })
+                } else {
+                    setClaimMessage({ type: "error", text: data.error || "Gagal klaim" })
+                }
+            }
+        } catch {
+            setClaimMessage({ type: "error", text: "Terjadi kesalahan" })
+        } finally {
+            setClaiming(false)
+        }
+    }
+
+    // Check if already claimed today
+    const hasClaimedToday = () => {
+        if (!userStats?.lastCheckIn) return false
+        const lastCheckIn = new Date(userStats.lastCheckIn)
+        const today = new Date()
+        return lastCheckIn.toDateString() === today.toDateString()
+    }
 
     const handleCopyReferral = () => {
         const referralLink = `${window.location.origin}/register?ref=${session?.user?.id}`
@@ -147,22 +189,54 @@ export default function RewardsPage() {
                         Check-in Harian
                     </h2>
                     <div className="grid grid-cols-7 gap-2">
-                        {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-                            <div
-                                key={day}
-                                className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm ${day === 1
-                                    ? "bg-[var(--color-primary)] text-white"
-                                    : "bg-[var(--bg-tertiary)]"
-                                    }`}
-                            >
-                                <span className="text-xs">Hari</span>
-                                <span className="font-bold">{day}</span>
-                            </div>
-                        ))}
+                        {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+                            const currentStreak = Math.min(userStats?.readingStreak || 0, 7)
+                            const isCompleted = day <= currentStreak
+                            const isToday = day === currentStreak + 1 && !hasClaimedToday()
+
+                            return (
+                                <div
+                                    key={day}
+                                    className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm ${isCompleted
+                                            ? "bg-green-500 text-white"
+                                            : isToday
+                                                ? "bg-[var(--color-primary)] text-white animate-pulse"
+                                                : "bg-[var(--bg-tertiary)]"
+                                        }`}
+                                >
+                                    <span className="text-xs">Hari</span>
+                                    <span className="font-bold">{day}</span>
+                                    {isCompleted && <CheckCircle className="w-3 h-3" />}
+                                </div>
+                            )
+                        })}
                     </div>
-                    <button className="btn btn-primary w-full mt-4">
-                        <Gift className="w-4 h-4 mr-2" />
-                        Klaim Hadiah Hari Ini
+
+                    {claimMessage && (
+                        <div className={`mt-3 p-3 rounded-lg text-center text-sm ${claimMessage.type === "success"
+                                ? "bg-green-500/10 text-green-500 border border-green-500/20"
+                                : "bg-red-500/10 text-red-500 border border-red-500/20"
+                            }`}>
+                            {claimMessage.text}
+                        </div>
+                    )}
+
+                    <button
+                        onClick={claimDaily}
+                        disabled={claiming || hasClaimedToday()}
+                        className={`btn w-full mt-4 ${hasClaimedToday()
+                                ? "bg-green-500 hover:bg-green-500 cursor-not-allowed"
+                                : "btn-primary"
+                            }`}
+                    >
+                        {claiming ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : hasClaimedToday() ? (
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                        ) : (
+                            <Gift className="w-4 h-4 mr-2" />
+                        )}
+                        {hasClaimedToday() ? "Sudah Klaim Hari Ini ✓" : "Klaim Hadiah Hari Ini"}
                     </button>
                 </div>
 
