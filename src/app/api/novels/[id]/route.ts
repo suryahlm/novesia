@@ -111,14 +111,29 @@ export async function DELETE(
         }
 
         const { id } = await params
+        console.log("Deleting novel:", id)
 
+        // First disconnect genres (many-to-many - not auto-deleted)
+        await prisma.novel.update({
+            where: { id },
+            data: { genres: { set: [] } },
+        })
+
+        // Delete ratings for this novel (if exists)
+        await prisma.rating.deleteMany({
+            where: { novelId: id },
+        }).catch(() => { })
+
+        // Now delete the novel - chapters and other relations cascade automatically
         await prisma.novel.delete({
             where: { id },
         })
 
+        console.log("Novel deleted successfully:", id)
         return NextResponse.json({ success: true })
     } catch (error) {
         console.error("Error deleting novel:", error)
-        return NextResponse.json({ error: "Failed to delete novel" }, { status: 500 })
+        const errorMessage = error instanceof Error ? error.message : "Unknown error"
+        return NextResponse.json({ error: `Failed to delete novel: ${errorMessage}` }, { status: 500 })
     }
 }
