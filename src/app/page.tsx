@@ -12,6 +12,7 @@ import {
 import BookCard from "@/components/novel/BookCard"
 import { prisma } from "@/lib/prisma"
 import { getProxiedImageUrl } from "@/lib/image-utils"
+import VipButton from "@/components/ui/VipButton"
 
 // Disable caching - always fetch fresh data
 export const dynamic = "force-dynamic"
@@ -120,13 +121,7 @@ export default async function HomePage() {
               <BookOpen className="w-4 h-4 mr-2" />
               Mulai Baca
             </Link>
-            <Link
-              href="/rewards"
-              className="btn border-2 border-white/50 hover:bg-white/10"
-            >
-              <Crown className="w-4 h-4 mr-2" />
-              Gabung VIP
-            </Link>
+            <VipButton />
           </div>
         </div>
         {/* Decorative elements */}
