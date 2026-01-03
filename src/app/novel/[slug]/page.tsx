@@ -208,23 +208,41 @@ export default async function NovelDetailPage({ params }: PageProps) {
                 </div>
 
                 {/* Chapter Number Buttons */}
-                {novel.chapters.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        {novel.chapters
-                            .slice()
-                            .sort((a, b) => a.chapterNumber - b.chapterNumber)
-                            .map((chapter) => (
-                                <Link
-                                    key={chapter.id}
-                                    href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
-                                    className="w-10 h-10 flex items-center justify-center rounded-lg border border-[var(--bg-tertiary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-colors text-sm font-medium"
-                                    title={chapter.title}
-                                >
-                                    {chapter.chapterNumber}
-                                </Link>
+                {novel.chapters.length > 0 && (() => {
+                    const sortedChapters = novel.chapters
+                        .slice()
+                        .sort((a, b) => a.chapterNumber - b.chapterNumber)
+
+                    const maxButtons = 15
+                    const showEllipsis = sortedChapters.length > maxButtons
+
+                    // If more than 15, show first 14 + last chapter
+                    const displayChapters = showEllipsis
+                        ? [...sortedChapters.slice(0, 14), sortedChapters[sortedChapters.length - 1]]
+                        : sortedChapters
+
+                    return (
+                        <div className="flex flex-wrap gap-2 mb-4 items-center">
+                            {displayChapters.map((chapter, index) => (
+                                <>
+                                    {showEllipsis && index === 14 && (
+                                        <span key="ellipsis" className="w-10 h-10 flex items-center justify-center text-[var(--text-muted)]">
+                                            ...
+                                        </span>
+                                    )}
+                                    <Link
+                                        key={chapter.id}
+                                        href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
+                                        className="w-10 h-10 flex items-center justify-center rounded-lg border border-[var(--bg-tertiary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-colors text-sm font-medium"
+                                        title={chapter.title}
+                                    >
+                                        {chapter.chapterNumber}
+                                    </Link>
+                                </>
                             ))}
-                    </div>
-                )}
+                        </div>
+                    )
+                })()}
 
                 <div className="card divide-y divide-[var(--bg-tertiary)]">
                     {novel.chapters.length === 0 ? (
