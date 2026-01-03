@@ -76,6 +76,11 @@ export default function NewNovelPage() {
                 if (uploadRes.ok) {
                     const uploadData = await uploadRes.json()
                     coverUrl = uploadData.url
+                    console.log("Cover uploaded:", coverUrl)
+                } else {
+                    const errorData = await uploadRes.json()
+                    console.error("Cover upload failed:", errorData)
+                    throw new Error(errorData.error || "Gagal upload cover")
                 }
             }
 

@@ -78,22 +78,22 @@ export default async function AdminNovelsPage() {
                             <tbody className="divide-y divide-[var(--bg-tertiary)]">
                                 {novels.map((novel) => (
                                     <tr key={novel.id} className="hover:bg-[var(--bg-secondary)] transition-colors">
-                                        <td className="p-4">
+                                        <td className="p-4 min-w-[200px]">
                                             <div className="flex items-center gap-3">
                                                 {novel.cover ? (
                                                     <img
                                                         src={novel.cover}
                                                         alt={novel.title}
-                                                        className="w-12 h-16 object-cover rounded"
+                                                        className="w-12 h-16 object-cover rounded flex-shrink-0"
                                                     />
                                                 ) : (
-                                                    <div className="w-12 h-16 bg-[var(--bg-tertiary)] rounded flex items-center justify-center">
+                                                    <div className="w-12 h-16 bg-[var(--bg-tertiary)] rounded flex items-center justify-center flex-shrink-0">
                                                         <BookOpen className="w-6 h-6 text-[var(--text-muted)]" />
                                                     </div>
                                                 )}
-                                                <div>
-                                                    <p className="font-medium line-clamp-1">{novel.title}</p>
-                                                    <p className="text-sm text-[var(--text-muted)]">
+                                                <div className="min-w-0">
+                                                    <p className="font-medium truncate max-w-[150px]">{novel.title}</p>
+                                                    <p className="text-sm text-[var(--text-muted)] truncate max-w-[150px]">
                                                         {novel.genres.slice(0, 2).map(g => g.name).join(", ")}
                                                     </p>
                                                 </div>
