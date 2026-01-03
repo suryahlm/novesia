@@ -15,7 +15,21 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.supabase.in",
       },
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "*.r2.cloudflarestorage.com",
+      },
+      {
+        protocol: "https",
+        hostname: "pub-d7fdf7a6932b4febbd724bd48ae0c2c3.r2.dev",
+      },
     ],
+    // Disable image optimization to prevent SSL cert issues with self-signed R2 dev URLs
+    unoptimized: true,
   },
 };
 

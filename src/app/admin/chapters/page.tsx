@@ -2,6 +2,7 @@ import Link from "next/link"
 import { FileText, BookOpen, Eye, Edit, Plus } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 import DeleteChapterButton from "@/components/admin/DeleteChapterButton"
 
 async function getAllNovels() {
@@ -103,7 +104,7 @@ export default async function AdminChaptersPage() {
                                 <div className="flex items-center gap-3">
                                     {novel.cover ? (
                                         <img
-                                            src={novel.cover}
+                                            src={getProxiedImageUrl(novel.cover) || novel.cover}
                                             alt={novel.title}
                                             className="w-10 h-14 object-cover rounded"
                                         />
