@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -16,7 +16,16 @@ import {
     Loader2,
     Save,
     CheckCircle,
+    Star,
 } from "lucide-react"
+
+interface ProfileData {
+    coins: number
+    isVip: boolean
+    readingStreak: number
+    bookmarkCount: number
+    readCount: number
+}
 
 export default function ProfilePage() {
     const { data: session, status, update } = useSession()
@@ -24,9 +33,36 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState(false)
+    const [profileData, setProfileData] = useState<ProfileData | null>(null)
     const [formData, setFormData] = useState({
         name: "",
     })
+
+    // Fetch profile data
+    useEffect(() => {
+        if (session?.user?.id) {
+            fetch("/api/user/profile")
+                .then(res => res.json())
+                .then(data => {
+                    setProfileData({
+                        coins: data.coins || 0,
+                        isVip: data.isVip || false,
+                        readingStreak: data.readingStreak || 0,
+                        bookmarkCount: data._count?.bookmarks || 0,
+                        readCount: data._count?.readingHistory || 0,
+                    })
+                })
+                .catch(() => {
+                    setProfileData({
+                        coins: 0,
+                        isVip: false,
+                        readingStreak: 0,
+                        bookmarkCount: 0,
+                        readCount: 0,
+                    })
+                })
+        }
+    }, [session?.user?.id])
 
     if (status === "loading") {
         return (
@@ -138,6 +174,12 @@ export default function ProfilePage() {
                                 <>
                                     <div className="flex items-center gap-2 mb-2">
                                         <h2 className="text-xl font-bold">{user?.name || "User"}</h2>
+                                        {profileData?.isVip && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-white text-xs font-bold">
+                                                <Crown className="w-3 h-3" />
+                                                VIP
+                                            </span>
+                                        )}
                                         {saveSuccess && <CheckCircle className="w-5 h-5 text-green-500" />}
                                     </div>
                                     <p className="text-[var(--text-muted)] flex items-center justify-center sm:justify-start gap-2 mb-4">
@@ -158,23 +200,33 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="card p-4 text-center">
                         <Coins className="w-6 h-6 text-amber-500 mx-auto mb-2" />
-                        <p className="text-xl font-bold">{(user as unknown as { coins?: number })?.coins || 50}</p>
+                        <p className="text-xl font-bold">{profileData?.coins?.toLocaleString() || 0}</p>
                         <p className="text-sm text-[var(--text-muted)]">Koin</p>
                     </div>
                     <div className="card p-4 text-center">
                         <BookOpen className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-                        <p className="text-xl font-bold">0</p>
+                        <p className="text-xl font-bold">{profileData?.readCount || 0}</p>
                         <p className="text-sm text-[var(--text-muted)]">Dibaca</p>
                     </div>
                     <div className="card p-4 text-center">
                         <Heart className="w-6 h-6 text-red-500 mx-auto mb-2" />
-                        <p className="text-xl font-bold">0</p>
+                        <p className="text-xl font-bold">{profileData?.bookmarkCount || 0}</p>
                         <p className="text-sm text-[var(--text-muted)]">Bookmark</p>
                     </div>
                     <div className="card p-4 text-center">
-                        <Crown className="w-6 h-6 text-purple-500 mx-auto mb-2" />
-                        <p className="text-xl font-bold">0</p>
-                        <p className="text-sm text-[var(--text-muted)]">Streak</p>
+                        {profileData?.isVip ? (
+                            <>
+                                <Crown className="w-6 h-6 text-amber-500 mx-auto mb-2" />
+                                <p className="text-xl font-bold text-amber-500">VIP</p>
+                                <p className="text-sm text-[var(--text-muted)]">Member</p>
+                            </>
+                        ) : (
+                            <>
+                                <Star className="w-6 h-6 text-purple-500 mx-auto mb-2" />
+                                <p className="text-xl font-bold">{profileData?.readingStreak || 0}</p>
+                                <p className="text-sm text-[var(--text-muted)]">Streak</p>
+                            </>
+                        )}
                     </div>
                 </div>
 
