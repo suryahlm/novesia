@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ChevronLeft, Crown, List } from "lucide-react"
+import { ChevronLeft, List } from "lucide-react"
 import { prisma } from "@/lib/prisma"
+import { ChapterList } from "./ChapterList"
 
 export const dynamic = "force-dynamic"
 
@@ -55,54 +56,18 @@ export default async function NovelChaptersPage({ params }: PageProps) {
                 </div>
             </div>
 
-            {/* Chapter Number Buttons */}
-            {novel.chapters.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                    {novel.chapters.map((chapter) => (
-                        <Link
-                            key={chapter.id}
-                            href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
-                            className="w-10 h-10 flex items-center justify-center rounded-lg border border-[var(--bg-tertiary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-colors text-sm font-medium"
-                            title={chapter.title}
-                        >
-                            {chapter.chapterNumber}
-                        </Link>
-                    ))}
-                </div>
-            )}
-
-            {/* Chapter List */}
-            <div className="card divide-y divide-[var(--bg-tertiary)]">
-                {novel.chapters.length === 0 ? (
-                    <div className="p-8 text-center text-[var(--text-muted)]">
-                        Belum ada chapter
-                    </div>
-                ) : (
-                    novel.chapters.map((chapter) => (
-                        <Link
-                            key={chapter.id}
-                            href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
-                            className="flex items-center justify-between p-4 hover:bg-[var(--bg-tertiary)] transition-colors"
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="w-12 text-sm text-[var(--text-muted)]">
-                                    Ch. {chapter.chapterNumber}
-                                </span>
-                                <span className="font-medium">{chapter.title}</span>
-                                {chapter.isPremium && (
-                                    <span className="badge badge-premium text-xs">
-                                        <Crown className="w-3 h-3 mr-0.5" />
-                                        {chapter.coinCost}
-                                    </span>
-                                )}
-                            </div>
-                            <span className="text-xs text-[var(--text-muted)]">
-                                {new Date(chapter.createdAt).toLocaleDateString("id-ID")}
-                            </span>
-                        </Link>
-                    ))
-                )}
-            </div>
+            {/* Chapter List - Client Component */}
+            <ChapterList
+                chapters={novel.chapters.map(ch => ({
+                    id: ch.id,
+                    chapterNumber: ch.chapterNumber,
+                    title: ch.title,
+                    isPremium: ch.isPremium,
+                    coinCost: ch.coinCost,
+                    createdAt: ch.createdAt.toISOString(),
+                }))}
+                novelSlug={novel.slug}
+            />
         </div>
     )
 }

@@ -6,7 +6,6 @@ import {
     BookOpen,
     Clock,
     Crown,
-    List,
     User,
     Calendar,
 } from "lucide-react"
@@ -15,6 +14,7 @@ import { prisma } from "@/lib/prisma"
 import { getProxiedImageUrl } from "@/lib/image-utils"
 import NovelActions from "@/components/novel/NovelActions"
 import CommentSection from "@/components/novel/CommentSection"
+import NovelChapterSection from "@/components/novel/NovelChapterPreview"
 
 // Disable caching - always fetch fresh data
 export const dynamic = "force-dynamic"
@@ -198,91 +198,19 @@ export default async function NovelDetailPage({ params }: PageProps) {
                 </div>
             </section>
 
-            {/* Chapter List */}
-            <section className="mb-8">
-                <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                        <List className="w-5 h-5 text-[var(--color-primary)]" />
-                        Daftar Chapter ({novel._count.chapters})
-                    </h2>
-                </div>
-
-                {/* Chapter Number Buttons */}
-                {novel.chapters.length > 0 && (() => {
-                    const sortedChapters = novel.chapters
-                        .slice()
-                        .sort((a, b) => a.chapterNumber - b.chapterNumber)
-
-                    const maxButtons = 15
-                    const showEllipsis = sortedChapters.length > maxButtons
-
-                    // If more than 15, show first 14 + last chapter
-                    const displayChapters = showEllipsis
-                        ? [...sortedChapters.slice(0, 14), sortedChapters[sortedChapters.length - 1]]
-                        : sortedChapters
-
-                    return (
-                        <div className="flex flex-wrap gap-2 mb-4 items-center">
-                            {displayChapters.map((chapter, index) => (
-                                <>
-                                    {showEllipsis && index === 14 && (
-                                        <span key="ellipsis" className="w-10 h-10 flex items-center justify-center text-[var(--text-muted)]">
-                                            ...
-                                        </span>
-                                    )}
-                                    <Link
-                                        key={chapter.id}
-                                        href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
-                                        className="w-10 h-10 flex items-center justify-center rounded-lg border border-[var(--bg-tertiary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-colors text-sm font-medium"
-                                        title={chapter.title}
-                                    >
-                                        {chapter.chapterNumber}
-                                    </Link>
-                                </>
-                            ))}
-                        </div>
-                    )
-                })()}
-
-                <div className="card divide-y divide-[var(--bg-tertiary)]">
-                    {novel.chapters.length === 0 ? (
-                        <div className="p-8 text-center text-[var(--text-muted)]">
-                            Belum ada chapter
-                        </div>
-                    ) : (
-                        novel.chapters.slice(0, 10).map((chapter) => (
-                            <Link
-                                key={chapter.id}
-                                href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
-                                className="flex items-center justify-between p-4 hover:bg-[var(--bg-tertiary)] transition-colors"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="w-12 text-sm text-[var(--text-muted)]">
-                                        Ch. {chapter.chapterNumber}
-                                    </span>
-                                    <span className="font-medium">{chapter.title}</span>
-                                    {chapter.isPremium && (
-                                        <span className="badge badge-premium text-xs">
-                                            <Crown className="w-3 h-3 mr-0.5" />
-                                            {chapter.coinCost}
-                                        </span>
-                                    )}
-                                </div>
-                                <span className="text-xs text-[var(--text-muted)]">
-                                    {new Date(chapter.createdAt).toLocaleDateString("id-ID")}
-                                </span>
-                            </Link>
-                        ))
-                    )}
-                </div>
-                {novel.chapters.length > 10 && (
-                    <div className="text-center mt-4">
-                        <Link href={`/novel/${novel.slug}/chapters`} className="btn btn-secondary">
-                            Lihat Semua Chapter
-                        </Link>
-                    </div>
-                )}
-            </section>
+            {/* Chapter List - Client Component for VIP-aware badges */}
+            <NovelChapterSection
+                chapters={novel.chapters.map(ch => ({
+                    id: ch.id,
+                    chapterNumber: ch.chapterNumber,
+                    title: ch.title,
+                    isPremium: ch.isPremium,
+                    coinCost: ch.coinCost,
+                    createdAt: ch.createdAt.toISOString(),
+                }))}
+                novelSlug={novel.slug}
+                totalChapters={novel._count.chapters}
+            />
 
             {/* Comments */}
             <CommentSection novelId={novel.id} />
