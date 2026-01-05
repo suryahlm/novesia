@@ -233,14 +233,19 @@ export async function POST(request: Request) {
                 const chapterData = await getJsonFromR2<R2Chapter>(`novels/${novelId}/chapter-${i}.json`)
 
                 if (chapterData) {
+                    // Check if title contains [Premium] and clean it
+                    const rawTitle = chapterData.title || `Chapter ${i}`
+                    const hasPremiumTag = rawTitle.includes("[Premium]")
+                    const cleanTitle = rawTitle.replace(/\s*\[Premium\]/gi, "").trim()
+
                     await prisma.chapter.create({
                         data: {
                             novelId: novel.id,
                             chapterNumber: chapterData.number || i,
-                            title: chapterData.title || `Chapter ${i}`,
+                            title: cleanTitle,
                             contentTranslated: chapterData.content,
-                            isPremium: false,
-                            coinCost: 0,
+                            isPremium: hasPremiumTag,
+                            coinCost: hasPremiumTag ? 10 : 0,
                         }
                     })
                     importedChapters++
