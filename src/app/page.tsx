@@ -17,6 +17,20 @@ import VipButton from "@/components/ui/VipButton"
 // Disable caching - always fetch fresh data
 export const dynamic = "force-dynamic"
 
+async function getVipPrice() {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: "vipMonthlyPrice" }
+    })
+    if (setting) {
+      return JSON.parse(setting.value) as number
+    }
+  } catch (error) {
+    console.error("Error fetching VIP price:", error)
+  }
+  return 49000 // Default
+}
+
 async function getFeaturedNovels() {
   return prisma.novel.findMany({
     orderBy: { totalViews: "desc" },
@@ -87,11 +101,12 @@ function SectionHeader({
 }
 
 export default async function HomePage() {
-  const [featuredNovels, newReleases, topRated, genres] = await Promise.all([
+  const [featuredNovels, newReleases, topRated, genres, vipPrice] = await Promise.all([
     getFeaturedNovels(),
     getNewReleases(),
     getTopRated(),
     getGenres(),
+    getVipPrice(),
   ])
 
   return (
@@ -267,7 +282,7 @@ export default async function HomePage() {
             href="/pricing"
             className="btn bg-white text-amber-600 hover:bg-white/90 whitespace-nowrap"
           >
-            Rp 15.000/bulan
+            Rp {vipPrice.toLocaleString("id-ID")}/bulan
           </Link>
         </div>
         <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />

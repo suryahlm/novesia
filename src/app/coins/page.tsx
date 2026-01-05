@@ -24,8 +24,15 @@ const vipBenefits = [
 export default function CoinsPage() {
     const { data: session, status } = useSession()
     const [userCoins, setUserCoins] = useState<number | null>(null)
+    const [vipPrice, setVipPrice] = useState(49000) // Default
 
     useEffect(() => {
+        // Fetch VIP price from settings
+        fetch("/api/settings")
+            .then(res => res.json())
+            .then(data => setVipPrice(data.vipMonthlyPrice || 49000))
+            .catch(() => setVipPrice(49000))
+
         if (session) {
             fetch("/api/user/profile")
                 .then(res => res.json())
@@ -148,7 +155,7 @@ export default function CoinsPage() {
                             </div>
                             <div className="text-center md:text-right">
                                 <p className="text-sm text-[var(--text-muted)] mb-1">Mulai dari</p>
-                                <p className="text-3xl font-bold mb-1">Rp 15.000</p>
+                                <p className="text-3xl font-bold mb-1">Rp {vipPrice.toLocaleString("id-ID")}</p>
                                 <p className="text-sm text-[var(--text-muted)] mb-4">/bulan</p>
                                 <button className="btn bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 w-full md:w-auto">
                                     <Crown className="w-4 h-4 mr-2" />
