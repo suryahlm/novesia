@@ -6,10 +6,13 @@ import Link from "next/link"
 import { Crown, Check } from "lucide-react"
 
 export default function VipButton() {
-    const { data: session } = useSession()
+    const { data: session, status } = useSession()
     const [isVip, setIsVip] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
+        if (status === "loading") return
+
         if (session?.user?.id) {
             fetch("/api/user/profile")
                 .then(res => res.json())
@@ -17,8 +20,24 @@ export default function VipButton() {
                     setIsVip(data.isVip || false)
                 })
                 .catch(() => setIsVip(false))
+                .finally(() => setIsLoading(false))
+        } else {
+            setIsLoading(false)
         }
-    }, [session?.user?.id])
+    }, [session?.user?.id, status])
+
+    // Show default button while loading
+    if (isLoading) {
+        return (
+            <Link
+                href="/rewards"
+                className="btn border-2 border-white/50 hover:bg-white/10"
+            >
+                <Crown className="w-4 h-4 mr-2" />
+                Gabung VIP
+            </Link>
+        )
+    }
 
     if (isVip) {
         return (
@@ -39,3 +58,4 @@ export default function VipButton() {
         </Link>
     )
 }
+
