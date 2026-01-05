@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import {
@@ -25,53 +25,6 @@ interface PricingPlan {
     savings?: string
 }
 
-const pricingPlans: PricingPlan[] = [
-    {
-        id: "monthly",
-        name: "Bulanan",
-        price: 15000,
-        duration: "bulan",
-        popular: false,
-        features: [
-            "Akses semua novel premium",
-            "Bebas iklan",
-            "50 koin bonus/bulan",
-            "Badge VIP eksklusif",
-        ],
-    },
-    {
-        id: "quarterly",
-        name: "3 Bulan",
-        price: 39000,
-        duration: "3 bulan",
-        popular: true,
-        savings: "Hemat 13%",
-        features: [
-            "Akses semua novel premium",
-            "Bebas iklan",
-            "200 koin bonus",
-            "Badge VIP eksklusif",
-            "Akses chapter lebih awal",
-        ],
-    },
-    {
-        id: "yearly",
-        name: "Tahunan",
-        price: 120000,
-        duration: "tahun",
-        popular: false,
-        savings: "Hemat 33%",
-        features: [
-            "Akses semua novel premium",
-            "Bebas iklan",
-            "1000 koin bonus",
-            "Badge VIP eksklusif",
-            "Akses chapter lebih awal",
-            "Prioritas support",
-        ],
-    },
-]
-
 const vipBenefits = [
     { icon: BookOpen, title: "Novel Premium", desc: "Akses ribuan novel premium tanpa batas" },
     { icon: Zap, title: "Bebas Iklan", desc: "Pengalaman baca tanpa gangguan iklan" },
@@ -84,6 +37,85 @@ export default function PricingPage() {
     const { data: session, status } = useSession()
     const [selectedPlan, setSelectedPlan] = useState<string>("quarterly")
     const [isLoading, setIsLoading] = useState(false)
+    const [pricesLoading, setPricesLoading] = useState(true)
+    const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([
+        {
+            id: "monthly",
+            name: "Bulanan",
+            price: 49000,
+            duration: "bulan",
+            popular: false,
+            features: [
+                "Akses semua novel premium",
+                "Bebas iklan",
+                "50 koin bonus/bulan",
+                "Badge VIP eksklusif",
+            ],
+        },
+        {
+            id: "quarterly",
+            name: "3 Bulan",
+            price: 120000,
+            duration: "3 bulan",
+            popular: true,
+            savings: "Hemat 18%",
+            features: [
+                "Akses semua novel premium",
+                "Bebas iklan",
+                "200 koin bonus",
+                "Badge VIP eksklusif",
+                "Akses chapter lebih awal",
+            ],
+        },
+        {
+            id: "yearly",
+            name: "Tahunan",
+            price: 399000,
+            duration: "tahun",
+            popular: false,
+            savings: "Hemat 32%",
+            features: [
+                "Akses semua novel premium",
+                "Bebas iklan",
+                "1000 koin bonus",
+                "Badge VIP eksklusif",
+                "Akses chapter lebih awal",
+                "Prioritas support",
+            ],
+        },
+    ])
+
+    useEffect(() => {
+        // Fetch prices from settings
+        fetch("/api/settings")
+            .then(res => res.json())
+            .then(data => {
+                const monthlyPrice = data.vipMonthlyPrice || 49000
+                const quarterlyPrice = data.vipQuarterlyPrice || 120000
+                const yearlyPrice = data.vipYearlyPrice || 399000
+
+                // Calculate savings
+                const quarterlySavings = Math.round((1 - quarterlyPrice / (monthlyPrice * 3)) * 100)
+                const yearlySavings = Math.round((1 - yearlyPrice / (monthlyPrice * 12)) * 100)
+
+                setPricingPlans(prev => prev.map(plan => {
+                    if (plan.id === "monthly") return { ...plan, price: monthlyPrice }
+                    if (plan.id === "quarterly") return {
+                        ...plan,
+                        price: quarterlyPrice,
+                        savings: quarterlySavings > 0 ? `Hemat ${quarterlySavings}%` : undefined
+                    }
+                    if (plan.id === "yearly") return {
+                        ...plan,
+                        price: yearlyPrice,
+                        savings: yearlySavings > 0 ? `Hemat ${yearlySavings}%` : undefined
+                    }
+                    return plan
+                }))
+            })
+            .catch(console.error)
+            .finally(() => setPricesLoading(false))
+    }, [])
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat("id-ID", {

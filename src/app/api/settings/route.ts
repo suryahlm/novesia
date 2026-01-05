@@ -26,6 +26,8 @@ export async function GET() {
             requireEmailVerification: settingsObject.requireEmailVerification || false,
             defaultUserCoins: settingsObject.defaultUserCoins || 50,
             vipMonthlyPrice: settingsObject.vipMonthlyPrice || 49000,
+            vipQuarterlyPrice: settingsObject.vipQuarterlyPrice || 120000,
+            vipYearlyPrice: settingsObject.vipYearlyPrice || 399000,
             coinPurchaseEnabled: settingsObject.coinPurchaseEnabled !== false,
             googleLoginEnabled: settingsObject.googleLoginEnabled !== false,
             maxUploadSize: settingsObject.maxUploadSize || 5,

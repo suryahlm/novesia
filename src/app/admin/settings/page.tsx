@@ -21,6 +21,8 @@ export default function AdminSettingsPage() {
         requireEmailVerification: false,
         defaultUserCoins: 50,
         vipMonthlyPrice: 49000,
+        vipQuarterlyPrice: 120000,
+        vipYearlyPrice: 399000,
         coinPurchaseEnabled: true,
         googleLoginEnabled: true,
         maxUploadSize: 5,
@@ -361,14 +363,34 @@ export default function AdminSettingsPage() {
                         Monetisasi
                     </h2>
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Harga VIP Bulanan (Rp)</label>
-                            <input
-                                type="number"
-                                value={settings.vipMonthlyPrice}
-                                onChange={(e) => setSettings({ ...settings, vipMonthlyPrice: parseInt(e.target.value) })}
-                                className="input w-40"
-                            />
+                        <div className="grid grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">VIP Bulanan (Rp)</label>
+                                <input
+                                    type="number"
+                                    value={settings.vipMonthlyPrice}
+                                    onChange={(e) => setSettings({ ...settings, vipMonthlyPrice: parseInt(e.target.value) })}
+                                    className="input w-full"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">VIP 3 Bulan (Rp)</label>
+                                <input
+                                    type="number"
+                                    value={settings.vipQuarterlyPrice}
+                                    onChange={(e) => setSettings({ ...settings, vipQuarterlyPrice: parseInt(e.target.value) })}
+                                    className="input w-full"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">VIP Tahunan (Rp)</label>
+                                <input
+                                    type="number"
+                                    value={settings.vipYearlyPrice}
+                                    onChange={(e) => setSettings({ ...settings, vipYearlyPrice: parseInt(e.target.value) })}
+                                    className="input w-full"
+                                />
+                            </div>
                         </div>
                         <div className="flex items-center justify-between">
                             <div>
