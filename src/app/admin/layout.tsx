@@ -14,6 +14,7 @@ import {
     ChevronLeft,
     ShieldAlert,
     Tag,
+    CloudDownload,
 } from "lucide-react"
 import { LogoutButton } from "@/components/admin/LogoutButton"
 
@@ -22,6 +23,7 @@ const sidebarItems = [
     { href: "/admin/novels", icon: BookOpen, label: "Novel" },
     { href: "/admin/chapters", icon: FileText, label: "Chapter" },
     { href: "/admin/genres", icon: Tag, label: "Genre" },
+    { href: "/admin/import", icon: CloudDownload, label: "Import R2" },
     { href: "/admin/scraper", icon: Download, label: "Scraper" },
     { href: "/admin/users", icon: Users, label: "Users" },
     { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },

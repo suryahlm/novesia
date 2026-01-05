@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3"
 
 // R2 Configuration
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || ""
@@ -18,6 +18,48 @@ const r2Client = new S3Client({
         secretAccessKey: R2_SECRET_ACCESS_KEY,
     },
 })
+
+/**
+ * Get a file from R2
+ * @param key - Object key (path in bucket)
+ * @returns File content as string or null if not found
+ */
+export async function getFromR2(key: string): Promise<string | null> {
+    try {
+        const command = new GetObjectCommand({
+            Bucket: R2_BUCKET_NAME,
+            Key: key,
+        })
+
+        const response = await r2Client.send(command)
+
+        if (!response.Body) {
+            return null
+        }
+
+        return await response.Body.transformToString()
+    } catch (error) {
+        console.error(`Error getting ${key} from R2:`, error)
+        return null
+    }
+}
+
+/**
+ * Get JSON data from R2
+ * @param key - Object key (path in bucket)
+ * @returns Parsed JSON or null if not found
+ */
+export async function getJsonFromR2<T>(key: string): Promise<T | null> {
+    const content = await getFromR2(key)
+    if (!content) return null
+
+    try {
+        return JSON.parse(content) as T
+    } catch {
+        console.error(`Error parsing JSON from ${key}`)
+        return null
+    }
+}
 
 /**
  * Upload a file to R2
