@@ -47,11 +47,17 @@ async function getChapterData(slug: string, chapterNumber: number) {
         }),
     ])
 
-    // Increment view count
-    await prisma.chapter.update({
-        where: { id: chapter.id },
-        data: { views: { increment: 1 } },
-    })
+    // Increment view counts (chapter views + novel totalViews)
+    await Promise.all([
+        prisma.chapter.update({
+            where: { id: chapter.id },
+            data: { views: { increment: 1 } },
+        }),
+        prisma.novel.update({
+            where: { id: novel.id },
+            data: { totalViews: { increment: 1 } },
+        }),
+    ])
 
     return {
         novel,
