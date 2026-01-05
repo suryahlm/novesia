@@ -25,11 +25,14 @@ export default function NovelChapterSection({
     novelSlug,
     totalChapters
 }: NovelChapterSectionProps) {
-    const { data: session } = useSession()
+    const { data: session, status } = useSession()
     const [isVip, setIsVip] = useState(false)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        // Wait until session status is determined
+        if (status === "loading") return
+
         if (session?.user?.id) {
             fetch("/api/user/profile")
                 .then(res => res.json())
@@ -39,9 +42,10 @@ export default function NovelChapterSection({
                 .catch(() => setIsVip(false))
                 .finally(() => setLoading(false))
         } else {
+            // Not logged in - show badges
             setLoading(false)
         }
-    }, [session?.user?.id])
+    }, [session?.user?.id, status])
 
     // Sort chapters for display
     const sortedChapters = [...chapters].sort((a, b) => a.chapterNumber - b.chapterNumber)

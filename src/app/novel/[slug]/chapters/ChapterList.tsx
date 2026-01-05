@@ -20,11 +20,14 @@ interface ChapterListProps {
 }
 
 export function ChapterList({ chapters, novelSlug }: ChapterListProps) {
-    const { data: session } = useSession()
+    const { data: session, status } = useSession()
     const [isVip, setIsVip] = useState(false)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        // Wait until session status is determined
+        if (status === "loading") return
+
         if (session?.user?.id) {
             fetch("/api/user/profile")
                 .then(res => res.json())
@@ -34,9 +37,10 @@ export function ChapterList({ chapters, novelSlug }: ChapterListProps) {
                 .catch(() => setIsVip(false))
                 .finally(() => setLoading(false))
         } else {
+            // Not logged in - show badges
             setLoading(false)
         }
-    }, [session?.user?.id])
+    }, [session?.user?.id, status])
 
     return (
         <>
