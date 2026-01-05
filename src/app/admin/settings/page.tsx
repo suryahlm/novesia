@@ -1,12 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Settings, Save, Globe, Bell, Shield, Palette, RefreshCw, Loader2, CheckCircle } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Settings, Save, Globe, Bell, Shield, Palette, RefreshCw, Loader2, CheckCircle, Image, Upload, X } from "lucide-react"
 
 export default function AdminSettingsPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState(false)
+    const [uploading, setUploading] = useState<string | null>(null)
+    const [branding, setBranding] = useState({
+        logoUrl: "",
+        faviconUrl: "",
+        ogImageUrl: "",
+    })
     const [settings, setSettings] = useState({
         siteName: "Novesia",
         siteDescription: "Platform novel terbaik Indonesia",
@@ -25,10 +31,18 @@ export default function AdminSettingsPage() {
     useEffect(() => {
         async function loadSettings() {
             try {
+                // Load settings
                 const response = await fetch("/api/settings")
                 if (response.ok) {
                     const data = await response.json()
                     setSettings(data)
+                }
+
+                // Load branding
+                const brandingResponse = await fetch("/api/admin/branding")
+                if (brandingResponse.ok) {
+                    const brandingData = await brandingResponse.json()
+                    setBranding(brandingData)
                 }
             } catch (error) {
                 console.error("Error loading settings:", error)
@@ -59,6 +73,37 @@ export default function AdminSettingsPage() {
             alert("Terjadi kesalahan")
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    const handleUploadBranding = async (file: File, type: "logo" | "favicon" | "ogImage") => {
+        setUploading(type)
+        try {
+            const formData = new FormData()
+            formData.append("file", file)
+            formData.append("type", type)
+
+            const response = await fetch("/api/admin/branding", {
+                method: "POST",
+                body: formData,
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setBranding(prev => ({
+                    ...prev,
+                    [`${type}Url`]: data.url
+                }))
+                alert(`${type === "logo" ? "Logo" : type === "favicon" ? "Favicon" : "OG Image"} berhasil diupload!`)
+            } else {
+                alert(data.error || "Gagal upload")
+            }
+        } catch (error) {
+            console.error("Error uploading:", error)
+            alert("Terjadi kesalahan saat upload")
+        } finally {
+            setUploading(null)
         }
     }
 
@@ -101,6 +146,117 @@ export default function AdminSettingsPage() {
             </div>
 
             <div className="grid gap-6">
+                {/* Branding */}
+                <div className="card p-6">
+                    <h2 className="font-semibold mb-4 flex items-center gap-2">
+                        <Image className="w-5 h-5 text-[var(--color-primary)]" />
+                        Branding
+                    </h2>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {/* Logo Navbar */}
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Logo Navbar</label>
+                            <p className="text-xs text-[var(--text-muted)] mb-2">48x48px, PNG/SVG</p>
+                            <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center">
+                                {branding.logoUrl ? (
+                                    <div className="space-y-2">
+                                        <img src={branding.logoUrl} alt="Logo" className="w-12 h-12 mx-auto object-contain" />
+                                        <p className="text-xs text-green-500">Logo aktif</p>
+                                    </div>
+                                ) : (
+                                    <Image className="w-12 h-12 mx-auto text-[var(--text-muted)]" />
+                                )}
+                                <label className="mt-3 cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90">
+                                    {uploading === "logo" ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Upload className="w-4 h-4" />
+                                    )}
+                                    Upload
+                                    <input
+                                        type="file"
+                                        accept="image/png,image/svg+xml,image/webp"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0]
+                                            if (file) handleUploadBranding(file, "logo")
+                                        }}
+                                        disabled={uploading !== null}
+                                    />
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Favicon */}
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Favicon</label>
+                            <p className="text-xs text-[var(--text-muted)] mb-2">32x32px, ICO/PNG</p>
+                            <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center">
+                                {branding.faviconUrl ? (
+                                    <div className="space-y-2">
+                                        <img src={branding.faviconUrl} alt="Favicon" className="w-8 h-8 mx-auto object-contain" />
+                                        <p className="text-xs text-green-500">Favicon aktif</p>
+                                    </div>
+                                ) : (
+                                    <Image className="w-12 h-12 mx-auto text-[var(--text-muted)]" />
+                                )}
+                                <label className="mt-3 cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90">
+                                    {uploading === "favicon" ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Upload className="w-4 h-4" />
+                                    )}
+                                    Upload
+                                    <input
+                                        type="file"
+                                        accept="image/x-icon,image/png"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0]
+                                            if (file) handleUploadBranding(file, "favicon")
+                                        }}
+                                        disabled={uploading !== null}
+                                    />
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* OG Image */}
+                        <div>
+                            <label className="block text-sm font-medium mb-2">OG Image</label>
+                            <p className="text-xs text-[var(--text-muted)] mb-2">1200x630px, PNG/JPG</p>
+                            <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center">
+                                {branding.ogImageUrl ? (
+                                    <div className="space-y-2">
+                                        <img src={branding.ogImageUrl} alt="OG Image" className="w-full h-16 mx-auto object-cover rounded" />
+                                        <p className="text-xs text-green-500">OG Image aktif</p>
+                                    </div>
+                                ) : (
+                                    <Image className="w-12 h-12 mx-auto text-[var(--text-muted)]" />
+                                )}
+                                <label className="mt-3 cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90">
+                                    {uploading === "ogImage" ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Upload className="w-4 h-4" />
+                                    )}
+                                    Upload
+                                    <input
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/jpg"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0]
+                                            if (file) handleUploadBranding(file, "ogImage")
+                                        }}
+                                        disabled={uploading !== null}
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* General Settings */}
                 <div className="card p-6">
                     <h2 className="font-semibold mb-4 flex items-center gap-2">
