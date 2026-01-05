@@ -24,7 +24,7 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        const { novelId, slugPattern, title, originalTitle, cover, slug } = await request.json()
+        const { novelId, slugPattern, title, cover, slug, author, synopsis } = await request.json()
 
         // Find novel by ID or slug pattern
         let novel = null
@@ -43,7 +43,6 @@ export async function PATCH(request: Request) {
         }
 
         if (!novel) {
-            // List all novels for debugging
             const allNovels = await prisma.novel.findMany({
                 select: { id: true, slug: true, title: true }
             })
@@ -56,9 +55,10 @@ export async function PATCH(request: Request) {
         // Update novel
         const updateData: Record<string, string> = {}
         if (title) updateData.title = title
-        if (originalTitle) updateData.originalTitle = originalTitle
         if (cover) updateData.cover = cover
         if (slug) updateData.slug = slug
+        if (author) updateData.author = author
+        if (synopsis) updateData.synopsis = synopsis
 
         const updated = await prisma.novel.update({
             where: { id: novel.id },
@@ -70,9 +70,9 @@ export async function PATCH(request: Request) {
             novel: {
                 id: updated.id,
                 title: updated.title,
-                originalTitle: updated.originalTitle,
                 slug: updated.slug,
                 cover: updated.cover,
+                author: updated.author,
             }
         })
     } catch (error) {
