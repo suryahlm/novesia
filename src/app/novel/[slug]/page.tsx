@@ -16,6 +16,7 @@ import { getProxiedImageUrl } from "@/lib/image-utils"
 import NovelActions from "@/components/novel/NovelActions"
 import CommentSection from "@/components/novel/CommentSection"
 import NovelChapterSection from "@/components/novel/NovelChapterPreview"
+import RatingSection from "@/components/novel/RatingSection"
 
 // Disable caching - always fetch fresh data
 export const dynamic = "force-dynamic"
@@ -240,6 +241,11 @@ export default async function NovelDetailPage({ params }: PageProps) {
                         {novel.synopsis}
                     </p>
                 </div>
+            </section>
+
+            {/* Ratings & Reviews */}
+            <section className="mb-8">
+                <RatingSection novelId={novel.id} />
             </section>
 
             {/* Chapter List - Client Component for VIP-aware badges */}
