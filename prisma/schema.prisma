@@ -47,6 +47,7 @@ model User {
   notifications   Notification[]
   unlockedChapters UnlockedChapter[]
   novelRequests   NovelRequest[]
+  dailyTaskClaims DailyTaskClaim[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -439,4 +440,20 @@ enum NovelRequestStatus {
   APPROVED    // Disetujui, akan diproses
   REJECTED    // Ditolak
   COMPLETED   // Sudah ada di platform
+}
+
+// ==================== DAILY TASKS ====================
+
+model DailyTaskClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  taskId    String   // "login", "read_1", "read_5"
+  reward    Int      // coins earned
+  
+  claimedAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([claimedAt])
 }

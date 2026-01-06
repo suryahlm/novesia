@@ -12,16 +12,28 @@ interface UserStats {
     lastCheckIn: string | null
 }
 
+interface DailyTask {
+    id: string
+    label: string
+    reward: number
+    completed: boolean
+    claimed: boolean
+    canClaim: boolean
+}
+
 export default function RewardsPage() {
     const { data: session, status } = useSession()
     const [userStats, setUserStats] = useState<UserStats | null>(null)
+    const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([])
     const [copied, setCopied] = useState(false)
     const [claiming, setClaiming] = useState(false)
+    const [claimingTask, setClaimingTask] = useState<string | null>(null)
     const [claimMessage, setClaimMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
     useEffect(() => {
         if (session) {
             fetchStats()
+            fetchTasks()
         }
     }, [session])
 
@@ -32,6 +44,43 @@ export default function RewardsPage() {
             setUserStats(data)
         } catch {
             setUserStats({ coins: 0, readingStreak: 0, referralCount: 0, lastCheckIn: null })
+        }
+    }
+
+    const fetchTasks = async () => {
+        try {
+            const res = await fetch("/api/rewards/tasks")
+            const data = await res.json()
+            if (data.tasks) {
+                setDailyTasks(data.tasks)
+            }
+        } catch (error) {
+            console.error("Error fetching tasks:", error)
+        }
+    }
+
+    const claimTask = async (taskId: string) => {
+        setClaimingTask(taskId)
+        try {
+            const res = await fetch("/api/rewards/tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ taskId }),
+            })
+            const data = await res.json()
+
+            if (res.ok) {
+                setClaimMessage({ type: "success", text: `+${data.reward} koin!` })
+                fetchStats()
+                fetchTasks()
+                setTimeout(() => setClaimMessage(null), 3000)
+            } else {
+                setClaimMessage({ type: "error", text: data.error || "Gagal klaim" })
+            }
+        } catch {
+            setClaimMessage({ type: "error", text: "Terjadi kesalahan" })
+        } finally {
+            setClaimingTask(null)
         }
     }
 
@@ -100,11 +149,12 @@ export default function RewardsPage() {
         )
     }
 
-    const dailyTasks = [
-        { icon: CheckCircle, label: "Login harian", reward: 5, completed: true },
-        { icon: Star, label: "Baca 1 chapter", reward: 10, completed: false },
-        { icon: Zap, label: "Baca 5 chapter", reward: 30, completed: false },
-    ]
+    // Task icons mapping
+    const taskIcons: Record<string, typeof CheckCircle> = {
+        login: CheckCircle,
+        read_1: Star,
+        read_5: Zap,
+    }
 
     return (
         <div className="pb-4 sm:py-8">
@@ -244,29 +294,68 @@ export default function RewardsPage() {
                 <div className="card p-6">
                     <h2 className="font-bold text-lg mb-4">Tugas Harian</h2>
                     <div className="space-y-3">
-                        {dailyTasks.map((task, index) => (
-                            <div
-                                key={index}
-                                className={`flex items-center justify-between p-4 rounded-lg ${task.completed
-                                    ? "bg-green-500/10 border border-green-500/20"
-                                    : "bg-[var(--bg-tertiary)]"
-                                    }`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <task.icon
-                                        className={`w-5 h-5 ${task.completed ? "text-green-500" : "text-[var(--text-muted)]"
-                                            }`}
-                                    />
-                                    <span className={task.completed ? "line-through text-[var(--text-muted)]" : ""}>
-                                        {task.label}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1 text-amber-500">
-                                    <Coins className="w-4 h-4" />
-                                    <span className="font-medium">+{task.reward}</span>
-                                </div>
+                        {dailyTasks.length === 0 ? (
+                            <div className="text-center py-4 text-[var(--text-muted)]">
+                                <Loader2 className="w-6 h-6 mx-auto animate-spin mb-2" />
+                                <p>Memuat tugas...</p>
                             </div>
-                        ))}
+                        ) : (
+                            dailyTasks.map((task) => {
+                                const TaskIcon = taskIcons[task.id] || CheckCircle
+                                return (
+                                    <div
+                                        key={task.id}
+                                        className={`flex items-center justify-between p-4 rounded-lg ${task.claimed
+                                                ? "bg-green-500/10 border border-green-500/20"
+                                                : task.completed
+                                                    ? "bg-amber-500/10 border border-amber-500/20"
+                                                    : "bg-[var(--bg-tertiary)]"
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <TaskIcon
+                                                className={`w-5 h-5 ${task.claimed
+                                                        ? "text-green-500"
+                                                        : task.completed
+                                                            ? "text-amber-500"
+                                                            : "text-[var(--text-muted)]"
+                                                    }`}
+                                            />
+                                            <span className={task.claimed ? "line-through text-[var(--text-muted)]" : ""}>
+                                                {task.label}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1 text-amber-500">
+                                                <Coins className="w-4 h-4" />
+                                                <span className="font-medium">+{task.reward}</span>
+                                            </div>
+                                            {task.claimed ? (
+                                                <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded">
+                                                    Diklaim ✓
+                                                </span>
+                                            ) : task.canClaim ? (
+                                                <button
+                                                    onClick={() => claimTask(task.id)}
+                                                    disabled={claimingTask === task.id}
+                                                    className="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded transition-colors"
+                                                >
+                                                    {claimingTask === task.id ? (
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                    ) : (
+                                                        "Klaim"
+                                                    )}
+                                                </button>
+                                            ) : !task.completed && (
+                                                <span className="text-xs text-[var(--text-muted)]">
+                                                    Belum selesai
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        )}
                     </div>
                 </div>
             </div>
