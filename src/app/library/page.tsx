@@ -20,6 +20,8 @@ interface ReadingHistoryItem {
     chapter: { chapterNumber: number; title: string }
     progress: number
     readAt: string
+    chaptersRead: number
+    lastChapterNumber: number
 }
 
 interface BookmarkItem {
@@ -158,11 +160,13 @@ export default function LibraryPage() {
                                                 <BookOpen className="w-12 h-12 text-white/50" />
                                             </div>
                                         )}
-                                        {/* Progress bar */}
-                                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
+                                        {/* Novel Progress Bar */}
+                                        <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/50">
                                             <div
-                                                className="h-full bg-[var(--color-primary)]"
-                                                style={{ width: `${item.progress}%` }}
+                                                className="h-full bg-[var(--color-primary)] transition-all"
+                                                style={{
+                                                    width: `${Math.round((item.chaptersRead / item.novel._count.chapters) * 100)}%`
+                                                }}
                                             />
                                         </div>
                                     </div>
@@ -170,8 +174,16 @@ export default function LibraryPage() {
                                         <h3 className="font-medium text-sm line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">
                                             {item.novel.title}
                                         </h3>
-                                        <p className="text-xs text-[var(--text-muted)] mt-1">
-                                            Ch. {item.chapter.chapterNumber}
+                                        <div className="flex items-center justify-between mt-1.5">
+                                            <p className="text-xs text-[var(--text-muted)]">
+                                                Ch. {item.lastChapterNumber}
+                                            </p>
+                                            <span className="text-xs font-medium text-[var(--color-primary)]">
+                                                {Math.round((item.chaptersRead / item.novel._count.chapters) * 100)}%
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                                            {item.chaptersRead} / {item.novel._count.chapters} chapter
                                         </p>
                                     </div>
                                 </Link>
