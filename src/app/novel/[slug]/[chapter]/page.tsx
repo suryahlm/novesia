@@ -3,6 +3,7 @@ import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { ChevronLeft, ChevronRight, Settings, Home, BookOpen, List } from "lucide-react"
 import SwipeWrapper from "@/components/reader/SwipeWrapper"
+import ProgressTracker from "@/components/reader/ProgressTracker"
 
 interface PageProps {
     params: Promise<{ slug: string; chapter: string }>
@@ -92,6 +93,9 @@ export default async function ChapterReaderPage({ params }: PageProps) {
             prevChapter={prevChapter?.chapterNumber || null}
             nextChapter={nextChapter?.chapterNumber || null}
         >
+            {/* Progress Tracker for daily tasks */}
+            <ProgressTracker chapterId={chapter.id} />
+
             <div className="min-h-screen bg-[var(--bg-primary)]">
                 {/* Top Navigation */}
                 <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--bg-tertiary)]">
