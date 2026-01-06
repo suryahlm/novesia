@@ -75,7 +75,7 @@ export default function InstallAppButton() {
             {/* Install Button */}
             <button
                 onClick={handleInstallClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[var(--color-primary)] to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[var(--color-primary)] to-amber-600 text-white text-sm font-medium hover:opacity-90 transition-opacity"
                 title="Install Novesia App"
             >
                 <Download className="w-4 h-4" />

@@ -56,7 +56,7 @@ export default function HeroCarousel({ novels }: HeroCarouselProps) {
                         className="w-full h-full object-cover blur-sm scale-110"
                     />
                 ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary)] to-purple-900" />
+                    <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary)] to-amber-700" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40" />
             </div>
@@ -76,7 +76,7 @@ export default function HeroCarousel({ novels }: HeroCarouselProps) {
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary)] to-purple-600 flex items-center justify-center">
+                            <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary)] to-amber-600 flex items-center justify-center">
                                 <BookOpen className="w-16 h-16 text-white/50" />
                             </div>
                         )}
@@ -165,8 +165,8 @@ export default function HeroCarousel({ novels }: HeroCarouselProps) {
                             key={index}
                             onClick={() => { setCurrentIndex(index); setIsAutoPlaying(false) }}
                             className={`w-2 h-2 rounded-full transition-all ${index === currentIndex
-                                    ? "w-6 bg-white"
-                                    : "bg-white/50 hover:bg-white/70"
+                                ? "w-6 bg-white"
+                                : "bg-white/50 hover:bg-white/70"
                                 }`}
                             aria-label={`Go to slide ${index + 1}`}
                         />

@@ -59,7 +59,7 @@ export default function TopRankings({ novels, title = "Top Rankings" }: TopRanki
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary)] to-purple-600" />
+                                <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary)] to-amber-600" />
                             )}
                         </div>
 

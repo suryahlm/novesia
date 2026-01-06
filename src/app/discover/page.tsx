@@ -93,7 +93,7 @@ function DiscoverContent() {
                 <FilterBar />
 
                 {/* Request Novel Link */}
-                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-[var(--color-primary)]/10 to-purple-500/10 rounded-lg border border-[var(--color-primary)]/20">
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-[var(--color-primary)]/10 to-amber-500/10 rounded-lg border border-[var(--color-primary)]/20">
                     <div className="flex items-center justify-between gap-3">
                         <div>
                             <p className="text-sm font-medium">Tidak menemukan novel?</p>

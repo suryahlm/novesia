@@ -76,7 +76,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                 </div>
                 <div className="p-4 flex-1 overflow-y-auto">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-purple-600 flex items-center justify-center text-white font-bold">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-amber-600 flex items-center justify-center text-white font-bold">
                             {user.name?.[0]?.toUpperCase() || "A"}
                         </div>
                         <div>
