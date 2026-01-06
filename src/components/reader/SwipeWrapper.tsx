@@ -74,11 +74,11 @@ export default function SwipeWrapper({
                 if (swipeDirection === "right" && prevChapter) {
                     setTimeout(() => {
                         router.push(`/novel/${novelSlug}/${prevChapter}`)
-                    }, 300)
+                    }, 150)
                 } else if (swipeDirection === "left" && nextChapter) {
                     setTimeout(() => {
                         router.push(`/novel/${novelSlug}/${nextChapter}`)
-                    }, 300)
+                    }, 150)
                 }
             }
 
