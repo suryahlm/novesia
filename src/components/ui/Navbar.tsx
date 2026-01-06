@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import InstallAppButton from "@/components/ui/InstallAppButton"
+import ThemeToggle from "@/components/ui/ThemeToggle"
 
 interface NavbarProps {
     locale?: "id" | "en"
@@ -136,6 +137,9 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
                             >
                                 <Search className="w-5 h-5" />
                             </button>
+
+                            {/* Theme Toggle */}
+                            <ThemeToggle />
 
                             {/* Language Switcher */}
                             <button className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors hidden sm:flex items-center gap-1 text-sm">

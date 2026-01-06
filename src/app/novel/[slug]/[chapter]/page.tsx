@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
-import { ChevronLeft, ChevronRight, Settings, Home, BookOpen, List } from "lucide-react"
+import { ChevronLeft, ChevronRight, Home, BookOpen, List } from "lucide-react"
 import SwipeWrapper from "@/components/reader/SwipeWrapper"
 import ProgressTracker from "@/components/reader/ProgressTracker"
+import ReaderWrapper from "@/components/reader/ReaderWrapper"
+import ChapterContent from "@/components/reader/ChapterContent"
 
 interface PageProps {
     params: Promise<{ slug: string; chapter: string }>
@@ -128,31 +130,20 @@ export default async function ChapterReaderPage({ params }: PageProps) {
 
                 {/* Content */}
                 <main className="pt-14 pb-20">
-                    <article className="max-w-3xl mx-auto px-4 py-8">
-                        <h1 className="text-xl sm:text-2xl font-bold mb-6 text-center">
-                            Chapter {chapter.chapterNumber}: {chapter.title}
-                        </h1>
+                    <ReaderWrapper>
+                        <ChapterContent
+                            chapterNumber={chapter.chapterNumber}
+                            title={chapter.title}
+                            content={content}
+                        />
+                    </ReaderWrapper>
 
-                        <div
-                            className="prose prose-lg dark:prose-invert max-w-none leading-relaxed text-[var(--text-primary)]"
-                            style={{ fontSize: '18px', lineHeight: '1.8' }}
-                        >
-                            {content.split('\n').map((paragraph, index) => (
-                                paragraph.trim() && (
-                                    <p key={index} className="mb-4">
-                                        {paragraph}
-                                    </p>
-                                )
-                            ))}
+                    {!content && (
+                        <div className="text-center py-12 text-[var(--text-muted)]">
+                            <BookOpen className="w-12 h-12 mx-auto mb-4" />
+                            <p>Konten chapter belum tersedia</p>
                         </div>
-
-                        {!content && (
-                            <div className="text-center py-12 text-[var(--text-muted)]">
-                                <BookOpen className="w-12 h-12 mx-auto mb-4" />
-                                <p>Konten chapter belum tersedia</p>
-                            </div>
-                        )}
-                    </article>
+                    )}
                 </main>
 
                 {/* Bottom Navigation */}
