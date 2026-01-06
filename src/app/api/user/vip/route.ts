@@ -80,9 +80,10 @@ export async function POST(request: NextRequest) {
         await prisma.transaction.create({
             data: {
                 userId: session.user.id,
-                type: "VIP_PURCHASE",
+                type: "VIP_SUBSCRIPTION",
                 amount: -vipPackage.priceCoins,
                 description: `Pembelian ${vipPackage.name}`,
+                status: "SUCCESS",
             },
         })
 
