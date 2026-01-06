@@ -160,16 +160,16 @@ export default function AdminSettingsPage() {
                         <div>
                             <label className="block text-sm font-medium mb-2">Logo Navbar</label>
                             <p className="text-xs text-[var(--text-muted)] mb-2">48x48px, PNG/SVG</p>
-                            <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center">
-                                {branding.logoUrl ? (
-                                    <div className="space-y-2">
-                                        <img src={branding.logoUrl} alt="Logo" className="w-12 h-12 mx-auto object-contain" />
-                                        <p className="text-xs text-green-500">Logo aktif</p>
-                                    </div>
-                                ) : (
-                                    <Image className="w-12 h-12 mx-auto text-[var(--text-muted)]" />
-                                )}
-                                <label className="mt-3 cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90">
+                            <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center min-h-[140px] flex flex-col items-center justify-center">
+                                <div className="h-12 flex items-center justify-center mb-2">
+                                    {branding.logoUrl ? (
+                                        <img src={branding.logoUrl} alt="Logo" className="w-12 h-12 object-contain" />
+                                    ) : (
+                                        <Image className="w-12 h-12 text-[var(--text-muted)]" />
+                                    )}
+                                </div>
+                                {branding.logoUrl && <p className="text-xs text-green-500 mb-2">Logo aktif</p>}
+                                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90">
                                     {uploading === "logo" ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
@@ -194,16 +194,16 @@ export default function AdminSettingsPage() {
                         <div>
                             <label className="block text-sm font-medium mb-2">Favicon</label>
                             <p className="text-xs text-[var(--text-muted)] mb-2">32x32px, ICO/PNG</p>
-                            <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center">
-                                {branding.faviconUrl ? (
-                                    <div className="space-y-2">
-                                        <img src={branding.faviconUrl} alt="Favicon" className="w-8 h-8 mx-auto object-contain" />
-                                        <p className="text-xs text-green-500">Favicon aktif</p>
-                                    </div>
-                                ) : (
-                                    <Image className="w-12 h-12 mx-auto text-[var(--text-muted)]" />
-                                )}
-                                <label className="mt-3 cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90">
+                            <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center min-h-[140px] flex flex-col items-center justify-center">
+                                <div className="h-12 flex items-center justify-center mb-2">
+                                    {branding.faviconUrl ? (
+                                        <img src={branding.faviconUrl} alt="Favicon" className="w-8 h-8 object-contain" />
+                                    ) : (
+                                        <Image className="w-12 h-12 text-[var(--text-muted)]" />
+                                    )}
+                                </div>
+                                {branding.faviconUrl && <p className="text-xs text-green-500 mb-2">Favicon aktif</p>}
+                                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90">
                                     {uploading === "favicon" ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
@@ -228,16 +228,16 @@ export default function AdminSettingsPage() {
                         <div>
                             <label className="block text-sm font-medium mb-2">OG Image</label>
                             <p className="text-xs text-[var(--text-muted)] mb-2">1200x630px, PNG/JPG</p>
-                            <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center">
-                                {branding.ogImageUrl ? (
-                                    <div className="space-y-2">
-                                        <img src={branding.ogImageUrl} alt="OG Image" className="w-full h-16 mx-auto object-cover rounded" />
-                                        <p className="text-xs text-green-500">OG Image aktif</p>
-                                    </div>
-                                ) : (
-                                    <Image className="w-12 h-12 mx-auto text-[var(--text-muted)]" />
-                                )}
-                                <label className="mt-3 cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90">
+                            <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center min-h-[140px] flex flex-col items-center justify-center">
+                                <div className="h-12 flex items-center justify-center mb-2">
+                                    {branding.ogImageUrl ? (
+                                        <img src={branding.ogImageUrl} alt="OG Image" className="h-12 w-auto object-cover rounded" />
+                                    ) : (
+                                        <Image className="w-12 h-12 text-[var(--text-muted)]" />
+                                    )}
+                                </div>
+                                {branding.ogImageUrl && <p className="text-xs text-green-500 mb-2">OG Image aktif</p>}
+                                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg text-sm hover:opacity-90">
                                     {uploading === "ogImage" ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
