@@ -6,11 +6,11 @@ import Link from "next/link"
 import { Coins, Crown, Gift, Zap, LogIn, Check, Loader2 } from "lucide-react"
 
 const coinPackages = [
-    { id: 1, name: "Coba Dulu", coins: 15, price: 5000, bonus: 0 },
-    { id: 2, name: "Starter", coins: 50, price: 15000, bonus: 5 },
-    { id: 3, name: "Popular", coins: 150, price: 35000, bonus: 30, isPopular: true },
-    { id: 4, name: "Best Value", coins: 400, price: 75000, bonus: 100 },
-    { id: 5, name: "Ultimate", coins: 1000, price: 150000, bonus: 350 },
+    { id: 1, name: "Starter", coins: 100, price: 10000, bonus: 0 },
+    { id: 2, name: "Basic", coins: 250, price: 25000, bonus: 25 },
+    { id: 3, name: "Popular", coins: 500, price: 50000, bonus: 100, isPopular: true },
+    { id: 4, name: "Best Value", coins: 1000, price: 100000, bonus: 300 },
+    { id: 5, name: "Ultimate", coins: 2500, price: 200000, bonus: 1000 },
 ]
 
 const vipBenefits = [

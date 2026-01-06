@@ -19,6 +19,7 @@ interface PricingPlan {
     id: string
     name: string
     price: number
+    coinPrice: number
     duration: string
     popular: boolean
     features: string[]
@@ -48,6 +49,7 @@ export default function PricingPage() {
             id: "monthly",
             name: "Bulanan",
             price: 49000,
+            coinPrice: 550,
             duration: "bulan",
             popular: false,
             features: [
@@ -60,10 +62,11 @@ export default function PricingPage() {
         {
             id: "quarterly",
             name: "3 Bulan",
-            price: 120000,
+            price: 127000,
+            coinPrice: 1400,
             duration: "3 bulan",
             popular: true,
-            savings: "Hemat 18%",
+            savings: "Hemat 14%",
             features: [
                 "Akses semua novel premium",
                 "Bebas iklan",
@@ -76,6 +79,7 @@ export default function PricingPage() {
             id: "yearly",
             name: "Tahunan",
             price: 399000,
+            coinPrice: 4500,
             duration: "tahun",
             popular: false,
             savings: "Hemat 32%",
@@ -166,7 +170,7 @@ export default function PricingPage() {
             yearly: "vip_1_year",
         }
 
-        const coinsNeeded = Math.round(confirmModal.plan.price / 10)
+        const coinsNeeded = confirmModal.plan.coinPrice
 
         if (userCoins < coinsNeeded) {
             setPurchaseStatus({
@@ -432,11 +436,11 @@ export default function PricingPage() {
                             {/* Pay with Coins */}
                             <button
                                 onClick={payWithCoins}
-                                disabled={userCoins < Math.round(confirmModal.plan.price / 10)}
+                                disabled={userCoins < confirmModal.plan.coinPrice}
                                 className="btn btn-secondary w-full flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                🪙 Pakai {Math.round(confirmModal.plan.price / 10).toLocaleString()} Koin
-                                {userCoins < Math.round(confirmModal.plan.price / 10) && (
+                                🪙 Pakai {confirmModal.plan.coinPrice.toLocaleString()} Koin
+                                {userCoins < confirmModal.plan.coinPrice && (
                                     <span className="text-xs text-red-500">(tidak cukup)</span>
                                 )}
                             </button>

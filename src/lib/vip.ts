@@ -74,13 +74,15 @@ export async function grantVip(
 
 /**
  * VIP package definitions
+ * Coin prices slightly higher than direct purchase to incentivize direct payment
+ * Base rate: 1 koin = Rp 100, VIP coins priced ~10% higher
  */
 export const VIP_PACKAGES = [
     {
         id: "vip_1_month",
         name: "VIP 1 Bulan",
         durationDays: 30,
-        priceCoins: 4900, // 49,000 IDR = 4900 coins (assuming 10 IDR/coin)
+        priceCoins: 550, // Rp 49,000 direct vs 550 koin (~Rp 55,000 in coins)
         priceIdr: 49000,
         discount: 0,
     },
@@ -88,7 +90,7 @@ export const VIP_PACKAGES = [
         id: "vip_3_months",
         name: "VIP 3 Bulan",
         durationDays: 90,
-        priceCoins: 12700, // 127,000 IDR = 12700 coins
+        priceCoins: 1400, // Rp 127,000 direct vs 1400 koin (~Rp 140,000 in coins)
         priceIdr: 127000,
         discount: 14, // Save ~14% vs monthly
     },
@@ -96,7 +98,7 @@ export const VIP_PACKAGES = [
         id: "vip_1_year",
         name: "VIP 1 Tahun",
         durationDays: 365,
-        priceCoins: 39900, // 399,000 IDR = 39900 coins
+        priceCoins: 4500, // Rp 399,000 direct vs 4500 koin (~Rp 450,000 in coins)
         priceIdr: 399000,
         discount: 32, // Save ~32% vs monthly
     },
