@@ -16,6 +16,7 @@ import { getProxiedImageUrl } from "@/lib/image-utils"
 import NovelActions from "@/components/novel/NovelActions"
 import CommentSection from "@/components/novel/CommentSection"
 import NovelChapterSection from "@/components/novel/NovelChapterPreview"
+import ContinueReadingButton from "@/components/novel/ContinueReadingButton"
 
 // Disable caching - always fetch fresh data
 export const dynamic = "force-dynamic"
@@ -202,10 +203,17 @@ export default async function NovelDetailPage({ params }: PageProps) {
 
                     {/* Action Buttons */}
                     <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                        {/* Continue Reading - shows if user has reading history */}
+                        {firstChapter && (
+                            <ContinueReadingButton
+                                novelSlug={novel.slug}
+                                firstChapterNumber={firstChapter.chapterNumber}
+                            />
+                        )}
                         {firstChapter ? (
                             <Link
                                 href={`/novel/${novel.slug}/${firstChapter.chapterNumber}`}
-                                className="btn btn-primary"
+                                className="btn btn-secondary"
                             >
                                 <BookOpen className="w-4 h-4 mr-2" />
                                 Mulai Baca
