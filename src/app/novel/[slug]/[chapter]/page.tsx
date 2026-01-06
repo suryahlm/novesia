@@ -6,6 +6,7 @@ import SwipeWrapper from "@/components/reader/SwipeWrapper"
 import ProgressTracker from "@/components/reader/ProgressTracker"
 import ReaderWrapper from "@/components/reader/ReaderWrapper"
 import ChapterContent from "@/components/reader/ChapterContent"
+import CommentSection from "@/components/reader/CommentSection"
 
 interface PageProps {
     params: Promise<{ slug: string; chapter: string }>
@@ -144,6 +145,9 @@ export default async function ChapterReaderPage({ params }: PageProps) {
                             <p>Konten chapter belum tersedia</p>
                         </div>
                     )}
+
+                    {/* Comment Section */}
+                    <CommentSection chapterId={chapter.id} />
                 </main>
 
                 {/* Bottom Navigation */}
