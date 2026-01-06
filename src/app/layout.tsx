@@ -3,6 +3,7 @@ import { Inter, Merriweather, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/ui/Navbar";
 import MobileNav from "@/components/ui/MobileNav";
+import Footer from "@/components/ui/Footer";
 import SessionProvider from "@/components/providers/SessionProvider";
 
 const inter = Inter({
@@ -64,6 +65,7 @@ export default function RootLayout({
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {children}
           </main>
+          <Footer />
           <MobileNav />
         </SessionProvider>
       </body>
