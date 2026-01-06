@@ -276,28 +276,28 @@ export default async function HomePage() {
             <TopRankings novels={topRated} title="🏆 Top Rankings" />
 
             {/* Donate Card */}
-            <div className="card p-4 sm:p-5 bg-gradient-to-br from-pink-500/10 via-rose-500/10 to-red-500/10 border border-pink-500/20">
+            <div className="card p-4 sm:p-5 bg-gradient-to-br from-amber-500/10 via-yellow-500/10 to-orange-500/10 border border-amber-500/20">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center text-white">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    <path d="M2 21v-2h18v2H2zm2-4v-1c0-1.1.9-2 2-2h1V7H5V3h14v4h-2v7h1c1.1 0 2 .9 2 2v1H4zm4-3h8V7H8v7z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm">Dukung Novesia ❤️</h3>
+                  <h3 className="font-bold text-sm">Dukung Novesia ☕</h3>
                   <p className="text-xs text-[var(--text-muted)]">Bantuan kamu sangat berarti!</p>
                 </div>
               </div>
               <p className="text-xs text-[var(--text-muted)] mb-3">
-                Suka dengan Novesia? Bantu kami tetap online dan berkembang dengan donasi! ☕
+                Suka dengan Novesia? Bantu kami tetap online dan berkembang dengan donasi!
               </p>
               <a
                 href="https://saweria.co/novesia"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:opacity-90 text-sm"
+                className="btn w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:opacity-90 text-sm"
               >
-                🎁 Donasi via Saweria
+                ☕ Traktir Kopi
               </a>
             </div>
           </div>
