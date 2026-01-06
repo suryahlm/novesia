@@ -204,12 +204,12 @@ export default function ProfilePage() {
                         <p className="text-sm text-[var(--text-muted)]">Koin</p>
                     </div>
                     <div className="card p-4 text-center">
-                        <BookOpen className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                        <BookOpen className="w-6 h-6 text-amber-500 mx-auto mb-2" />
                         <p className="text-xl font-bold">{profileData?.readCount || 0}</p>
                         <p className="text-sm text-[var(--text-muted)]">Dibaca</p>
                     </div>
                     <div className="card p-4 text-center">
-                        <Heart className="w-6 h-6 text-red-500 mx-auto mb-2" />
+                        <Heart className="w-6 h-6 text-amber-500 mx-auto mb-2" />
                         <p className="text-xl font-bold">{profileData?.bookmarkCount || 0}</p>
                         <p className="text-sm text-[var(--text-muted)]">Bookmark</p>
                     </div>
@@ -222,7 +222,7 @@ export default function ProfilePage() {
                             </>
                         ) : (
                             <>
-                                <Star className="w-6 h-6 text-purple-500 mx-auto mb-2" />
+                                <Star className="w-6 h-6 text-amber-500 mx-auto mb-2" />
                                 <p className="text-xl font-bold">{profileData?.readingStreak || 0}</p>
                                 <p className="text-sm text-[var(--text-muted)]">Streak</p>
                             </>
@@ -246,7 +246,7 @@ export default function ProfilePage() {
                     </Link>
                     <Link href="/rewards" className="flex items-center justify-between p-4 hover:bg-[var(--bg-tertiary)] transition-colors">
                         <div className="flex items-center gap-3">
-                            <Crown className="w-5 h-5 text-purple-500" />
+                            <Crown className="w-5 h-5 text-amber-500" />
                             <span>Hadiah & Reward</span>
                         </div>
                     </Link>
