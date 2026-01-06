@@ -137,7 +137,7 @@ export default function RewardsPage() {
                         <p className="text-xs sm:text-sm text-[var(--text-muted)]">Streak</p>
                     </div>
                     <div className="card p-3 sm:p-6 text-center">
-                        <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mx-auto mb-1 sm:mb-2" />
+                        <Users className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500 mx-auto mb-1 sm:mb-2" />
                         {userStats ? (
                             <p className="text-lg sm:text-2xl font-bold">{userStats.referralCount}</p>
                         ) : (
@@ -150,7 +150,7 @@ export default function RewardsPage() {
                 {/* Referral Section */}
                 <div className="card p-4 sm:p-6 mb-4 sm:mb-6 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/20">
                     <h2 className="font-bold text-base sm:text-lg mb-2 flex items-center gap-2">
-                        <Users className="w-5 h-5 text-blue-500" />
+                        <Users className="w-5 h-5 text-amber-500" />
                         Ajak Teman, Dapat Bonus!
                     </h2>
                     <p className="text-xs sm:text-sm text-[var(--text-muted)] mb-3 sm:mb-4">
