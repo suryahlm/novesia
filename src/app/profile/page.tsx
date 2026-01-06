@@ -18,6 +18,7 @@ import {
     CheckCircle,
     Star,
 } from "lucide-react"
+import BadgesSection from "@/components/profile/BadgesSection"
 
 interface ProfileData {
     coins: number
@@ -229,6 +230,9 @@ export default function ProfilePage() {
                         )}
                     </div>
                 </div>
+
+                {/* Achievement Badges */}
+                <BadgesSection />
 
                 {/* Quick Links */}
                 <div className="card divide-y divide-[var(--bg-tertiary)]">

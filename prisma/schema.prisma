@@ -48,9 +48,23 @@ model User {
   unlockedChapters UnlockedChapter[]
   novelRequests   NovelRequest[]
   dailyTaskClaims DailyTaskClaim[]
+  userBadges      UserBadge[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+// Achievement Badges
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String   // Badge type identifier (e.g., "first_chapter", "bookworm")
+  
+  unlockedAt DateTime @default(now())
+  
+  @@unique([userId, badgeId])
+  @@index([userId])
 }
 
 model Account {
