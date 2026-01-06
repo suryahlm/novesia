@@ -250,7 +250,7 @@ export default async function NovelDetailPage({ params }: PageProps) {
 
             {/* Chapter List - Client Component for VIP-aware badges */}
             <NovelChapterSection
-                chapters={novel.chapters.map(ch => ({
+                chapters={(novel.chapters || []).map(ch => ({
                     id: ch.id,
                     chapterNumber: ch.chapterNumber,
                     title: ch.title,

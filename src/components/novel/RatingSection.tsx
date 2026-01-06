@@ -48,12 +48,22 @@ export default function RatingSection({ novelId }: RatingSectionProps) {
     const fetchRatings = async () => {
         try {
             const res = await fetch(`/api/ratings?novelId=${novelId}`)
+            if (!res.ok) {
+                console.error("Failed to fetch ratings:", res.status)
+                setIsLoading(false)
+                return
+            }
             const data = await res.json()
-            setRatings(data.ratings || [])
-            setStats(data.stats)
+
+            // Ensure ratings is always an array
+            setRatings(Array.isArray(data.ratings) ? data.ratings : [])
+
+            // Ensure stats has proper defaults
+            setStats(data.stats || { avgRating: 0, totalRatings: 0, distribution: {} })
+
             if (data.userRating) {
                 setUserRating(data.userRating)
-                setScore(data.userRating.score)
+                setScore(data.userRating.score || 0)
                 setReview(data.userRating.review || "")
             }
         } catch (error) {
