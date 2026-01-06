@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { checkAndUpdateVipStatus } from "@/lib/vip"
 
-// GET - Get user profile
+// GET - Get user profile (with VIP expiration check)
 export async function GET() {
     try {
         const session = await auth()
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
+
+        // Check and update VIP status if expired
+        const vipStatus = await checkAndUpdateVipStatus(session.user.id)
 
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
@@ -35,7 +39,11 @@ export async function GET() {
             return NextResponse.json({ error: "User not found" }, { status: 404 })
         }
 
-        return NextResponse.json(user)
+        // Return with VIP expiration info
+        return NextResponse.json({
+            ...user,
+            vipWasExpired: vipStatus.wasExpired,
+        })
     } catch (error) {
         console.error("Error fetching profile:", error)
         return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 })

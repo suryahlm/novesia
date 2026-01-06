@@ -37,7 +37,10 @@ export default function PricingPage() {
     const { data: session, status } = useSession()
     const [selectedPlan, setSelectedPlan] = useState<string>("quarterly")
     const [isLoading, setIsLoading] = useState(false)
+    const [purchaseStatus, setPurchaseStatus] = useState<{ success?: boolean; message?: string } | null>(null)
     const [pricesLoading, setPricesLoading] = useState(true)
+    const [userCoins, setUserCoins] = useState<number>(0)
+    const [currentVip, setCurrentVip] = useState<{ isVip: boolean; expiresAt: string | null } | null>(null)
     const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([
         {
             id: "monthly",
@@ -115,7 +118,18 @@ export default function PricingPage() {
             })
             .catch(console.error)
             .finally(() => setPricesLoading(false))
-    }, [])
+
+        // Fetch VIP status and user coins if logged in
+        if (session?.user) {
+            fetch("/api/user/vip")
+                .then(res => res.json())
+                .then(data => {
+                    setUserCoins(data.userCoins || 0)
+                    setCurrentVip(data.currentVip || null)
+                })
+                .catch(console.error)
+        }
+    }, [session])
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat("id-ID", {
@@ -131,10 +145,48 @@ export default function PricingPage() {
             return
         }
 
+        // Map plan IDs to VIP package IDs
+        const packageMap: Record<string, string> = {
+            monthly: "vip_1_month",
+            quarterly: "vip_3_months",
+            yearly: "vip_1_year",
+        }
+
+        const plan = pricingPlans.find(p => p.id === planId)
+        const coinsNeeded = Math.round(plan?.price ? plan.price / 10 : 0) // 10 IDR per coin
+
+        if (userCoins < coinsNeeded) {
+            setPurchaseStatus({
+                success: false,
+                message: `Koin tidak cukup! Kamu butuh ${coinsNeeded.toLocaleString()} koin, tapi hanya punya ${userCoins.toLocaleString()} koin.`
+            })
+            return
+        }
+
         setIsLoading(true)
-        // TODO: Integrate with payment gateway
-        alert("Fitur pembayaran akan segera tersedia!")
-        setIsLoading(false)
+        setPurchaseStatus(null)
+
+        try {
+            const res = await fetch("/api/user/vip", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ packageId: packageMap[planId] }),
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                setPurchaseStatus({ success: true, message: data.message })
+                setCurrentVip({ isVip: true, expiresAt: data.vipExpiresAt })
+                setUserCoins(prev => prev - coinsNeeded)
+            } else {
+                setPurchaseStatus({ success: false, message: data.error || "Gagal membeli VIP" })
+            }
+        } catch (error) {
+            setPurchaseStatus({ success: false, message: "Terjadi kesalahan" })
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     if (status === "loading") {
@@ -162,6 +214,42 @@ export default function PricingPage() {
                         Akses ribuan novel eksklusif dan fitur spesial lainnya.
                     </p>
                 </div>
+
+                {/* Current VIP Status */}
+                {session && currentVip?.isVip && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 rounded-xl text-center">
+                        <div className="flex items-center justify-center gap-2 text-amber-600 font-medium">
+                            <Crown className="w-5 h-5" />
+                            <span>Kamu sudah VIP!</span>
+                        </div>
+                        <p className="text-sm text-[var(--text-muted)] mt-1">
+                            Aktif sampai: {new Date(currentVip.expiresAt!).toLocaleDateString("id-ID", {
+                                day: "numeric", month: "long", year: "numeric"
+                            })}
+                        </p>
+                    </div>
+                )}
+
+                {/* User Coins */}
+                {session && (
+                    <div className="mb-6 text-center">
+                        <span className="text-sm text-[var(--text-muted)]">Koin kamu: </span>
+                        <span className="font-bold text-amber-500">{userCoins.toLocaleString()}</span>
+                        <Link href="/coins" className="ml-2 text-sm text-[var(--color-primary)] hover:underline">
+                            + Beli Koin
+                        </Link>
+                    </div>
+                )}
+
+                {/* Purchase Status */}
+                {purchaseStatus && (
+                    <div className={`mb-6 p-4 rounded-xl text-center ${purchaseStatus.success
+                            ? "bg-green-500/10 border border-green-500/30 text-green-600"
+                            : "bg-red-500/10 border border-red-500/30 text-red-600"
+                        }`}>
+                        {purchaseStatus.message}
+                    </div>
+                )}
 
                 {/* Pricing Cards */}
                 <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 mb-12 pt-4">
