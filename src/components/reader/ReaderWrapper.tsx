@@ -43,7 +43,7 @@ export default function ReaderWrapper({ children }: ReaderWrapperProps) {
             {/* Settings Button - Fixed at bottom right */}
             <button
                 onClick={() => setIsSettingsOpen(true)}
-                className="fixed bottom-24 md:bottom-8 right-4 z-40 p-3 bg-[var(--color-primary)] text-white rounded-full shadow-lg hover:scale-110 transition-transform"
+                className="fixed bottom-36 md:bottom-8 right-4 z-40 p-3 bg-[var(--color-primary)] text-white rounded-full shadow-lg hover:scale-110 transition-transform"
                 aria-label="Reader Settings"
             >
                 <Settings className="w-5 h-5" />
