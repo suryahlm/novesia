@@ -41,6 +41,7 @@ export default function PricingPage() {
     const [pricesLoading, setPricesLoading] = useState(true)
     const [userCoins, setUserCoins] = useState<number>(0)
     const [currentVip, setCurrentVip] = useState<{ isVip: boolean; expiresAt: string | null } | null>(null)
+    const [confirmModal, setConfirmModal] = useState<{ open: boolean; planId: string | null; plan: PricingPlan | null }>({ open: false, planId: null, plan: null })
     const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([
         {
             id: "monthly",
@@ -139,21 +140,17 @@ export default function PricingPage() {
         }).format(price)
     }
 
-    const handleSubscribe = async (planId: string) => {
+    // Open confirmation modal
+    const handleSelectPlan = (planId: string) => {
         if (!session) {
             window.location.href = "/login?redirect=/pricing"
             return
         }
 
-        // Map plan IDs to VIP package IDs
-        const packageMap: Record<string, string> = {
-            monthly: "vip_1_month",
-            quarterly: "vip_3_months",
-            yearly: "vip_1_year",
-        }
-
         const plan = pricingPlans.find(p => p.id === planId)
-        const coinsNeeded = Math.round(plan?.price ? plan.price / 10 : 0) // 10 IDR per coin
+        if (!plan) return
+
+        const coinsNeeded = Math.round(plan.price / 10)
 
         if (userCoins < coinsNeeded) {
             setPurchaseStatus({
@@ -163,6 +160,23 @@ export default function PricingPage() {
             return
         }
 
+        // Show confirmation modal
+        setConfirmModal({ open: true, planId, plan })
+    }
+
+    // Confirm and process purchase
+    const confirmPurchase = async () => {
+        if (!confirmModal.planId || !confirmModal.plan) return
+
+        const packageMap: Record<string, string> = {
+            monthly: "vip_1_month",
+            quarterly: "vip_3_months",
+            yearly: "vip_1_year",
+        }
+
+        const coinsNeeded = Math.round(confirmModal.plan.price / 10)
+
+        setConfirmModal({ open: false, planId: null, plan: null })
         setIsLoading(true)
         setPurchaseStatus(null)
 
@@ -170,7 +184,7 @@ export default function PricingPage() {
             const res = await fetch("/api/user/vip", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ packageId: packageMap[planId] }),
+                body: JSON.stringify({ packageId: packageMap[confirmModal.planId] }),
             })
 
             const data = await res.json()
@@ -244,8 +258,8 @@ export default function PricingPage() {
                 {/* Purchase Status */}
                 {purchaseStatus && (
                     <div className={`mb-6 p-4 rounded-xl text-center ${purchaseStatus.success
-                            ? "bg-green-500/10 border border-green-500/30 text-green-600"
-                            : "bg-red-500/10 border border-red-500/30 text-red-600"
+                        ? "bg-green-500/10 border border-green-500/30 text-green-600"
+                        : "bg-red-500/10 border border-red-500/30 text-red-600"
                         }`}>
                         {purchaseStatus.message}
                     </div>
@@ -299,7 +313,7 @@ export default function PricingPage() {
                             </ul>
 
                             <button
-                                onClick={() => handleSubscribe(plan.id)}
+                                onClick={() => handleSelectPlan(plan.id)}
                                 disabled={isLoading}
                                 className={`btn w-full ${plan.popular ? "btn-primary" : "btn-secondary"
                                     }`}
@@ -347,6 +361,46 @@ export default function PricingPage() {
                     </p>
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            {confirmModal.open && confirmModal.plan && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setConfirmModal({ open: false, planId: null, plan: null })}>
+                    <div className="bg-[var(--bg-primary)] rounded-2xl p-6 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-center mb-4">Konfirmasi Pembelian</h3>
+
+                        <div className="bg-[var(--bg-secondary)] rounded-xl p-4 mb-4">
+                            <div className="text-center">
+                                <Crown className="w-10 h-10 text-amber-500 mx-auto mb-2" />
+                                <p className="font-bold text-lg">{confirmModal.plan.name}</p>
+                                <p className="text-2xl font-bold text-[var(--color-primary)]">{formatPrice(confirmModal.plan.price)}</p>
+                            </div>
+                        </div>
+
+                        <div className="text-sm text-center mb-4 text-[var(--text-muted)]">
+                            <p>Akan dipotong</p>
+                            <p className="text-lg font-bold text-amber-500">
+                                {Math.round(confirmModal.plan.price / 10).toLocaleString()} koin
+                            </p>
+                            <p>dari saldo koin kamu</p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmModal({ open: false, planId: null, plan: null })}
+                                className="btn btn-secondary flex-1"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmPurchase}
+                                className="btn btn-primary flex-1"
+                            >
+                                Ya, Beli VIP
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
