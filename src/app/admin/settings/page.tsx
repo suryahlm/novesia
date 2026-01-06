@@ -157,7 +157,7 @@ export default function AdminSettingsPage() {
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* Logo Navbar */}
-                        <div>
+                        <div className="text-center">
                             <label className="block text-sm font-medium mb-2">Logo Navbar</label>
                             <p className="text-xs text-[var(--text-muted)] mb-2">48x48px, PNG/SVG</p>
                             <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center min-h-[140px] flex flex-col items-center justify-center">
@@ -191,7 +191,7 @@ export default function AdminSettingsPage() {
                         </div>
 
                         {/* Favicon */}
-                        <div>
+                        <div className="text-center">
                             <label className="block text-sm font-medium mb-2">Favicon</label>
                             <p className="text-xs text-[var(--text-muted)] mb-2">32x32px, ICO/PNG</p>
                             <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center min-h-[140px] flex flex-col items-center justify-center">
@@ -225,7 +225,7 @@ export default function AdminSettingsPage() {
                         </div>
 
                         {/* OG Image */}
-                        <div>
+                        <div className="text-center">
                             <label className="block text-sm font-medium mb-2">OG Image</label>
                             <p className="text-xs text-[var(--text-muted)] mb-2">1200x630px, PNG/JPG</p>
                             <div className="border-2 border-dashed border-[var(--bg-tertiary)] rounded-lg p-4 text-center min-h-[140px] flex flex-col items-center justify-center">
