@@ -31,7 +31,7 @@ export default function RatingSection({ novelId }: RatingSectionProps) {
     const { data: session } = useSession()
     const [ratings, setRatings] = useState<Rating[]>([])
     const [stats, setStats] = useState<RatingStats | null>(null)
-    const [userRating, setUserRating] = useState<Rating | null>(null)
+    const [userRating, setUserRating] = useState<{ id: string; score: number; review: string | null } | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -105,8 +105,8 @@ export default function RatingSection({ novelId }: RatingSectionProps) {
                     <Star
                         key={star}
                         className={`${sizeClass} ${star <= rating
-                                ? "fill-amber-400 text-amber-400"
-                                : "text-gray-400"
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-gray-400"
                             }`}
                     />
                 ))}
@@ -143,7 +143,7 @@ export default function RatingSection({ novelId }: RatingSectionProps) {
                     {/* Average Rating */}
                     <div className="text-center">
                         <div className="text-5xl font-bold text-amber-400">
-                            {stats?.avgRating.toFixed(1) || "0.0"}
+                            {stats?.avgRating?.toFixed(1) || "0.0"}
                         </div>
                         <div className="mt-1">{renderStars(Math.round(stats?.avgRating || 0), "lg")}</div>
                         <div className="text-sm text-[var(--text-muted)] mt-1">
@@ -208,8 +208,8 @@ export default function RatingSection({ novelId }: RatingSectionProps) {
                                     >
                                         <Star
                                             className={`w-8 h-8 transition-colors ${star <= (hoverScore || score)
-                                                    ? "fill-amber-400 text-amber-400"
-                                                    : "text-gray-400"
+                                                ? "fill-amber-400 text-amber-400"
+                                                : "text-gray-400"
                                                 }`}
                                         />
                                     </button>
@@ -239,8 +239,8 @@ export default function RatingSection({ novelId }: RatingSectionProps) {
                         {message && (
                             <div
                                 className={`p-3 rounded-lg ${message.type === "success"
-                                        ? "bg-green-500/20 text-green-400"
-                                        : "bg-red-500/20 text-red-400"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : "bg-red-500/20 text-red-400"
                                     }`}
                             >
                                 {message.text}
