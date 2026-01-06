@@ -2,6 +2,26 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+// Helper function to get date range for today in Indonesia timezone (WIB)
+function getIndonesiaTodayRange(): { today: Date; tomorrow: Date } {
+    const now = new Date()
+    // Convert to Indonesia timezone
+    const indonesiaTime = now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })
+    const indonesiaDate = new Date(indonesiaTime)
+
+    // Get midnight today in Indonesia
+    const today = new Date(indonesiaDate.getFullYear(), indonesiaDate.getMonth(), indonesiaDate.getDate())
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    // Convert back to UTC for database comparison
+    // Indonesia is UTC+7, so subtract 7 hours
+    const todayUTC = new Date(today.getTime() - (7 * 60 * 60 * 1000))
+    const tomorrowUTC = new Date(tomorrow.getTime() - (7 * 60 * 60 * 1000))
+
+    return { today: todayUTC, tomorrow: tomorrowUTC }
+}
+
 // GET: Get daily tasks status
 export async function GET() {
     try {
@@ -18,11 +38,8 @@ export async function GET() {
             return NextResponse.json({ error: "User not found" }, { status: 404 })
         }
 
-        // Get today's date range
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const tomorrow = new Date(today)
-        tomorrow.setDate(tomorrow.getDate() + 1)
+        // Get today's date range in Indonesia timezone
+        const { today, tomorrow } = getIndonesiaTodayRange()
 
         // Count chapters COMPLETED today (scroll >=70% or navigated to next)
         const chaptersReadToday = await prisma.readingHistory.count({
@@ -108,11 +125,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "User not found" }, { status: 404 })
         }
 
-        // Get today's date range
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const tomorrow = new Date(today)
-        tomorrow.setDate(tomorrow.getDate() + 1)
+        // Get today's date range in Indonesia timezone
+        const { today, tomorrow } = getIndonesiaTodayRange()
 
         // Check if already claimed today
         const existingClaim = await prisma.dailyTaskClaim.findFirst({

@@ -2,6 +2,15 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+// Helper function to get current date in Indonesia timezone (WIB)
+function getIndonesiaDate(date: Date = new Date()): Date {
+    // Convert to Indonesia timezone string and parse back
+    const indonesiaTime = date.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })
+    const indonesiaDate = new Date(indonesiaTime)
+    // Return just the date part (midnight)
+    return new Date(indonesiaDate.getFullYear(), indonesiaDate.getMonth(), indonesiaDate.getDate())
+}
+
 // POST - Claim daily reward
 export async function POST() {
     try {
@@ -23,37 +32,29 @@ export async function POST() {
             return NextResponse.json({ error: "User not found" }, { status: 404 })
         }
 
-        // Check if already claimed today
+        // Use Indonesia timezone for date comparison
         const now = new Date()
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const todayIndonesia = getIndonesiaDate(now)
 
         if (user.lastCheckIn) {
-            const lastCheckInDate = new Date(
-                user.lastCheckIn.getFullYear(),
-                user.lastCheckIn.getMonth(),
-                user.lastCheckIn.getDate()
-            )
+            const lastCheckInIndonesia = getIndonesiaDate(user.lastCheckIn)
 
-            if (lastCheckInDate.getTime() === today.getTime()) {
+            if (lastCheckInIndonesia.getTime() === todayIndonesia.getTime()) {
                 return NextResponse.json(
-                    { error: "Already claimed today", alreadyClaimed: true },
+                    { error: "Sudah klaim hari ini! Kembali besok.", alreadyClaimed: true },
                     { status: 400 }
                 )
             }
         }
 
-        // Calculate streak
+        // Calculate streak using Indonesia dates
         let newStreak = 1
         if (user.lastCheckIn) {
-            const lastCheckInDate = new Date(
-                user.lastCheckIn.getFullYear(),
-                user.lastCheckIn.getMonth(),
-                user.lastCheckIn.getDate()
-            )
-            const yesterday = new Date(today)
-            yesterday.setDate(yesterday.getDate() - 1)
+            const lastCheckInIndonesia = getIndonesiaDate(user.lastCheckIn)
+            const yesterdayIndonesia = new Date(todayIndonesia)
+            yesterdayIndonesia.setDate(yesterdayIndonesia.getDate() - 1)
 
-            if (lastCheckInDate.getTime() === yesterday.getTime()) {
+            if (lastCheckInIndonesia.getTime() === yesterdayIndonesia.getTime()) {
                 // Consecutive day - increase streak
                 newStreak = user.readingStreak + 1
             }
