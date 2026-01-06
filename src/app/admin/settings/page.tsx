@@ -23,6 +23,7 @@ export default function AdminSettingsPage() {
         vipMonthlyPrice: 49000,
         vipQuarterlyPrice: 120000,
         vipYearlyPrice: 399000,
+        donationLink: "https://saweria.co/novesia",
         coinPurchaseEnabled: true,
         googleLoginEnabled: true,
         maxUploadSize: 5,
@@ -408,6 +409,17 @@ export default function AdminSettingsPage() {
                                 />
                                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--color-primary)]"></div>
                             </label>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Link Donasi (Saweria/Trakteer)</label>
+                            <p className="text-xs text-[var(--text-muted)] mb-2">Contoh: https://saweria.co/username</p>
+                            <input
+                                type="url"
+                                value={settings.donationLink}
+                                onChange={(e) => setSettings({ ...settings, donationLink: e.target.value })}
+                                placeholder="https://saweria.co/username"
+                                className="input w-full"
+                            />
                         </div>
                     </div>
                 </div>

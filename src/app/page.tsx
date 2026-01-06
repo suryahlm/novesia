@@ -34,6 +34,20 @@ async function getVipPrice() {
   return 49000 // Default
 }
 
+async function getDonationLink() {
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: "donationLink" }
+    })
+    if (setting) {
+      return JSON.parse(setting.value) as string
+    }
+  } catch (error) {
+    console.error("Error fetching donation link:", error)
+  }
+  return "https://saweria.co/novesia" // Default
+}
+
 async function getFeaturedNovels() {
   return prisma.novel.findMany({
     orderBy: { totalViews: "desc" },
@@ -104,12 +118,13 @@ function SectionHeader({
 }
 
 export default async function HomePage() {
-  const [featuredNovels, newReleases, topRated, genres, vipPrice] = await Promise.all([
+  const [featuredNovels, newReleases, topRated, genres, vipPrice, donationLink] = await Promise.all([
     getFeaturedNovels(),
     getNewReleases(),
     getTopRated(),
     getGenres(),
     getVipPrice(),
+    getDonationLink(),
   ])
 
   return (
@@ -292,7 +307,7 @@ export default async function HomePage() {
                 Suka dengan Novesia? Bantu kami tetap online dan berkembang dengan donasi!
               </p>
               <a
-                href="https://saweria.co/novesia"
+                href={donationLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:opacity-90 text-sm"
