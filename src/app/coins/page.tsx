@@ -25,6 +25,8 @@ export default function CoinsPage() {
     const { data: session, status } = useSession()
     const [userCoins, setUserCoins] = useState<number | null>(null)
     const [vipPrice, setVipPrice] = useState(49000) // Default
+    const [isLoading, setIsLoading] = useState<number | null>(null) // Track which package is loading
+    const [purchaseStatus, setPurchaseStatus] = useState<{ success?: boolean; message?: string } | null>(null)
 
     useEffect(() => {
         // Fetch VIP price from settings
@@ -40,6 +42,41 @@ export default function CoinsPage() {
                 .catch(() => setUserCoins(50))
         }
     }, [session])
+
+    const handleBuyCoins = async (packageId: number, packageName: string, price: number) => {
+        if (!session) {
+            window.location.href = "/login?redirect=/coins"
+            return
+        }
+
+        setIsLoading(packageId)
+        setPurchaseStatus(null)
+
+        try {
+            const res = await fetch("/api/payment/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "coin",
+                    packageId: `coin_${packageId}`,
+                    packageName,
+                    price,
+                }),
+            })
+
+            const data = await res.json()
+
+            if (data.success && data.redirectUrl) {
+                window.location.href = data.redirectUrl
+            } else {
+                setPurchaseStatus({ success: false, message: data.error || "Gagal membuat pembayaran" })
+                setIsLoading(null)
+            }
+        } catch (error) {
+            setPurchaseStatus({ success: false, message: "Terjadi kesalahan" })
+            setIsLoading(null)
+        }
+    }
 
     if (status === "loading") {
         return (
@@ -91,6 +128,13 @@ export default function CoinsPage() {
                     </div>
                 </div>
 
+                {/* Purchase Status Messages */}
+                {purchaseStatus && (
+                    <div className={`p-4 rounded-lg mb-6 ${purchaseStatus.success ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                        {purchaseStatus.message}
+                    </div>
+                )}
+
                 {/* Coin Packages */}
                 <div className="mb-12">
                     <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
@@ -121,9 +165,19 @@ export default function CoinsPage() {
                                     <p className="text-2xl font-bold mb-4">
                                         Rp {pkg.price.toLocaleString("id-ID")}
                                     </p>
-                                    <button className="btn btn-primary w-full">
-                                        <Zap className="w-4 h-4 mr-2" />
-                                        Beli Sekarang
+                                    <button
+                                        onClick={() => handleBuyCoins(pkg.id, pkg.name, pkg.price)}
+                                        disabled={isLoading !== null}
+                                        className="btn btn-primary w-full disabled:opacity-50"
+                                    >
+                                        {isLoading === pkg.id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Zap className="w-4 h-4 mr-2" />
+                                                Beli Sekarang
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>

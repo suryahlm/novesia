@@ -25,18 +25,23 @@ export async function POST(request: NextRequest) {
         let vipDays = 0
 
         if (type === "coin") {
-            // Coin packages
-            const coinPackage = await prisma.coinPackage.findUnique({
-                where: { id: packageId },
-            })
+            // Hardcoded coin packages (matching frontend)
+            const coinPackages: Record<string, { name: string; coins: number; price: number; bonus: number }> = {
+                coin_1: { name: "Starter", coins: 100, price: 10000, bonus: 0 },
+                coin_2: { name: "Basic", coins: 250, price: 25000, bonus: 25 },
+                coin_3: { name: "Popular", coins: 500, price: 50000, bonus: 100 },
+                coin_4: { name: "Best Value", coins: 1000, price: 100000, bonus: 300 },
+                coin_5: { name: "Ultimate", coins: 2500, price: 200000, bonus: 1000 },
+            }
 
+            const coinPackage = coinPackages[packageId]
             if (!coinPackage) {
-                return NextResponse.json({ error: "Package not found" }, { status: 404 })
+                return NextResponse.json({ error: "Coin package not found" }, { status: 404 })
             }
 
             itemName = coinPackage.name
-            grossAmount = coinPackage.priceIdr
-            itemId = `coin_${packageId}`
+            grossAmount = coinPackage.price
+            itemId = packageId
             coinsToGrant = coinPackage.coins + coinPackage.bonus
         } else if (type === "vip") {
             // VIP packages
