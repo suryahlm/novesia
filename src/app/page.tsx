@@ -14,6 +14,8 @@ import { prisma } from "@/lib/prisma"
 import { getProxiedImageUrl } from "@/lib/image-utils"
 import VipButton from "@/components/ui/VipButton"
 import ContinueReadingSection from "@/components/home/ContinueReadingSection"
+import HeroCarousel from "@/components/home/HeroCarousel"
+import TopRankings from "@/components/home/TopRankings"
 
 // Disable caching - always fetch fresh data
 export const dynamic = "force-dynamic"
@@ -112,185 +114,170 @@ export default async function HomePage() {
 
   return (
     <div className="pb-4 sm:py-6 space-y-6 sm:space-y-10">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--color-primary)] via-purple-600 to-[var(--color-secondary)] p-6 sm:p-10 text-white">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5" />
-            <span className="text-sm font-medium uppercase tracking-wider opacity-90">
-              Selamat Datang di
-            </span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-            Novesia
-          </h1>
-          <p className="text-lg sm:text-xl opacity-90 max-w-2xl mb-6">
-            Jelajahi ribuan novel terjemahan berkualitas dengan pengalaman membaca
-            yang imersif. Baca kapan saja, di mana saja.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/discover"
-              className="btn bg-white text-[var(--color-primary)] hover:bg-white/90"
-            >
-              <BookOpen className="w-4 h-4 mr-2" />
-              Mulai Baca
-            </Link>
-            <VipButton />
-          </div>
-        </div>
-        {/* Decorative elements */}
-        <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
-      </section>
+      {/* Hero Carousel - Featured Novels */}
+      <HeroCarousel novels={featuredNovels} />
 
       {/* Continue Reading - Client Component */}
       <ContinueReadingSection />
 
-      {/* Trending Section */}
-      <section>
-        <SectionHeader
-          icon={TrendingUp}
-          title="Trending Sekarang"
-          href="/discover?sort=trending"
-        />
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
-          {featuredNovels.map((novel) => (
-            <BookCard
-              key={novel.id}
-              id={novel.id}
-              title={novel.title}
-              slug={novel.slug}
-              cover={novel.cover}
-              author={novel.author}
-              rating={novel.avgRating}
-              views={novel.totalViews}
-              chaptersCount={novel._count.chapters}
-              status={novel.status}
-              isPremium={novel.isPremium}
-              isHot={novel.totalViews > 50000}
-              size="lg"
-            />
-          ))}
-        </div>
-      </section>
+      {/* Main Content with Sidebar Layout */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Main Content */}
+        <div className="flex-1 space-y-8">
 
-      {/* New Releases */}
-      <section>
-        <SectionHeader
-          icon={Clock}
-          title="Baru Rilis"
-          href="/discover?sort=newest"
-        />
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
-          {newReleases.map((novel) => (
-            <BookCard
-              key={novel.id}
-              id={novel.id}
-              title={novel.title}
-              slug={novel.slug}
-              cover={novel.cover}
-              author={novel.author}
-              rating={novel.avgRating}
-              views={novel.totalViews}
-              chaptersCount={novel._count.chapters}
-              status={novel.status}
-              isPremium={novel.isPremium}
-              isNew
+          {/* Trending Section */}
+          <section>
+            <SectionHeader
+              icon={TrendingUp}
+              title="Trending Sekarang"
+              href="/discover?sort=trending"
             />
-          ))}
-        </div>
-      </section>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
+              {featuredNovels.map((novel) => (
+                <BookCard
+                  key={novel.id}
+                  id={novel.id}
+                  title={novel.title}
+                  slug={novel.slug}
+                  cover={novel.cover}
+                  author={novel.author}
+                  rating={novel.avgRating}
+                  views={novel.totalViews}
+                  chaptersCount={novel._count.chapters}
+                  status={novel.status}
+                  isPremium={novel.isPremium}
+                  isHot={novel.totalViews > 50000}
+                  size="lg"
+                />
+              ))}
+            </div>
+          </section>
 
-      {/* Genres Grid */}
-      <section>
-        <SectionHeader
-          icon={Star}
-          title="Jelajahi Genre"
-          href="/genre"
-        />
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-          {genres.map((genre) => {
-            const isImageUrl = genre.icon && (genre.icon.startsWith("http") || genre.icon.startsWith("/"))
-            return (
-              <Link
-                key={genre.slug}
-                href={`/genre/${genre.slug}`}
-                className="card p-4 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
-              >
-                <div className="w-12 h-12 mx-auto mb-2 rounded-lg overflow-hidden flex items-center justify-center bg-[var(--bg-tertiary)]">
-                  {isImageUrl ? (
-                    <img
-                      src={getProxiedImageUrl(genre.icon) || genre.icon!}
-                      alt={genre.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : genre.icon ? (
-                    <span className="text-2xl">{genre.icon}</span>
-                  ) : (
-                    <BookOpen className="w-6 h-6 text-[var(--text-muted)]" />
-                  )}
+          {/* New Releases */}
+          <section>
+            <SectionHeader
+              icon={Clock}
+              title="Baru Rilis"
+              href="/discover?sort=newest"
+            />
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
+              {newReleases.map((novel) => (
+                <BookCard
+                  key={novel.id}
+                  id={novel.id}
+                  title={novel.title}
+                  slug={novel.slug}
+                  cover={novel.cover}
+                  author={novel.author}
+                  rating={novel.avgRating}
+                  views={novel.totalViews}
+                  chaptersCount={novel._count.chapters}
+                  status={novel.status}
+                  isPremium={novel.isPremium}
+                  isNew
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* Genres Grid */}
+          <section>
+            <SectionHeader
+              icon={Star}
+              title="Jelajahi Genre"
+              href="/genre"
+            />
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+              {genres.map((genre) => {
+                const isImageUrl = genre.icon && (genre.icon.startsWith("http") || genre.icon.startsWith("/"))
+                return (
+                  <Link
+                    key={genre.slug}
+                    href={`/genre/${genre.slug}`}
+                    className="card p-4 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
+                  >
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-lg overflow-hidden flex items-center justify-center bg-[var(--bg-tertiary)]">
+                      {isImageUrl ? (
+                        <img
+                          src={getProxiedImageUrl(genre.icon) || genre.icon!}
+                          alt={genre.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : genre.icon ? (
+                        <span className="text-2xl">{genre.icon}</span>
+                      ) : (
+                        <BookOpen className="w-6 h-6 text-[var(--text-muted)]" />
+                      )}
+                    </div>
+                    <span className="font-medium text-sm block">{genre.name}</span>
+                    <span className="text-xs text-[var(--text-muted)]">
+                      {genre._count.novels} novel
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* Top Rated */}
+          <section>
+            <SectionHeader
+              icon={Star}
+              title="Rating Tertinggi"
+              href="/discover?sort=rating"
+            />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {topRated.map((novel) => (
+                <BookCard
+                  key={novel.id}
+                  id={novel.id}
+                  title={novel.title}
+                  slug={novel.slug}
+                  cover={novel.cover}
+                  author={novel.author}
+                  rating={novel.avgRating}
+                  views={novel.totalViews}
+                  chaptersCount={novel._count.chapters}
+                  status={novel.status}
+                  isPremium={novel.isPremium}
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* VIP Banner */}
+          <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 p-6 sm:p-8 text-white">
+            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+                  <Crown className="w-8 h-8" />
                 </div>
-                <span className="font-medium text-sm block">{genre.name}</span>
-                <span className="text-xs text-[var(--text-muted)]">
-                  {genre._count.novels} novel
-                </span>
+                <div>
+                  <h3 className="text-xl font-bold">Upgrade ke VIP</h3>
+                  <p className="text-sm opacity-90">
+                    Akses semua novel premium, bebas iklan, bonus koin harian
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/pricing"
+                className="btn bg-white text-amber-600 hover:bg-white/90 whitespace-nowrap"
+              >
+                Rp {vipPrice.toLocaleString("id-ID")}/bulan
               </Link>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* Top Rated */}
-      <section>
-        <SectionHeader
-          icon={Star}
-          title="Rating Tertinggi"
-          href="/discover?sort=rating"
-        />
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {topRated.map((novel) => (
-            <BookCard
-              key={novel.id}
-              id={novel.id}
-              title={novel.title}
-              slug={novel.slug}
-              cover={novel.cover}
-              author={novel.author}
-              rating={novel.avgRating}
-              views={novel.totalViews}
-              chaptersCount={novel._count.chapters}
-              status={novel.status}
-              isPremium={novel.isPremium}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* VIP Banner */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 p-6 sm:p-8 text-white">
-        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-              <Crown className="w-8 h-8" />
             </div>
-            <div>
-              <h3 className="text-xl font-bold">Upgrade ke VIP</h3>
-              <p className="text-sm opacity-90">
-                Akses semua novel premium, bebas iklan, bonus koin harian
-              </p>
-            </div>
+            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+          </section>
+        </div>
+
+        {/* Sidebar - Top Rankings */}
+        <aside className="lg:w-80 flex-shrink-0">
+          <div className="lg:sticky lg:top-20">
+            <TopRankings novels={topRated} title="🏆 Top Rankings" />
           </div>
-          <Link
-            href="/pricing"
-            className="btn bg-white text-amber-600 hover:bg-white/90 whitespace-nowrap"
-          >
-            Rp {vipPrice.toLocaleString("id-ID")}/bulan
-          </Link>
-        </div>
-        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-      </section>
+        </aside>
+      </div>
     </div>
   )
 }
+
