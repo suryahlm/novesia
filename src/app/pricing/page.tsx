@@ -42,6 +42,7 @@ export default function PricingPage() {
     const [userCoins, setUserCoins] = useState<number>(0)
     const [currentVip, setCurrentVip] = useState<{ isVip: boolean; expiresAt: string | null } | null>(null)
     const [confirmModal, setConfirmModal] = useState<{ open: boolean; planId: string | null; plan: PricingPlan | null }>({ open: false, planId: null, plan: null })
+    const [paymentMethod, setPaymentMethod] = useState<"coins" | "midtrans">("midtrans")
     const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([
         {
             id: "monthly",
@@ -150,22 +151,13 @@ export default function PricingPage() {
         const plan = pricingPlans.find(p => p.id === planId)
         if (!plan) return
 
-        const coinsNeeded = Math.round(plan.price / 10)
-
-        if (userCoins < coinsNeeded) {
-            setPurchaseStatus({
-                success: false,
-                message: `Koin tidak cukup! Kamu butuh ${coinsNeeded.toLocaleString()} koin, tapi hanya punya ${userCoins.toLocaleString()} koin.`
-            })
-            return
-        }
-
         // Show confirmation modal
         setConfirmModal({ open: true, planId, plan })
+        setPaymentMethod("midtrans") // Default to real money
     }
 
-    // Confirm and process purchase
-    const confirmPurchase = async () => {
+    // Pay with coins
+    const payWithCoins = async () => {
         if (!confirmModal.planId || !confirmModal.plan) return
 
         const packageMap: Record<string, string> = {
@@ -175,6 +167,15 @@ export default function PricingPage() {
         }
 
         const coinsNeeded = Math.round(confirmModal.plan.price / 10)
+
+        if (userCoins < coinsNeeded) {
+            setPurchaseStatus({
+                success: false,
+                message: `Koin tidak cukup! Butuh ${coinsNeeded.toLocaleString()} koin.`
+            })
+            setConfirmModal({ open: false, planId: null, plan: null })
+            return
+        }
 
         setConfirmModal({ open: false, planId: null, plan: null })
         setIsLoading(true)
@@ -199,6 +200,45 @@ export default function PricingPage() {
         } catch (error) {
             setPurchaseStatus({ success: false, message: "Terjadi kesalahan" })
         } finally {
+            setIsLoading(false)
+        }
+    }
+
+    // Pay with Midtrans (real money)
+    const payWithMidtrans = async () => {
+        if (!confirmModal.planId || !confirmModal.plan) return
+
+        const packageMap: Record<string, string> = {
+            monthly: "vip_1_month",
+            quarterly: "vip_3_months",
+            yearly: "vip_1_year",
+        }
+
+        setConfirmModal({ open: false, planId: null, plan: null })
+        setIsLoading(true)
+        setPurchaseStatus(null)
+
+        try {
+            const res = await fetch("/api/payment/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "vip",
+                    packageId: packageMap[confirmModal.planId],
+                }),
+            })
+
+            const data = await res.json()
+
+            if (data.success && data.redirectUrl) {
+                // Redirect to Midtrans payment page
+                window.location.href = data.redirectUrl
+            } else {
+                setPurchaseStatus({ success: false, message: data.error || "Gagal membuat pembayaran" })
+                setIsLoading(false)
+            }
+        } catch (error) {
+            setPurchaseStatus({ success: false, message: "Terjadi kesalahan" })
             setIsLoading(false)
         }
     }
@@ -376,26 +416,37 @@ export default function PricingPage() {
                             </div>
                         </div>
 
-                        <div className="text-sm text-center mb-4 text-[var(--text-muted)]">
-                            <p>Akan dipotong</p>
-                            <p className="text-lg font-bold text-amber-500">
-                                {Math.round(confirmModal.plan.price / 10).toLocaleString()} koin
-                            </p>
-                            <p>dari saldo koin kamu</p>
+                        <div className="text-sm text-center mb-4">
+                            <p className="text-[var(--text-muted)] mb-2">Pilih metode pembayaran:</p>
                         </div>
 
-                        <div className="flex gap-3">
+                        <div className="space-y-3">
+                            {/* Pay with Midtrans (Real Money) */}
+                            <button
+                                onClick={payWithMidtrans}
+                                className="btn btn-primary w-full flex items-center justify-center gap-2"
+                            >
+                                💳 Bayar {formatPrice(confirmModal.plan.price)}
+                            </button>
+
+                            {/* Pay with Coins */}
+                            <button
+                                onClick={payWithCoins}
+                                disabled={userCoins < Math.round(confirmModal.plan.price / 10)}
+                                className="btn btn-secondary w-full flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                🪙 Pakai {Math.round(confirmModal.plan.price / 10).toLocaleString()} Koin
+                                {userCoins < Math.round(confirmModal.plan.price / 10) && (
+                                    <span className="text-xs text-red-500">(tidak cukup)</span>
+                                )}
+                            </button>
+
+                            {/* Cancel */}
                             <button
                                 onClick={() => setConfirmModal({ open: false, planId: null, plan: null })}
-                                className="btn btn-secondary flex-1"
+                                className="btn w-full text-[var(--text-muted)]"
                             >
                                 Batal
-                            </button>
-                            <button
-                                onClick={confirmPurchase}
-                                className="btn btn-primary flex-1"
-                            >
-                                Ya, Beli VIP
                             </button>
                         </div>
                     </div>
