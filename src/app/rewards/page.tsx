@@ -128,7 +128,7 @@ export default function RewardsPage() {
                         <p className="text-xs sm:text-sm text-[var(--text-muted)]">Koin</p>
                     </div>
                     <div className="card p-3 sm:p-6 text-center">
-                        <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 mx-auto mb-1 sm:mb-2" />
+                        <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500 mx-auto mb-1 sm:mb-2" />
                         {userStats ? (
                             <p className="text-lg sm:text-2xl font-bold">{userStats.readingStreak}</p>
                         ) : (
@@ -148,13 +148,13 @@ export default function RewardsPage() {
                 </div>
 
                 {/* Referral Section */}
-                <div className="card p-4 sm:p-6 mb-4 sm:mb-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
+                <div className="card p-4 sm:p-6 mb-4 sm:mb-6 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/20">
                     <h2 className="font-bold text-base sm:text-lg mb-2 flex items-center gap-2">
                         <Users className="w-5 h-5 text-blue-500" />
                         Ajak Teman, Dapat Bonus!
                     </h2>
                     <p className="text-xs sm:text-sm text-[var(--text-muted)] mb-3 sm:mb-4">
-                        Dapat <span className="text-amber-500 font-bold">50 koin</span> + <span className="text-purple-500 font-bold">3 hari VIP</span> per teman!
+                        Dapat <span className="text-amber-500 font-bold">50 koin</span> + <span className="text-amber-600 font-bold">3 hari VIP</span> per teman!
                     </p>
                     <div className="flex flex-col sm:flex-row gap-2">
                         <input
@@ -198,10 +198,10 @@ export default function RewardsPage() {
                                 <div
                                     key={day}
                                     className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm ${isCompleted
-                                            ? "bg-green-500 text-white"
-                                            : isToday
-                                                ? "bg-[var(--color-primary)] text-white animate-pulse"
-                                                : "bg-[var(--bg-tertiary)]"
+                                        ? "bg-green-500 text-white"
+                                        : isToday
+                                            ? "bg-[var(--color-primary)] text-white animate-pulse"
+                                            : "bg-[var(--bg-tertiary)]"
                                         }`}
                                 >
                                     <span className="text-xs">Hari</span>
@@ -214,8 +214,8 @@ export default function RewardsPage() {
 
                     {claimMessage && (
                         <div className={`mt-3 p-3 rounded-lg text-center text-sm ${claimMessage.type === "success"
-                                ? "bg-green-500/10 text-green-500 border border-green-500/20"
-                                : "bg-red-500/10 text-red-500 border border-red-500/20"
+                            ? "bg-green-500/10 text-green-500 border border-green-500/20"
+                            : "bg-red-500/10 text-red-500 border border-red-500/20"
                             }`}>
                             {claimMessage.text}
                         </div>
@@ -225,8 +225,8 @@ export default function RewardsPage() {
                         onClick={claimDaily}
                         disabled={claiming || hasClaimedToday()}
                         className={`btn w-full mt-4 ${hasClaimedToday()
-                                ? "bg-green-500 hover:bg-green-500 cursor-not-allowed"
-                                : "btn-primary"
+                            ? "bg-green-500 hover:bg-green-500 cursor-not-allowed"
+                            : "btn-primary"
                             }`}
                     >
                         {claiming ? (
