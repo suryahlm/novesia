@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils"
 import ReaderSettingsPanel, {
     useReaderSettings,
 } from "@/components/reader/ReaderSettings"
+import { useSwipeNavigation, SwipeIndicator } from "@/components/reader/SwipeNavigation"
 
 interface ChapterData {
     id: string
@@ -69,6 +70,13 @@ export default function ReaderPage({ params }: { params: Promise<{ chapterId: st
     const [chapter, setChapter] = useState<ChapterData | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+
+    // Swipe navigation for mobile
+    const swipeState = useSwipeNavigation({
+        prevChapterId: chapter?.prevChapter?.id || null,
+        nextChapterId: chapter?.nextChapter?.id || null,
+        threshold: 80,
+    })
 
     // Debounced save progress function
     const saveProgress = useCallback(async (chapterId: string, progressValue: number) => {
@@ -207,6 +215,9 @@ export default function ReaderPage({ params }: { params: Promise<{ chapterId: st
 
     return (
         <div className={cn("min-h-screen", themeClasses[settings.theme])}>
+            {/* Swipe Navigation Indicator (Mobile) */}
+            <SwipeIndicator swipeState={swipeState} threshold={80} />
+
             {/* Progress Bar */}
             <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-black/10">
                 <div
