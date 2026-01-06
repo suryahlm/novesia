@@ -189,11 +189,13 @@ model ReadingHistory {
   chapterId String
   chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   
-  progress  Int      @default(0) // scroll percentage 0-100
-  readAt    DateTime @default(now())
+  progress    Int       @default(0) // scroll percentage 0-100
+  readAt      DateTime  @default(now())
+  completedAt DateTime? // When chapter was marked as "read" (scroll >=70% or navigated to next)
   
   @@unique([userId, chapterId])
   @@index([userId])
+  @@index([completedAt])
 }
 
 model Bookmark {

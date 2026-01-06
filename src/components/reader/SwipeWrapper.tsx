@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react"
 interface SwipeWrapperProps {
     children: React.ReactNode
     novelSlug: string
+    currentChapterId: string
     prevChapter: number | null
     nextChapter: number | null
 }
@@ -13,6 +14,7 @@ interface SwipeWrapperProps {
 export default function SwipeWrapper({
     children,
     novelSlug,
+    currentChapterId,
     prevChapter,
     nextChapter
 }: SwipeWrapperProps) {
@@ -76,6 +78,13 @@ export default function SwipeWrapper({
                         router.push(`/novel/${novelSlug}/${prevChapter}`)
                     }, 150)
                 } else if (swipeDirection === "left" && nextChapter) {
+                    // Mark current chapter as completed when navigating to next
+                    fetch("/api/user/complete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ chapterId: currentChapterId }),
+                    }).catch(console.error)
+
                     setTimeout(() => {
                         router.push(`/novel/${novelSlug}/${nextChapter}`)
                     }, 150)
@@ -96,7 +105,7 @@ export default function SwipeWrapper({
             document.removeEventListener("touchmove", handleTouchMove)
             document.removeEventListener("touchend", handleTouchEnd)
         }
-    }, [novelSlug, prevChapter, nextChapter, router, swipeProgress, swipeDirection, isNavigating])
+    }, [novelSlug, currentChapterId, prevChapter, nextChapter, router, swipeProgress, swipeDirection, isNavigating])
 
     const opacity = Math.min(swipeProgress / threshold, 1)
     const scale = 0.5 + (Math.min(swipeProgress / threshold, 1) * 0.5)

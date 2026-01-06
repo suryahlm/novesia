@@ -88,6 +88,7 @@ export default async function ChapterReaderPage({ params }: PageProps) {
     return (
         <SwipeWrapper
             novelSlug={novel.slug}
+            currentChapterId={chapter.id}
             prevChapter={prevChapter?.chapterNumber || null}
             nextChapter={nextChapter?.chapterNumber || null}
         >

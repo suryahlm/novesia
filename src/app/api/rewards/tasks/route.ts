@@ -24,11 +24,11 @@ export async function GET() {
         const tomorrow = new Date(today)
         tomorrow.setDate(tomorrow.getDate() + 1)
 
-        // Count chapters read today (from reading history)
+        // Count chapters COMPLETED today (scroll >=70% or navigated to next)
         const chaptersReadToday = await prisma.readingHistory.count({
             where: {
                 userId: user.id,
-                readAt: {
+                completedAt: {
                     gte: today,
                     lt: tomorrow,
                 },
@@ -147,7 +147,7 @@ export async function POST(request: Request) {
             const chaptersReadToday = await prisma.readingHistory.count({
                 where: {
                     userId: user.id,
-                    readAt: {
+                    completedAt: {
                         gte: today,
                         lt: tomorrow,
                     },
