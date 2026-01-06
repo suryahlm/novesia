@@ -1,16 +1,49 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 // GET - Get user's reading history with novel progress
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        // Get all reading history grouped by novel
+        const { searchParams } = new URL(request.url)
+        const novelSlug = searchParams.get("novelSlug")
+
+        // If novelSlug is provided, return only the last read chapter for that novel
+        if (novelSlug) {
+            const novel = await prisma.novel.findUnique({
+                where: { slug: novelSlug },
+                select: { id: true },
+            })
+
+            if (!novel) {
+                return NextResponse.json({ lastReadChapter: null })
+            }
+
+            // Get the most recent reading history for this novel
+            const lastRead = await prisma.readingHistory.findFirst({
+                where: {
+                    userId: session.user.id,
+                    chapter: { novelId: novel.id },
+                },
+                orderBy: { readAt: "desc" },
+                include: {
+                    chapter: {
+                        select: { chapterNumber: true },
+                    },
+                },
+            })
+
+            return NextResponse.json({
+                lastReadChapter: lastRead?.chapter.chapterNumber || null,
+            })
+        }
+
+        // Otherwise, return full reading history
         const history = await prisma.readingHistory.findMany({
             where: { userId: session.user.id },
             orderBy: { readAt: "desc" },
