@@ -13,6 +13,7 @@ import BookCard from "@/components/novel/BookCard"
 import { prisma } from "@/lib/prisma"
 import { getProxiedImageUrl } from "@/lib/image-utils"
 import VipButton from "@/components/ui/VipButton"
+import ContinueReadingSection from "@/components/home/ContinueReadingSection"
 
 // Disable caching - always fetch fresh data
 export const dynamic = "force-dynamic"
@@ -143,6 +144,9 @@ export default async function HomePage() {
         <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
       </section>
+
+      {/* Continue Reading - Client Component */}
+      <ContinueReadingSection />
 
       {/* Trending Section */}
       <section>

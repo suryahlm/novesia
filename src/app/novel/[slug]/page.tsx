@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { Metadata } from "next"
 import {
     Star,
     Eye,
@@ -21,6 +22,49 @@ export const dynamic = "force-dynamic"
 
 interface PageProps {
     params: Promise<{ slug: string }>
+}
+
+// Generate dynamic metadata for SEO
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { slug } = await params
+    const novel = await prisma.novel.findUnique({
+        where: { slug },
+        select: {
+            title: true,
+            synopsis: true,
+            cover: true,
+            author: true,
+            genres: { select: { name: true } },
+            _count: { select: { chapters: true } },
+        },
+    })
+
+    if (!novel) {
+        return { title: "Novel tidak ditemukan - Novesia" }
+    }
+
+    const description = novel.synopsis.slice(0, 160) + (novel.synopsis.length > 160 ? "..." : "")
+    const genres = novel.genres.map(g => g.name).join(", ")
+
+    return {
+        title: `${novel.title} - Baca Novel di Novesia`,
+        description: description,
+        keywords: [novel.title, novel.author || "", genres, "novel", "web novel", "baca novel"].filter(Boolean),
+        authors: novel.author ? [{ name: novel.author }] : undefined,
+        openGraph: {
+            title: novel.title,
+            description: description,
+            type: "book",
+            images: novel.cover ? [{ url: novel.cover, width: 400, height: 600 }] : undefined,
+            siteName: "Novesia",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: novel.title,
+            description: description,
+            images: novel.cover ? [novel.cover] : undefined,
+        },
+    }
 }
 
 async function getNovel(slug: string) {

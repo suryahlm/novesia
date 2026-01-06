@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef, use } from "react"
+import { useState, useEffect, useRef, use, useCallback } from "react"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 import {
     ChevronLeft,
@@ -56,16 +57,66 @@ const fonts = {
 
 export default function ReaderPage({ params }: { params: Promise<{ chapterId: string }> }) {
     const resolvedParams = use(params)
+    const { data: session } = useSession()
     const { settings, setSettings } = useReaderSettings()
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [isHeaderVisible, setIsHeaderVisible] = useState(true)
     const [progress, setProgress] = useState(0)
     const lastScrollY = useRef(0)
     const contentRef = useRef<HTMLDivElement>(null)
+    const lastSavedProgress = useRef(0)
 
     const [chapter, setChapter] = useState<ChapterData | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+
+    // Debounced save progress function
+    const saveProgress = useCallback(async (chapterId: string, progressValue: number) => {
+        if (!session) return
+
+        // Only save if progress changed significantly (avoid spam)
+        if (Math.abs(progressValue - lastSavedProgress.current) < 5) return
+
+        try {
+            await fetch("/api/user/progress", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chapterId, progress: progressValue }),
+            })
+            lastSavedProgress.current = progressValue
+        } catch (err) {
+            console.error("Failed to save progress:", err)
+        }
+    }, [session])
+
+    // Auto-save progress with debounce
+    useEffect(() => {
+        if (!chapter || !session) return
+
+        const timer = setTimeout(() => {
+            saveProgress(chapter.id, progress)
+        }, 2000) // Save after 2 seconds of inactivity
+
+        return () => clearTimeout(timer)
+    }, [progress, chapter, session, saveProgress])
+
+    // Save progress on page leave
+    useEffect(() => {
+        if (!chapter || !session) return
+
+        const handleBeforeUnload = () => {
+            // Use sendBeacon for reliable save on page close
+            if (progress > lastSavedProgress.current) {
+                navigator.sendBeacon(
+                    "/api/user/progress",
+                    JSON.stringify({ chapterId: chapter.id, progress })
+                )
+            }
+        }
+
+        window.addEventListener("beforeunload", handleBeforeUnload)
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+    }, [chapter, session, progress])
 
     // Fetch chapter data
     useEffect(() => {

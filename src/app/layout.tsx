@@ -26,11 +26,28 @@ export const metadata: Metadata = {
   description: "Platform baca novel web terbaik dengan pengalaman membaca yang imersif. Ribuan novel terjemahan berkualitas dalam Bahasa Indonesia.",
   keywords: ["novel", "web novel", "baca novel", "novel terjemahan", "novel indonesia"],
   authors: [{ name: "Novesia" }],
+  manifest: "/manifest.json",
+  themeColor: "#6366f1",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Novesia",
+  },
   openGraph: {
     title: "Novesia - Baca Novel Terbaik",
     description: "Platform baca novel web terbaik dengan pengalaman membaca yang imersif.",
     type: "website",
     locale: "id_ID",
+    siteName: "Novesia",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Novesia - Baca Novel Terbaik",
+    description: "Platform baca novel web terbaik dengan pengalaman membaca yang imersif.",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/icons/icon-192.png",
   },
 };
 

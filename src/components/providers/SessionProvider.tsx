@@ -1,6 +1,7 @@
 "use client"
 
 import { SessionProvider as NextAuthSessionProvider } from "next-auth/react"
+import { ToastProvider } from "@/components/ui/Toast"
 
 export default function SessionProvider({
     children,
@@ -9,7 +10,9 @@ export default function SessionProvider({
 }) {
     return (
         <NextAuthSessionProvider>
-            {children}
+            <ToastProvider>
+                {children}
+            </ToastProvider>
         </NextAuthSessionProvider>
     )
 }

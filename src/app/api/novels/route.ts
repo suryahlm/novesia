@@ -1,17 +1,74 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 
-// GET - Get all novels
-export async function GET() {
+// GET - Get all novels with filters
+export async function GET(request: NextRequest) {
     try {
+        const { searchParams } = new URL(request.url)
+
+        // Extract query params
+        const q = searchParams.get("q")
+        const genres = searchParams.get("genres") // comma-separated genre slugs
+        const status = searchParams.get("status") // ONGOING, COMPLETED, HIATUS, DROPPED
+        const sort = searchParams.get("sort") || "trending" // trending, newest, rating, az
+
+        // Build where clause
+        const where: Prisma.NovelWhereInput = {}
+
+        // Search query
+        if (q) {
+            where.OR = [
+                { title: { contains: q, mode: "insensitive" } },
+                { author: { contains: q, mode: "insensitive" } },
+            ]
+        }
+
+        // Genre filter
+        if (genres) {
+            const genreSlugs = genres.split(",").filter(Boolean)
+            if (genreSlugs.length > 0) {
+                where.genres = {
+                    some: {
+                        slug: { in: genreSlugs }
+                    }
+                }
+            }
+        }
+
+        // Status filter
+        if (status && ["ONGOING", "COMPLETED", "HIATUS", "DROPPED"].includes(status)) {
+            where.status = status as "ONGOING" | "COMPLETED" | "HIATUS" | "DROPPED"
+        }
+
+        // Build orderBy
+        let orderBy: Prisma.NovelOrderByWithRelationInput = { totalViews: "desc" }
+        switch (sort) {
+            case "newest":
+                orderBy = { createdAt: "desc" }
+                break
+            case "rating":
+                orderBy = { avgRating: "desc" }
+                break
+            case "az":
+                orderBy = { title: "asc" }
+                break
+            case "trending":
+            default:
+                orderBy = { totalViews: "desc" }
+                break
+        }
+
         const novels = await prisma.novel.findMany({
-            orderBy: { createdAt: "desc" },
+            where,
+            orderBy,
             include: {
                 genres: true,
                 _count: { select: { chapters: true } },
             },
         })
+
         return NextResponse.json(novels)
     } catch (error) {
         console.error("Error fetching novels:", error)

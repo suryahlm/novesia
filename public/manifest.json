@@ -1,0 +1,72 @@
+{
+    "name": "Novesia - Baca Novel Terbaik",
+    "short_name": "Novesia",
+    "description": "Platform baca novel terjemahan berkualitas dengan pengalaman membaca imersif",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#6366f1",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "books",
+        "entertainment",
+        "lifestyle"
+    ],
+    "lang": "id",
+    "dir": "ltr",
+    "screenshots": [
+        {
+            "src": "/icons/screenshot-wide.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide"
+        },
+        {
+            "src": "/icons/screenshot-narrow.png",
+            "sizes": "750x1334",
+            "type": "image/png",
+            "form_factor": "narrow"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Jelajahi Novel",
+            "short_name": "Discover",
+            "description": "Temukan novel baru",
+            "url": "/discover",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Pustaka Saya",
+            "short_name": "Library",
+            "description": "Lihat koleksi novel",
+            "url": "/library",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}
