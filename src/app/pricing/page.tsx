@@ -314,24 +314,26 @@ export default function PricingPage() {
                     {pricingPlans.map((plan) => (
                         <div
                             key={plan.id}
-                            className={`card p-5 sm:p-6 relative flex flex-col ${plan.popular
+                            className={`card p-5 sm:p-6 relative flex flex-col overflow-visible ${plan.popular
                                 ? "ring-2 ring-[var(--color-primary)]"
                                 : ""
                                 }`}
                         >
-                            {/* Badges - positioned at top right, side by side */}
-                            <div className="absolute -top-2 right-3 flex gap-2">
-                                {plan.popular && (
-                                    <span className="badge bg-amber-500 text-white text-xs px-2 py-0.5">
-                                        ⭐ Populer
-                                    </span>
-                                )}
-                                {plan.savings && (
-                                    <span className="badge bg-green-500 text-white text-xs px-2 py-0.5">
-                                        {plan.savings}
-                                    </span>
-                                )}
-                            </div>
+                            {/* Badges - positioned inside card at top right */}
+                            {(plan.popular || plan.savings) && (
+                                <div className="absolute top-3 right-3 flex gap-2 z-10">
+                                    {plan.popular && (
+                                        <span className="px-2 py-1 rounded-full bg-amber-500 text-white text-xs font-medium whitespace-nowrap">
+                                            ⭐ Populer
+                                        </span>
+                                    )}
+                                    {plan.savings && (
+                                        <span className="px-2 py-1 rounded-full bg-green-500 text-white text-xs font-medium whitespace-nowrap">
+                                            {plan.savings}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="text-center mb-4 pt-2">
                                 <h3 className="font-bold text-lg mb-2">{plan.name}</h3>
