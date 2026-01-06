@@ -33,7 +33,8 @@ export default function CommentSection({ novelId }: CommentSectionProps) {
                 const response = await fetch(`/api/comments?novelId=${novelId}`)
                 if (response.ok) {
                     const data = await response.json()
-                    setComments(data)
+                    // API returns { comments, totalCount } - extract the array
+                    setComments(Array.isArray(data) ? data : (data.comments || []))
                 }
             } catch (error) {
                 console.error("Error fetching comments:", error)
