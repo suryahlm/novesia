@@ -315,25 +315,23 @@ export default function PricingPage() {
                         <div
                             key={plan.id}
                             className={`card p-5 sm:p-6 relative flex flex-col ${plan.popular
-                                ? "ring-2 ring-[var(--color-primary)] mt-0 sm:scale-[1.02]"
-                                : "mt-4 sm:mt-0"
+                                ? "ring-2 ring-[var(--color-primary)]"
+                                : ""
                                 }`}
                         >
-                            {plan.popular && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                                    <span className="badge badge-primary px-3 py-1 whitespace-nowrap shadow-md">
-                                        ⭐ Paling Populer
+                            {/* Badges - positioned at top right, side by side */}
+                            <div className="absolute -top-2 right-3 flex gap-2">
+                                {plan.popular && (
+                                    <span className="badge bg-amber-500 text-white text-xs px-2 py-0.5">
+                                        ⭐ Populer
                                     </span>
-                                </div>
-                            )}
-
-                            {plan.savings && (
-                                <div className="absolute top-3 right-3">
-                                    <span className="badge bg-green-500 text-white text-xs">
+                                )}
+                                {plan.savings && (
+                                    <span className="badge bg-green-500 text-white text-xs px-2 py-0.5">
                                         {plan.savings}
                                     </span>
-                                </div>
-                            )}
+                                )}
+                            </div>
 
                             <div className="text-center mb-4 pt-2">
                                 <h3 className="font-bold text-lg mb-2">{plan.name}</h3>
