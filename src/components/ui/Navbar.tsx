@@ -19,6 +19,7 @@ import {
     LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import InstallAppButton from "@/components/ui/InstallAppButton"
 
 interface NavbarProps {
     locale?: "id" | "en"
@@ -124,6 +125,9 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
 
                         {/* Right Section */}
                         <div className="flex items-center gap-2">
+                            {/* Install App Button */}
+                            <InstallAppButton />
+
                             {/* Search Button */}
                             <button
                                 onClick={() => setIsSearchOpen(true)}
