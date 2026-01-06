@@ -319,23 +319,24 @@ export default function PricingPage() {
                                 : ""
                                 }`}
                         >
-                            {/* Badges - positioned inside card at top right */}
-                            {(plan.popular || plan.savings) && (
-                                <div className="absolute top-3 right-3 flex gap-2 z-10">
-                                    {plan.popular && (
-                                        <span className="px-2 py-1 rounded-full bg-amber-500 text-white text-xs font-medium whitespace-nowrap">
-                                            ⭐ Populer
-                                        </span>
-                                    )}
-                                    {plan.savings && (
-                                        <span className="px-2 py-1 rounded-full bg-green-500 text-white text-xs font-medium whitespace-nowrap">
-                                            {plan.savings}
-                                        </span>
-                                    )}
+                            {/* Hemat badge - top right */}
+                            {plan.savings && (
+                                <div className="absolute top-3 right-3 z-10">
+                                    <span className="px-2 py-1 rounded-full bg-green-500 text-white text-xs font-medium whitespace-nowrap">
+                                        {plan.savings}
+                                    </span>
                                 </div>
                             )}
 
                             <div className="text-center mb-4 pt-2">
+                                {/* Populer badge - centered above title */}
+                                {plan.popular && (
+                                    <div className="mb-2">
+                                        <span className="px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-medium">
+                                            ⭐ Populer
+                                        </span>
+                                    </div>
+                                )}
                                 <h3 className="font-bold text-lg mb-2">{plan.name}</h3>
                                 <div className="flex items-baseline justify-center gap-1">
                                     <span className="text-2xl sm:text-3xl font-bold">
