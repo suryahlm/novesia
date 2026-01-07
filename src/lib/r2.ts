@@ -113,10 +113,8 @@ export function getR2PublicUrl(key: string): string {
  * @returns CDN URL through Vercel
  */
 export function getCdnUrl(key: string): string {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "https://novesia.vercel.app"
-    return `${appUrl}/api/cdn/${key}`
+    // Always use production URL to avoid preview deployment URLs
+    return `https://novesia.vercel.app/api/cdn/${key}`
 }
 
 /**
