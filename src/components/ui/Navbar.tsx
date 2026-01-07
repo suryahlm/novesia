@@ -48,6 +48,19 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
     const user = session?.user
     const isLoading = status === "loading"
     const [userCoins, setUserCoins] = useState<number | null>(null)
+    const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
+    // Fetch branding logo
+    useEffect(() => {
+        fetch("/api/admin/branding")
+            .then(res => res.json())
+            .then(data => {
+                if (data.logoUrl) {
+                    setLogoUrl(data.logoUrl)
+                }
+            })
+            .catch(() => { })
+    }, [])
 
     // Fetch user coins when logged in
     useEffect(() => {
@@ -86,7 +99,11 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
                     <div className="flex items-center justify-between h-16">
                         {/* Logo */}
                         <Link href="/" className="flex items-center gap-2">
-                            <BookOpen className="w-8 h-8 text-[var(--color-primary)]" />
+                            {logoUrl ? (
+                                <img src={logoUrl} alt="Novesia" className="w-8 h-8 object-contain" />
+                            ) : (
+                                <BookOpen className="w-8 h-8 text-[var(--color-primary)]" />
+                            )}
                             <span className="text-xl font-bold gradient-text hidden sm:block">
                                 Novesia
                             </span>
