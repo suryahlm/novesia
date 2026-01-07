@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { uploadToR2, getR2PublicUrl, getFromR2 } from "@/lib/r2"
+import { uploadToR2, getR2PublicUrl } from "@/lib/r2"
 
 // Helper to verify admin
 async function verifyAdmin(userId: string) {
@@ -12,25 +12,49 @@ async function verifyAdmin(userId: string) {
     return user?.role === "ADMIN"
 }
 
-// Fixed paths for branding assets
+// Fixed paths for branding assets (without extension)
 const BRANDING_PATHS = {
     logo: "branding/logo",
     favicon: "branding/favicon",
     ogImage: "branding/og-image",
 }
 
-// GET - Get current branding URLs
+// Settings keys for storing actual URLs
+const BRANDING_SETTINGS = {
+    logo: "brandingLogoUrl",
+    favicon: "brandingFaviconUrl",
+    ogImage: "brandingOgImageUrl",
+}
+
+// GET - Get current branding URLs from settings
 export async function GET() {
     try {
-        // Return fixed URLs - they may or may not exist
+        // Get URLs from settings table
+        const settings = await prisma.setting.findMany({
+            where: {
+                key: {
+                    in: Object.values(BRANDING_SETTINGS)
+                }
+            }
+        })
+
+        const urlMap: Record<string, string> = {}
+        settings.forEach(s => {
+            urlMap[s.key] = JSON.parse(s.value)
+        })
+
         return NextResponse.json({
-            logoUrl: getR2PublicUrl(`${BRANDING_PATHS.logo}.png`),
-            faviconUrl: getR2PublicUrl(`${BRANDING_PATHS.favicon}.ico`),
-            ogImageUrl: getR2PublicUrl(`${BRANDING_PATHS.ogImage}.png`),
+            logoUrl: urlMap[BRANDING_SETTINGS.logo] || "",
+            faviconUrl: urlMap[BRANDING_SETTINGS.favicon] || "",
+            ogImageUrl: urlMap[BRANDING_SETTINGS.ogImage] || "",
         })
     } catch (error) {
         console.error("Error fetching branding:", error)
-        return NextResponse.json({ error: "Failed to fetch branding" }, { status: 500 })
+        return NextResponse.json({
+            logoUrl: "",
+            faviconUrl: "",
+            ogImageUrl: "",
+        })
     }
 }
 
@@ -83,12 +107,20 @@ export async function POST(request: Request) {
             }
         }
 
-        // Upload to R2 with fixed path
+        // Upload to R2 with actual extension
         const basePath = BRANDING_PATHS[type as keyof typeof BRANDING_PATHS]
         const filename = `${basePath}.${ext}`
 
         await uploadToR2(buffer, filename, file.type)
         const url = getR2PublicUrl(filename)
+
+        // Save actual URL to settings
+        const settingKey = BRANDING_SETTINGS[type as keyof typeof BRANDING_SETTINGS]
+        await prisma.setting.upsert({
+            where: { key: settingKey },
+            update: { value: JSON.stringify(url) },
+            create: { key: settingKey, value: JSON.stringify(url) },
+        })
 
         return NextResponse.json({
             success: true,
