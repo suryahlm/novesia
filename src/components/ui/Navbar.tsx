@@ -100,13 +100,15 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
                         {/* Logo */}
                         <Link href="/" className="flex items-center gap-2">
                             {logoUrl ? (
-                                <img src={logoUrl} alt="Novesia" className="h-8 w-auto max-w-[120px] object-contain" />
+                                <img src={logoUrl} alt="Novesia" className="h-10 w-auto object-contain" />
                             ) : (
-                                <BookOpen className="w-8 h-8 text-[var(--color-primary)]" />
+                                <>
+                                    <BookOpen className="w-8 h-8 text-[var(--color-primary)]" />
+                                    <span className="text-xl font-bold gradient-text hidden sm:block">
+                                        Novesia
+                                    </span>
+                                </>
                             )}
-                            <span className="text-xl font-bold gradient-text hidden sm:block">
-                                Novesia
-                            </span>
                         </Link>
 
                         {/* Desktop Navigation */}
