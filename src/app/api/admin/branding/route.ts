@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { uploadToR2, getR2PublicUrl, r2Client } from "@/lib/r2"
+import { uploadToR2, getR2PublicUrl, getCdnUrl, r2Client } from "@/lib/r2"
 import { ListObjectsV2Command } from "@aws-sdk/client-s3"
 
 // Helper to verify admin
@@ -45,7 +45,7 @@ async function findBrandingFileInR2(basePath: string): Promise<string | null> {
                 obj.Key && obj.Key.startsWith(basePath + ".")
             )
             if (file?.Key) {
-                return getR2PublicUrl(file.Key)
+                return getCdnUrl(file.Key)
             }
         }
     } catch (error) {
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
         const filename = `${basePath}.${ext}`
 
         await uploadToR2(buffer, filename, file.type)
-        const url = getR2PublicUrl(filename)
+        const url = getCdnUrl(filename)
 
         // Save actual URL to settings
         const settingKey = BRANDING_SETTINGS[type as keyof typeof BRANDING_SETTINGS]

@@ -99,12 +99,24 @@ export async function deleteFromR2(key: string): Promise<void> {
 }
 
 /**
- * Get public URL for a file in R2
+ * Get public URL for a file in R2 (direct R2 URL - may be blocked)
  * @param key - Object key
  * @returns Public URL
  */
 export function getR2PublicUrl(key: string): string {
     return `${R2_PUBLIC_URL}/${key}`
+}
+
+/**
+ * Get CDN URL for a file (via proxy API - not blocked)
+ * @param key - Object key
+ * @returns CDN URL through Vercel
+ */
+export function getCdnUrl(key: string): string {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "https://novesia.vercel.app"
+    return `${appUrl}/api/cdn/${key}`
 }
 
 /**
