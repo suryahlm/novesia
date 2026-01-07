@@ -141,13 +141,23 @@ export default function BookCard({
                         </p>
                     )}
 
-                    {/* Rating */}
-                    {rating > 0 && (
-                        <div className="flex items-center gap-1 mt-1.5">
-                            <Star className="w-3.5 h-3.5 fill-[var(--color-accent)] text-[var(--color-accent)]" />
-                            <span className="text-xs font-medium">{rating.toFixed(1)}</span>
-                        </div>
-                    )}
+                    {/* Stats row - visible on mobile */}
+                    <div className="flex items-center gap-2 mt-1.5 text-xs text-[var(--text-muted)]">
+                        <span className="flex items-center gap-0.5">
+                            <Eye className="w-3 h-3" />
+                            {formatNumber(views)}
+                        </span>
+                        <span className="flex items-center gap-0.5">
+                            <BookOpen className="w-3 h-3" />
+                            {chaptersCount}
+                        </span>
+                        {rating > 0 && (
+                            <span className="flex items-center gap-0.5 ml-auto">
+                                <Star className="w-3 h-3 fill-[var(--color-accent)] text-[var(--color-accent)]" />
+                                {rating.toFixed(1)}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
         </Link>
