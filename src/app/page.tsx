@@ -202,14 +202,14 @@ export default async function HomePage() {
               title="Jelajahi Genre"
               href="/genre"
             />
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
               {genres.map((genre) => {
                 const isImageUrl = genre.icon && (genre.icon.startsWith("http") || genre.icon.startsWith("/"))
                 return (
                   <Link
                     key={genre.slug}
                     href={`/genre/${genre.slug}`}
-                    className="card p-4 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
+                    className="card p-4 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all flex-shrink-0"
                   >
                     <div className="w-12 h-12 mx-auto mb-2 rounded-lg overflow-hidden flex items-center justify-center bg-[var(--bg-tertiary)]">
                       {isImageUrl ? (
