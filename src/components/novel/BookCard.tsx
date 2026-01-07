@@ -114,8 +114,8 @@ export default function BookCard({
                         </span>
                     </div>
 
-                    {/* Quick Stats Overlay (shown on hover) */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                    {/* Quick Stats Overlay (shown on hover - desktop only) */}
+                    <div className="hidden sm:block absolute bottom-0 left-0 right-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                         <div className="flex items-center justify-between text-white text-xs">
                             <span className="flex items-center gap-1">
                                 <Eye className="w-3 h-3" />
