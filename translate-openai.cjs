@@ -6,7 +6,7 @@ require("dotenv").config({ path: "./scraper-data/.env" });
 // Initialize OpenAI
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Translation prompt
+// Translation prompt - ONLY for chapter content, NOT titles
 const SYSTEM_PROMPT = `You are an expert professional translator for Web Novels, capable of handling mixed genres including "Interstellar", "Cultivation (Xianxia/Xuanhuan)", "Historical", and "Transmigration".
 
 Your Goal: Translate the input text from English to Indonesian (Bahasa Indonesia) with a natural, immersive, and professional literary style suitable for the detected genre.
@@ -68,15 +68,21 @@ const RAW_DIR = "./scraper-data/data/raw/novels";
 const TRANSLATED_DIR = "./scraper-data/data/translated/novels";
 const PROGRESS_FILE = "./translation-progress-openai.json";
 
-// Rate limiting (OpenAI: much higher limits)
-const DELAY_MS = 1000; // 1 second between requests
+// Rate limiting
+const DELAY_MS = 1000;
 const MAX_RETRIES = 3;
+
+// SPECIFIC NOVELS TO TRANSLATE (by ID prefix)
+const NOVELS_TO_TRANSLATE = [
+    "2137", // Zombie King is on the hot search again with his cubs
+    "2192", // When I woke up, I inherited the earth [Interstellar]
+];
 
 // Helper: Sleep
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Helper: Translate single chapter
-async function translateChapter(content, novelTitle, chapterNum) {
+// Helper: Translate single chapter content ONLY
+async function translateChapterContent(content, novelTitle, chapterNum) {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
             const response = await openai.chat.completions.create({
@@ -124,6 +130,7 @@ async function translateNovels() {
     console.log("OPENAI TRANSLATION SCRIPT (GPT-4o-mini)");
     console.log("=".repeat(60));
     console.log(`Started at: ${new Date().toLocaleString()}`);
+    console.log(`Novels to translate: ${NOVELS_TO_TRANSLATE.join(", ")}`);
 
     // Ensure output directory exists
     if (!fs.existsSync(TRANSLATED_DIR)) {
@@ -133,10 +140,11 @@ async function translateNovels() {
     // Get all novel files
     const allNovelFiles = fs.readdirSync(RAW_DIR).filter((f) => f.endsWith(".json"));
 
-    // Limit to first 2 novels
-    const MAX_NOVELS = 2;
-    const novelFiles = allNovelFiles.slice(0, MAX_NOVELS);
-    console.log(`Found ${allNovelFiles.length} novels, processing first ${MAX_NOVELS}\n`);
+    // Filter to only translate specified novels
+    const novelFiles = allNovelFiles.filter((f) =>
+        NOVELS_TO_TRANSLATE.some((id) => f.startsWith(id + "-"))
+    );
+    console.log(`Found ${novelFiles.length} matching novels\n`);
 
     // Load progress
     const progress = loadProgress();
@@ -154,10 +162,17 @@ async function translateNovels() {
         try {
             // Load novel data
             const novelData = JSON.parse(fs.readFileSync(novelPath, "utf8"));
-            const novelTitle = novelData.title || file;
             const chapters = novelData.chapters || [];
 
-            console.log(`  Title: ${novelTitle}`);
+            // KEEP ORIGINAL ENGLISH TITLE - DO NOT TRANSLATE
+            const novelTitle = novelData.title || file.replace(".json", "");
+
+            console.log(`  Title: ${novelTitle} (ENGLISH - NOT TRANSLATED)`);
+            console.log(`  Author: ${novelData.author || "Unknown"}`);
+            console.log(`  Status: ${novelData.status || "unknown"}`);
+            console.log(`  Genres: ${(novelData.genres || []).join(", ") || "none"}`);
+            console.log(`  Synopsis: ${novelData.synopsis ? "Yes" : "No"}`);
+            console.log(`  Cover: ${novelData.cover ? "Yes" : "No"}`);
             console.log(`  Chapters: ${chapters.length}`);
 
             // Initialize progress for this novel
@@ -165,10 +180,26 @@ async function translateNovels() {
                 progress[file] = { translated: [], lastChapter: 0 };
             }
 
-            // Load existing translated data or start fresh
-            let translatedData = { ...novelData, chapters: [] };
+            // Prepare translated data with FULL METADATA (English title preserved)
+            let translatedData = {
+                // PRESERVE ALL ORIGINAL METADATA
+                title: novelTitle, // ENGLISH - NOT TRANSLATED
+                titleOriginal: novelTitle, // Keep original for reference
+                author: novelData.author || "Unknown",
+                synopsis: novelData.synopsis || "",
+                synopsisOriginal: novelData.synopsis || "",
+                cover: novelData.cover || "",
+                status: novelData.status || "ongoing",
+                genres: novelData.genres || [],
+                sourceUrl: novelData.sourceUrl || "",
+                totalChapters: chapters.length,
+                chapters: [],
+            };
+
+            // Load existing if resuming
             if (fs.existsSync(outputPath)) {
-                translatedData = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+                const existing = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+                translatedData.chapters = existing.chapters || [];
             }
 
             // Process chapters
@@ -185,18 +216,20 @@ async function translateNovels() {
                 console.log(`  Translating chapter ${chapterNum}/${chapters.length}...`);
 
                 try {
-                    // Translate content
-                    const translatedContent = await translateChapter(
+                    // Translate CONTENT only, keep title in English
+                    const translatedContent = await translateChapterContent(
                         chapter.content,
                         novelTitle,
                         chapterNum
                     );
 
-                    // Add to translated data
+                    // Add to translated data - TITLE STAYS ENGLISH
                     translatedData.chapters[i] = {
-                        ...chapter,
-                        contentOriginal: chapter.content,
+                        number: chapterNum,
+                        title: chapter.title || `Chapter ${chapterNum}`, // ENGLISH - NOT TRANSLATED
+                        titleOriginal: chapter.title || `Chapter ${chapterNum}`,
                         content: translatedContent,
+                        contentOriginal: chapter.content,
                     };
 
                     // Update progress

@@ -106,15 +106,36 @@ export async function GET() {
             }, { status: 200 })
         }
 
-        // Get first chapter of each novel to extract metadata
+        // Get metadata of each novel from metadata.json
         const novelsWithMeta = await Promise.all(
             scannedNovels.map(async (novel) => {
-                const chapterData = await getJsonFromR2<R2Chapter>(
-                    `novels/${novel.id}/chapter-1.json`
+                // Try to read metadata.json first
+                interface NovelMetadata {
+                    id?: string
+                    title?: string
+                    author?: string
+                    synopsis?: string
+                    status?: string
+                    genres?: string[]
+                    cover?: string
+                    totalChapters?: number
+                }
+
+                const metadata = await getJsonFromR2<NovelMetadata>(
+                    `novels/${novel.id}/metadata.json`
                 )
 
-                // Generate slug from novel ID (or from title if available)
-                const slug = `novel-${novel.id}`
+                // Fallback to chapter-1 if no metadata
+                const chapterData = !metadata ? await getJsonFromR2<R2Chapter>(
+                    `novels/${novel.id}/chapter-1.json`
+                ) : null
+
+                // Generate slug from title or ID
+                const title = metadata?.title || `Novel ${novel.id}`
+                const slug = title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "") || `novel-${novel.id}`
 
                 // Check if already imported
                 const existing = await prisma.novel.findFirst({
@@ -128,15 +149,13 @@ export async function GET() {
 
                 return {
                     id: novel.id,
-                    title: chapterData?.originalTitle
-                        ? `Novel ${novel.id}`
-                        : `Novel ${novel.id}`,
+                    title: metadata?.title || `Novel ${novel.id}`,
                     slug,
-                    coverUrl: getR2PublicUrl(`covers/${novel.id}.jpg`),
-                    author: "Unknown",
-                    synopsis: `Novel dengan ${novel.totalChapters} chapter dari R2 storage.`,
-                    status: "ongoing",
-                    genres: ["Fantasy"],
+                    coverUrl: metadata?.cover || getR2PublicUrl(`covers/${novel.id}.jpg`),
+                    author: metadata?.author || "Unknown",
+                    synopsis: metadata?.synopsis || `Novel dengan ${novel.totalChapters} chapter dari R2 storage.`,
+                    status: metadata?.status || "ongoing",
+                    genres: metadata?.genres || ["Fantasy"],
                     totalChapters: novel.totalChapters,
                     isImported: !!existing,
                     folderPath: novel.folderPath,
@@ -182,7 +201,30 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Novel tidak ditemukan di R2" }, { status: 404 })
         }
 
-        const slug = `novel-${novelId}`
+        // Read metadata.json for full novel info
+        interface NovelMetadata {
+            id?: string
+            title?: string
+            author?: string
+            synopsis?: string
+            status?: string
+            genres?: string[]
+            cover?: string
+        }
+        const metadata = await getJsonFromR2<NovelMetadata>(`novels/${novelId}/metadata.json`)
+
+        // Use provided values or fallback to metadata
+        const novelTitle = title || metadata?.title || `Novel ${novelId}`
+        const novelAuthor = author || metadata?.author || "Unknown"
+        const novelSynopsis = synopsis || metadata?.synopsis || `Novel dengan ${novelInfo.totalChapters} chapter.`
+        const novelStatus = metadata?.status?.toUpperCase() === "COMPLETED" ? "COMPLETED" : "ONGOING"
+        const novelCover = metadata?.cover || getR2PublicUrl(`covers/${novelId}.jpg`)
+
+        // Generate slug from title
+        const slug = novelTitle
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "") || `novel-${novelId}`
 
         // Check if already exists
         const existing = await prisma.novel.findUnique({
@@ -193,8 +235,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Novel sudah ada di database" }, { status: 400 })
         }
 
-        // Get or create genres
-        const genreNames = genres || ["Fantasy"]
+        // Get or create genres - use metadata genres if available
+        const genreNames = genres || metadata?.genres || ["Fantasy"]
         const genreRecords = await Promise.all(
             genreNames.map(async (genreName: string) => {
                 const genreSlug = genreName.toLowerCase().replace(/\s+/g, "-")
@@ -206,18 +248,15 @@ export async function POST(request: Request) {
             })
         )
 
-        // Get first chapter to extract title if not provided
-        const firstChapter = await getJsonFromR2<R2Chapter>(`novels/${novelId}/chapter-1.json`)
-
-        // Create novel
+        // Create novel with full metadata
         const novel = await prisma.novel.create({
             data: {
-                title: title || `Novel ${novelId}`,
+                title: novelTitle,
                 slug,
-                synopsis: synopsis || `Novel dengan ${novelInfo.totalChapters} chapter dari R2 storage.`,
-                cover: getR2PublicUrl(`covers/${novelId}.jpg`),
-                author: author || "Unknown",
-                status: "ONGOING",
+                synopsis: novelSynopsis,
+                cover: novelCover,
+                author: novelAuthor,
+                status: novelStatus,
                 genres: {
                     connect: genreRecords.map(g => ({ id: g.id }))
                 }
