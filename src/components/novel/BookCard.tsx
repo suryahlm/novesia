@@ -49,8 +49,8 @@ export default function BookCard({
     const coverUrl = getProxiedImageUrl(cover)
 
     const sizeClasses = {
-        sm: "w-full",
-        md: "w-full",
+        sm: "w-[100px] sm:w-28",
+        md: "w-[120px] sm:w-36",
         lg: "w-[140px] sm:w-44",
     }
 

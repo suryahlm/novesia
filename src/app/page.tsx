@@ -255,6 +255,7 @@ export default async function HomePage() {
                   chaptersCount={novel._count.chapters}
                   status={novel.status}
                   isPremium={novel.isPremium}
+                  size="sm"
                 />
               ))}
             </div>
