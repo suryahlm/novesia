@@ -190,6 +190,7 @@ export default async function HomePage() {
                   status={novel.status}
                   isPremium={novel.isPremium}
                   isNew
+                  size="lg"
                 />
               ))}
             </div>
