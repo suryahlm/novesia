@@ -196,13 +196,13 @@ export default async function HomePage() {
           </section>
 
           {/* Genres Grid */}
-          <section className="overflow-hidden">
+          <section>
             <SectionHeader
               icon={Star}
               title="Jelajahi Genre"
               href="/genre"
             />
-            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
               {genres.map((genre) => {
                 const isImageUrl = genre.icon && (genre.icon.startsWith("http") || genre.icon.startsWith("/"))
                 return (
