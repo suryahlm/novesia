@@ -49,24 +49,24 @@ export default function BookCard({
     const coverUrl = getProxiedImageUrl(cover)
 
     const sizeClasses = {
-        sm: "w-24",
-        md: "w-32 sm:w-36",
-        lg: "w-40 sm:w-44",
+        sm: "w-[100px]",
+        md: "w-[120px] sm:w-36",
+        lg: "w-[140px] sm:w-44",
     }
 
     return (
         <Link
             href={`/novel/${slug}`}
-            className={cn("group block", sizeClasses[size])}
+            className={cn("group block flex-shrink-0", sizeClasses[size])}
         >
             <div className="card overflow-hidden">
                 {/* Cover Image */}
-                <div className="relative aspect-book bg-[var(--bg-tertiary)] overflow-hidden">
+                <div className="relative w-full" style={{ aspectRatio: '2/3' }}>
                     {coverUrl ? (
                         <img
                             src={coverUrl}
                             alt={title}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -157,9 +157,9 @@ export default function BookCard({
 // Skeleton Loading Component
 export function BookCardSkeleton({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
     const sizeClasses = {
-        sm: "w-24",
-        md: "w-32 sm:w-36",
-        lg: "w-40 sm:w-44",
+        sm: "w-[100px]",
+        md: "w-[120px] sm:w-36",
+        lg: "w-[140px] sm:w-44",
     }
 
     return (
