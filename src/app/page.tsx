@@ -71,14 +71,22 @@ async function getNewReleases() {
 }
 
 async function getTopRated() {
-  return prisma.novel.findMany({
-    orderBy: { avgRating: "desc" },
-    take: 10,
+  const novels = await prisma.novel.findMany({
     include: {
       genres: true,
       _count: { select: { chapters: true } },
     },
   })
+
+  // Sort by weighted score: rating * 20 + log10(views)
+  // This balances high rating with popularity
+  return novels
+    .map(novel => ({
+      ...novel,
+      score: (novel.avgRating * 20) + Math.log10(Math.max(novel.totalViews, 1))
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10)
 }
 
 async function getGenres() {
