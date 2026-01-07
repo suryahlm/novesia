@@ -148,10 +148,10 @@ export default function ContinueReadingSection() {
                                     {/* Continue Button */}
                                     <Link
                                         href={`/read/${item.chapter.id}`}
-                                        className="mt-auto pt-2"
+                                        className="mt-auto pt-1"
                                     >
-                                        <button className="btn btn-primary w-full text-sm py-1.5">
-                                            <Play className="w-3 h-3 mr-1.5 fill-current" />
+                                        <button className="btn btn-primary w-full text-xs py-1 px-2">
+                                            <Play className="w-3 h-3 mr-1 fill-current" />
                                             Lanjutkan
                                         </button>
                                     </Link>
