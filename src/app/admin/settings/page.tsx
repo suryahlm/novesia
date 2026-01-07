@@ -212,7 +212,7 @@ export default function AdminSettingsPage() {
                                     Upload
                                     <input
                                         type="file"
-                                        accept="image/x-icon,image/png"
+                                        accept="image/x-icon,image/png,image/webp"
                                         className="hidden"
                                         onChange={(e) => {
                                             const file = e.target.files?.[0]
@@ -246,7 +246,7 @@ export default function AdminSettingsPage() {
                                     Upload
                                     <input
                                         type="file"
-                                        accept="image/png,image/jpeg,image/jpg"
+                                        accept="image/png,image/jpeg,image/jpg,image/webp"
                                         className="hidden"
                                         onChange={(e) => {
                                             const file = e.target.files?.[0]

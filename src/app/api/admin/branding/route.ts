@@ -74,8 +74,8 @@ export async function POST(request: Request) {
 
         // Validate extensions based on type
         if (type === "favicon") {
-            if (!["ico", "png"].includes(ext)) {
-                return NextResponse.json({ error: "Favicon must be .ico or .png" }, { status: 400 })
+            if (!["ico", "png", "webp"].includes(ext)) {
+                return NextResponse.json({ error: "Favicon must be .ico, .png or .webp" }, { status: 400 })
             }
         } else {
             if (!["png", "jpg", "jpeg", "svg", "webp"].includes(ext)) {
