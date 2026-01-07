@@ -202,16 +202,16 @@ export default async function HomePage() {
               title="Jelajahi Genre"
               href="/genre"
             />
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-              {genres.map((genre) => {
+            <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3">
+              {genres.slice(0, 8).map((genre) => {
                 const isImageUrl = genre.icon && (genre.icon.startsWith("http") || genre.icon.startsWith("/"))
                 return (
                   <Link
                     key={genre.slug}
                     href={`/genre/${genre.slug}`}
-                    className="card p-4 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
+                    className="card p-2 sm:p-4 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
                   >
-                    <div className="w-12 h-12 mx-auto mb-2 rounded-lg overflow-hidden flex items-center justify-center bg-[var(--bg-tertiary)]">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-1 sm:mb-2 rounded-lg overflow-hidden flex items-center justify-center bg-[var(--bg-tertiary)]">
                       {isImageUrl ? (
                         <img
                           src={getProxiedImageUrl(genre.icon) || genre.icon!}
@@ -219,13 +219,13 @@ export default async function HomePage() {
                           className="w-full h-full object-cover"
                         />
                       ) : genre.icon ? (
-                        <span className="text-2xl">{genre.icon}</span>
+                        <span className="text-xl sm:text-2xl">{genre.icon}</span>
                       ) : (
-                        <BookOpen className="w-6 h-6 text-[var(--text-muted)]" />
+                        <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--text-muted)]" />
                       )}
                     </div>
-                    <span className="font-medium text-sm block">{genre.name}</span>
-                    <span className="text-xs text-[var(--text-muted)]">
+                    <span className="font-medium text-xs sm:text-sm block truncate">{genre.name}</span>
+                    <span className="text-xs text-[var(--text-muted)] hidden sm:block">
                       {genre._count.novels} novel
                     </span>
                   </Link>
