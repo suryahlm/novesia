@@ -202,16 +202,16 @@ export default async function HomePage() {
               title="Jelajahi Genre"
               href="/genre"
             />
-            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               {genres.map((genre) => {
                 const isImageUrl = genre.icon && (genre.icon.startsWith("http") || genre.icon.startsWith("/"))
                 return (
                   <Link
                     key={genre.slug}
                     href={`/genre/${genre.slug}`}
-                    className="card p-3 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all flex-shrink-0 min-w-[80px]"
+                    className="card p-4 text-center hover:ring-2 hover:ring-[var(--color-primary)] transition-all"
                   >
-                    <div className="w-10 h-10 mx-auto mb-2 rounded-lg overflow-hidden flex items-center justify-center bg-[var(--bg-tertiary)]">
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-lg overflow-hidden flex items-center justify-center bg-[var(--bg-tertiary)]">
                       {isImageUrl ? (
                         <img
                           src={getProxiedImageUrl(genre.icon) || genre.icon!}
@@ -219,12 +219,12 @@ export default async function HomePage() {
                           className="w-full h-full object-cover"
                         />
                       ) : genre.icon ? (
-                        <span className="text-xl">{genre.icon}</span>
+                        <span className="text-2xl">{genre.icon}</span>
                       ) : (
-                        <BookOpen className="w-5 h-5 text-[var(--text-muted)]" />
+                        <BookOpen className="w-6 h-6 text-[var(--text-muted)]" />
                       )}
                     </div>
-                    <span className="font-medium text-xs block whitespace-nowrap">{genre.name}</span>
+                    <span className="font-medium text-sm block">{genre.name}</span>
                     <span className="text-xs text-[var(--text-muted)]">
                       {genre._count.novels} novel
                     </span>
