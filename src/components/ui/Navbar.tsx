@@ -100,7 +100,7 @@ export default function Navbar({ locale = "id" }: NavbarProps) {
                         {/* Logo */}
                         <Link href="/" className="flex items-center gap-2">
                             {logoUrl ? (
-                                <img src={logoUrl} alt="Novesia" className="h-10 w-auto object-contain" />
+                                <img src={logoUrl} alt="Novesia" className="h-12 w-auto object-contain" />
                             ) : (
                                 <>
                                     <BookOpen className="w-8 h-8 text-[var(--color-primary)]" />
