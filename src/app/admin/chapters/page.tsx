@@ -1,9 +1,8 @@
 import Link from "next/link"
-import { FileText, BookOpen, Eye, Edit, Plus } from "lucide-react"
+import { FileText, BookOpen, Eye, Plus } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
-import { getProxiedImageUrl } from "@/lib/image-utils"
-import DeleteChapterButton from "@/components/admin/DeleteChapterButton"
+import NovelChapterAccordion from "@/components/admin/NovelChapterAccordion"
 
 async function getAllNovels() {
     const novels = await prisma.novel.findMany({
@@ -97,93 +96,9 @@ export default async function AdminChaptersPage() {
                     </Link>
                 </div>
             ) : (
-                <div className="space-y-6">
-                    {novels.map((novel) => (
-                        <div key={novel.id} className="card overflow-hidden">
-                            <div className="flex items-center justify-between p-4 border-b border-[var(--bg-tertiary)] bg-[var(--bg-secondary)]">
-                                <div className="flex items-center gap-3">
-                                    {novel.cover ? (
-                                        <img
-                                            src={getProxiedImageUrl(novel.cover) || novel.cover}
-                                            alt={novel.title}
-                                            className="w-10 h-14 object-cover rounded"
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-14 bg-[var(--bg-tertiary)] rounded flex items-center justify-center">
-                                            <BookOpen className="w-5 h-5 text-[var(--text-muted)]" />
-                                        </div>
-                                    )}
-                                    <div>
-                                        <Link
-                                            href={`/novel/${novel.slug}`}
-                                            className="font-semibold hover:text-[var(--color-primary)]"
-                                        >
-                                            {novel.title}
-                                        </Link>
-                                        <p className="text-sm text-[var(--text-muted)]">
-                                            {novel.chapters.length} chapter
-                                        </p>
-                                    </div>
-                                </div>
-                                <Link
-                                    href={`/admin/novels/${novel.id}/chapters/new`}
-                                    className="btn btn-primary text-sm"
-                                >
-                                    <Plus className="w-4 h-4 mr-1" />
-                                    Tambah Chapter
-                                </Link>
-                            </div>
-
-                            {novel.chapters.length === 0 ? (
-                                <div className="p-6 text-center text-[var(--text-muted)]">
-                                    <p>Belum ada chapter. Klik "Tambah Chapter" untuk mulai menulis.</p>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-[var(--bg-tertiary)]">
-                                    {novel.chapters.map((chapter) => (
-                                        <div
-                                            key={chapter.id}
-                                            className="flex items-center justify-between p-4 hover:bg-[var(--bg-secondary)] transition-colors"
-                                        >
-                                            <div>
-                                                <p className="font-medium">
-                                                    Chapter {chapter.chapterNumber}: {chapter.title}
-                                                </p>
-                                                <p className="text-sm text-[var(--text-muted)]">
-                                                    {chapter.wordCount} kata • {formatNumber(chapter.views)} views
-                                                    {chapter.isPremium && (
-                                                        <span className="ml-2 badge badge-premium text-xs">Premium</span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Link
-                                                    href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
-                                                    className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
-                                                    title="Lihat"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </Link>
-                                                <Link
-                                                    href={`/admin/chapters/${chapter.id}/edit`}
-                                                    className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </Link>
-                                                <DeleteChapterButton
-                                                    chapterId={chapter.id}
-                                                    chapterTitle={`Chapter ${chapter.chapterNumber}: ${chapter.title}`}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
+                <NovelChapterAccordion novels={novels} />
             )}
         </div>
     )
 }
+

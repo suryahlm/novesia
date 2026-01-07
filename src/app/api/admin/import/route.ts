@@ -153,7 +153,7 @@ export async function GET() {
                     slug,
                     coverUrl: metadata?.cover || getR2PublicUrl(`covers/${novel.id}.jpg`),
                     author: metadata?.author || "Unknown",
-                    synopsis: metadata?.synopsis || `Novel dengan ${novel.totalChapters} chapter dari R2 storage.`,
+                    synopsis: metadata?.synopsis || "",
                     status: metadata?.status || "ongoing",
                     genres: metadata?.genres || ["Fantasy"],
                     totalChapters: novel.totalChapters,
@@ -216,7 +216,7 @@ export async function POST(request: Request) {
         // Use provided values or fallback to metadata
         const novelTitle = title || metadata?.title || `Novel ${novelId}`
         const novelAuthor = author || metadata?.author || "Unknown"
-        const novelSynopsis = synopsis || metadata?.synopsis || `Novel dengan ${novelInfo.totalChapters} chapter.`
+        const novelSynopsis = synopsis || metadata?.synopsis || ""
         const novelStatus = metadata?.status?.toUpperCase() === "COMPLETED" ? "COMPLETED" : "ONGOING"
         const novelCover = metadata?.cover || getR2PublicUrl(`covers/${novelId}.jpg`)
 
