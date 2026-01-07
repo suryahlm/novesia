@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
-import { ChevronDown, ChevronRight, Eye, Edit, Plus, BookOpen } from "lucide-react"
+import { ChevronDown, ChevronRight, Eye, Edit, Plus, BookOpen, Search, X } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 import { getProxiedImageUrl } from "@/lib/image-utils"
 import DeleteChapterButton from "@/components/admin/DeleteChapterButton"
@@ -30,128 +30,177 @@ interface Props {
 
 export default function NovelChapterAccordion({ novels }: Props) {
     const [expandedNovel, setExpandedNovel] = useState<string | null>(null)
+    const [searchQuery, setSearchQuery] = useState("")
 
     const toggleNovel = (novelId: string) => {
         setExpandedNovel(prev => prev === novelId ? null : novelId)
     }
 
+    // Filter novels based on search query
+    const filteredNovels = useMemo(() => {
+        if (!searchQuery.trim()) return novels
+        const query = searchQuery.toLowerCase()
+        return novels.filter(novel =>
+            novel.title.toLowerCase().includes(query)
+        )
+    }, [novels, searchQuery])
+
+    // Auto-expand when search matches exactly one novel
+    useEffect(() => {
+        if (filteredNovels.length === 1 && searchQuery.trim()) {
+            setExpandedNovel(filteredNovels[0].id)
+        }
+    }, [filteredNovels, searchQuery])
+
     return (
-        <div className="space-y-2">
-            {novels.map((novel) => (
-                <div key={novel.id} className="card overflow-hidden">
-                    {/* Novel Header - always visible */}
-                    <div
-                        className="flex items-center justify-between p-4 cursor-pointer hover:bg-[var(--bg-secondary)] transition-colors"
-                        onClick={() => toggleNovel(novel.id)}
+        <div className="space-y-4">
+            {/* Local Search Bar */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
+                <input
+                    type="text"
+                    placeholder="Cari novel..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-10 py-3 bg-[var(--bg-secondary)] border border-[var(--bg-tertiary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                />
+                {searchQuery && (
+                    <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-[var(--bg-tertiary)] rounded"
                     >
-                        <div className="flex items-center gap-3">
-                            {/* Expand/Collapse Arrow */}
-                            <button
-                                className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors"
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    toggleNovel(novel.id)
-                                }}
+                        <X className="w-4 h-4 text-[var(--text-muted)]" />
+                    </button>
+                )}
+            </div>
+
+            {/* Search Results Count */}
+            {searchQuery && (
+                <p className="text-sm text-[var(--text-muted)]">
+                    Ditemukan {filteredNovels.length} novel
+                </p>
+            )}
+
+            {/* Novel List */}
+            <div className="space-y-2">
+                {filteredNovels.length === 0 ? (
+                    <div className="card p-8 text-center text-[var(--text-muted)]">
+                        <p>Novel tidak ditemukan untuk "{searchQuery}"</p>
+                    </div>
+                ) : (
+                    filteredNovels.map((novel) => (
+                        <div key={novel.id} className="card overflow-hidden">
+                            {/* Novel Header - always visible */}
+                            <div
+                                className="flex items-center justify-between p-4 cursor-pointer hover:bg-[var(--bg-secondary)] transition-colors"
+                                onClick={() => toggleNovel(novel.id)}
                             >
-                                {expandedNovel === novel.id ? (
-                                    <ChevronDown className="w-5 h-5 text-[var(--text-muted)]" />
-                                ) : (
-                                    <ChevronRight className="w-5 h-5 text-[var(--text-muted)]" />
-                                )}
-                            </button>
+                                <div className="flex items-center gap-3">
+                                    {/* Expand/Collapse Arrow */}
+                                    <button
+                                        className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            toggleNovel(novel.id)
+                                        }}
+                                    >
+                                        {expandedNovel === novel.id ? (
+                                            <ChevronDown className="w-5 h-5 text-[var(--text-muted)]" />
+                                        ) : (
+                                            <ChevronRight className="w-5 h-5 text-[var(--text-muted)]" />
+                                        )}
+                                    </button>
 
-                            {/* Cover */}
-                            {novel.cover ? (
-                                <img
-                                    src={getProxiedImageUrl(novel.cover) || novel.cover}
-                                    alt={novel.title}
-                                    className="w-10 h-14 object-cover rounded"
-                                />
-                            ) : (
-                                <div className="w-10 h-14 bg-[var(--bg-tertiary)] rounded flex items-center justify-center">
-                                    <BookOpen className="w-5 h-5 text-[var(--text-muted)]" />
+                                    {/* Cover */}
+                                    {novel.cover ? (
+                                        <img
+                                            src={getProxiedImageUrl(novel.cover) || novel.cover}
+                                            alt={novel.title}
+                                            className="w-10 h-14 object-cover rounded"
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-14 bg-[var(--bg-tertiary)] rounded flex items-center justify-center">
+                                            <BookOpen className="w-5 h-5 text-[var(--text-muted)]" />
+                                        </div>
+                                    )}
+
+                                    {/* Title & Chapter Count */}
+                                    <div>
+                                        <span className="font-semibold">
+                                            {novel.title}
+                                        </span>
+                                        <p className="text-sm text-[var(--text-muted)]">
+                                            {novel.chapters.length} chapter
+                                        </p>
+                                    </div>
                                 </div>
-                            )}
 
-                            {/* Title & Chapter Count */}
-                            <div>
+                                {/* Add Chapter Button */}
                                 <Link
-                                    href={`/novel/${novel.slug}`}
-                                    className="font-semibold hover:text-[var(--color-primary)]"
+                                    href={`/admin/novels/${novel.id}/chapters/new`}
+                                    className="btn btn-primary text-sm"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    {novel.title}
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Tambah Chapter
                                 </Link>
-                                <p className="text-sm text-[var(--text-muted)]">
-                                    {novel.chapters.length} chapter
-                                </p>
                             </div>
-                        </div>
 
-                        {/* Add Chapter Button */}
-                        <Link
-                            href={`/admin/novels/${novel.id}/chapters/new`}
-                            className="btn btn-primary text-sm"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Tambah Chapter
-                        </Link>
-                    </div>
-
-                    {/* Chapters List - collapsed by default */}
-                    {expandedNovel === novel.id && (
-                        <div className="border-t border-[var(--bg-tertiary)]">
-                            {novel.chapters.length === 0 ? (
-                                <div className="p-6 text-center text-[var(--text-muted)]">
-                                    <p>Belum ada chapter. Klik "Tambah Chapter" untuk mulai menulis.</p>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-[var(--bg-tertiary)] max-h-96 overflow-y-auto">
-                                    {novel.chapters.map((chapter) => (
-                                        <div
-                                            key={chapter.id}
-                                            className="flex items-center justify-between p-4 hover:bg-[var(--bg-secondary)] transition-colors"
-                                        >
-                                            <div>
-                                                <p className="font-medium">
-                                                    Chapter {chapter.chapterNumber}: {chapter.title}
-                                                </p>
-                                                <p className="text-sm text-[var(--text-muted)]">
-                                                    {chapter.wordCount} kata • {formatNumber(chapter.views)} views
-                                                    {chapter.isPremium && (
-                                                        <span className="ml-2 badge badge-premium text-xs">Premium</span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Link
-                                                    href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
-                                                    className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
-                                                    title="Lihat"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </Link>
-                                                <Link
-                                                    href={`/admin/chapters/${chapter.id}/edit`}
-                                                    className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </Link>
-                                                <DeleteChapterButton
-                                                    chapterId={chapter.id}
-                                                    chapterTitle={`Chapter ${chapter.chapterNumber}: ${chapter.title}`}
-                                                />
-                                            </div>
+                            {/* Chapters List - collapsed by default */}
+                            {expandedNovel === novel.id && (
+                                <div className="border-t border-[var(--bg-tertiary)]">
+                                    {novel.chapters.length === 0 ? (
+                                        <div className="p-6 text-center text-[var(--text-muted)]">
+                                            <p>Belum ada chapter. Klik "Tambah Chapter" untuk mulai menulis.</p>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        <div className="divide-y divide-[var(--bg-tertiary)] max-h-96 overflow-y-auto">
+                                            {novel.chapters.map((chapter) => (
+                                                <div
+                                                    key={chapter.id}
+                                                    className="flex items-center justify-between p-4 hover:bg-[var(--bg-secondary)] transition-colors"
+                                                >
+                                                    <div>
+                                                        <p className="font-medium">
+                                                            Chapter {chapter.chapterNumber}: {chapter.title}
+                                                        </p>
+                                                        <p className="text-sm text-[var(--text-muted)]">
+                                                            {chapter.wordCount} kata • {formatNumber(chapter.views)} views
+                                                            {chapter.isPremium && (
+                                                                <span className="ml-2 badge badge-premium text-xs">Premium</span>
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Link
+                                                            href={`/novel/${novel.slug}/${chapter.chapterNumber}`}
+                                                            className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
+                                                            title="Lihat"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </Link>
+                                                        <Link
+                                                            href={`/admin/chapters/${chapter.id}/edit`}
+                                                            className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
+                                                            title="Edit"
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </Link>
+                                                        <DeleteChapterButton
+                                                            chapterId={chapter.id}
+                                                            chapterTitle={`Chapter ${chapter.chapterNumber}: ${chapter.title}`}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
-                    )}
-                </div>
-            ))}
+                    ))
+                )}
+            </div>
         </div>
     )
 }
