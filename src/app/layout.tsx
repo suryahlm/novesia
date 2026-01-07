@@ -40,11 +40,18 @@ export const metadata: Metadata = {
     type: "website",
     locale: "id_ID",
     siteName: "Novesia",
+    images: [{
+      url: "https://pub-d7fdf7a6932b4febbd724bd48ae0c2c3.r2.dev/branding/og-image.png",
+      width: 1200,
+      height: 630,
+      alt: "Novesia - Platform Baca Novel Terbaik Indonesia",
+    }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Novesia - Baca Novel Terbaik",
     description: "Platform baca novel web terbaik dengan pengalaman membaca yang imersif.",
+    images: ["https://pub-d7fdf7a6932b4febbd724bd48ae0c2c3.r2.dev/branding/og-image.png"],
   },
   icons: {
     icon: "/favicon.ico",

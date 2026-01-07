@@ -81,6 +81,37 @@ const NOVELS_TO_TRANSLATE = [
 // Helper: Sleep
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Helper: Romanize Chinese author name to "Pinyin (原名)" format
+async function romanizeAuthorName(chineseName) {
+    if (!chineseName) return "Unknown";
+
+    // Check if already romanized (no Chinese characters)
+    const hasChinese = /[\u4e00-\u9fff]/.test(chineseName);
+    if (!hasChinese) return chineseName;
+
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a Chinese to Pinyin converter. Convert the Chinese name to Pinyin romanization. Output ONLY the romanized name followed by the original in parentheses. Example: 陆之然 -> Lu Zhiran (陆之然)"
+                },
+                {
+                    role: "user",
+                    content: chineseName
+                }
+            ],
+            temperature: 0,
+            max_tokens: 100,
+        });
+        return response.choices[0]?.message?.content?.trim() || chineseName;
+    } catch (error) {
+        console.log(`  Warning: Could not romanize author name, using original`);
+        return chineseName;
+    }
+}
+
 // Helper: Translate single chapter content ONLY
 async function translateChapterContent(content, novelTitle, chapterNum) {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -167,8 +198,12 @@ async function translateNovels() {
             // KEEP ORIGINAL ENGLISH TITLE - DO NOT TRANSLATE
             const novelTitle = novelData.title || file.replace(".json", "");
 
+            // Romanize author name: "Pinyin (原名)" format
+            const originalAuthor = novelData.author || "Unknown";
+            const romanizedAuthor = await romanizeAuthorName(originalAuthor);
+
             console.log(`  Title: ${novelTitle} (ENGLISH - NOT TRANSLATED)`);
-            console.log(`  Author: ${novelData.author || "Unknown"}`);
+            console.log(`  Author: ${romanizedAuthor}`);
             console.log(`  Status: ${novelData.status || "unknown"}`);
             console.log(`  Genres: ${(novelData.genres || []).join(", ") || "none"}`);
             console.log(`  Synopsis: ${novelData.synopsis ? "Yes" : "No"}`);
@@ -185,7 +220,8 @@ async function translateNovels() {
                 // PRESERVE ALL ORIGINAL METADATA
                 title: novelTitle, // ENGLISH - NOT TRANSLATED
                 titleOriginal: novelTitle, // Keep original for reference
-                author: novelData.author || "Unknown",
+                author: romanizedAuthor, // Romanized: "Pinyin (原名)"
+                authorOriginal: originalAuthor, // Keep original
                 synopsis: novelData.synopsis || "",
                 synopsisOriginal: novelData.synopsis || "",
                 cover: novelData.cover || "",
