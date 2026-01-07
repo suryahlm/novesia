@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { BookOpen } from "lucide-react"
+import { getProxiedImageUrl } from "@/lib/image-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -13,17 +14,6 @@ async function getGenres() {
     })
     return genres
 }
-
-const genreColors = [
-    "from-purple-500 to-pink-500",
-    "from-blue-500 to-cyan-500",
-    "from-green-500 to-emerald-500",
-    "from-orange-500 to-red-500",
-    "from-indigo-500 to-purple-500",
-    "from-pink-500 to-rose-500",
-    "from-teal-500 to-green-500",
-    "from-amber-500 to-orange-500",
-]
 
 export default async function GenrePage() {
     const genres = await getGenres()
@@ -40,21 +30,38 @@ export default async function GenrePage() {
 
                 {/* Genre Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {genres.map((genre, index) => (
+                    {genres.map((genre) => (
                         <Link
                             key={genre.id}
                             href={`/genre/${genre.slug}`}
-                            className={`relative overflow-hidden rounded-xl p-6 bg-gradient-to-br ${genreColors[index % genreColors.length]} hover:scale-[1.02] transition-transform`}
+                            className="relative overflow-hidden rounded-xl aspect-[4/3] group hover:scale-[1.02] transition-transform"
                         >
-                            <div className="relative z-10">
-                                <h3 className="text-white font-bold text-lg mb-1">
+                            {/* Background Image or Fallback */}
+                            {genre.icon && (genre.icon.startsWith("http") || genre.icon.startsWith("/")) ? (
+                                <img
+                                    src={getProxiedImageUrl(genre.icon) || genre.icon}
+                                    alt={genre.name}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-secondary)]" />
+                            )}
+
+                            {/* Dark Overlay for text readability */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+                            {/* Content */}
+                            <div className="absolute inset-0 p-4 flex flex-col justify-end">
+                                <h3 className="text-white font-bold text-lg mb-0.5 drop-shadow-lg">
                                     {genre.name}
                                 </h3>
-                                <p className="text-white/70 text-sm">
+                                <p className="text-white/80 text-sm">
                                     {genre._count.novels} novel
                                 </p>
                             </div>
-                            <BookOpen className="absolute right-4 bottom-4 w-16 h-16 text-white/20" />
+
+                            {/* Hover Effect */}
+                            <div className="absolute inset-0 bg-[var(--color-primary)]/0 group-hover:bg-[var(--color-primary)]/10 transition-colors" />
                         </Link>
                     ))}
                 </div>
@@ -68,3 +75,4 @@ export default async function GenrePage() {
         </div>
     )
 }
+
