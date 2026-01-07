@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { uploadToR2, getR2PublicUrl } from "@/lib/r2"
+import { uploadToR2, getR2PublicUrl, r2Client } from "@/lib/r2"
+import { ListObjectsV2Command } from "@aws-sdk/client-s3"
 
 // Helper to verify admin
 async function verifyAdmin(userId: string) {
@@ -11,6 +12,8 @@ async function verifyAdmin(userId: string) {
     })
     return user?.role === "ADMIN"
 }
+
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "novesia-assets"
 
 // Fixed paths for branding assets (without extension)
 const BRANDING_PATHS = {
@@ -26,10 +29,35 @@ const BRANDING_SETTINGS = {
     ogImage: "brandingOgImageUrl",
 }
 
-// GET - Get current branding URLs from settings
+// Helper: Find actual file in R2 by scanning for any extension
+async function findBrandingFileInR2(basePath: string): Promise<string | null> {
+    try {
+        const command = new ListObjectsV2Command({
+            Bucket: R2_BUCKET_NAME,
+            Prefix: basePath,
+            MaxKeys: 10,
+        })
+        const response = await r2Client.send(command)
+
+        if (response.Contents && response.Contents.length > 0) {
+            // Find first matching file
+            const file = response.Contents.find(obj =>
+                obj.Key && obj.Key.startsWith(basePath + ".")
+            )
+            if (file?.Key) {
+                return getR2PublicUrl(file.Key)
+            }
+        }
+    } catch (error) {
+        console.error(`Error scanning R2 for ${basePath}:`, error)
+    }
+    return null
+}
+
+// GET - Get current branding URLs (with R2 fallback)
 export async function GET() {
     try {
-        // Get URLs from settings table
+        // First try to get URLs from settings table
         const settings = await prisma.setting.findMany({
             where: {
                 key: {
@@ -40,13 +68,33 @@ export async function GET() {
 
         const urlMap: Record<string, string> = {}
         settings.forEach(s => {
-            urlMap[s.key] = JSON.parse(s.value)
+            try {
+                urlMap[s.key] = JSON.parse(s.value)
+            } catch {
+                urlMap[s.key] = s.value
+            }
         })
 
+        // Get URLs from settings or fallback to R2 scan
+        let logoUrl = urlMap[BRANDING_SETTINGS.logo] || ""
+        let faviconUrl = urlMap[BRANDING_SETTINGS.favicon] || ""
+        let ogImageUrl = urlMap[BRANDING_SETTINGS.ogImage] || ""
+
+        // If settings are empty, scan R2 for existing files
+        if (!logoUrl) {
+            logoUrl = await findBrandingFileInR2(BRANDING_PATHS.logo) || ""
+        }
+        if (!faviconUrl) {
+            faviconUrl = await findBrandingFileInR2(BRANDING_PATHS.favicon) || ""
+        }
+        if (!ogImageUrl) {
+            ogImageUrl = await findBrandingFileInR2(BRANDING_PATHS.ogImage) || ""
+        }
+
         return NextResponse.json({
-            logoUrl: urlMap[BRANDING_SETTINGS.logo] || "",
-            faviconUrl: urlMap[BRANDING_SETTINGS.favicon] || "",
-            ogImageUrl: urlMap[BRANDING_SETTINGS.ogImage] || "",
+            logoUrl,
+            faviconUrl,
+            ogImageUrl,
         })
     } catch (error) {
         console.error("Error fetching branding:", error)
