@@ -253,6 +253,52 @@ export default function ReaderPage({ params }: { params: Promise<{ chapterId: st
                     </div>
 
                     <div className="flex items-center gap-1">
+                        {/* Quick Theme Toggle */}
+                        <div className="hidden sm:flex items-center bg-black/10 rounded-lg p-0.5 mr-2">
+                            <button
+                                onClick={() => setSettings({ ...settings, theme: "light" })}
+                                className={cn(
+                                    "px-2 py-1 text-xs rounded-md transition-colors",
+                                    settings.theme === "light" ? "bg-white text-gray-800 shadow" : "opacity-60 hover:opacity-100"
+                                )}
+                                title="Mode Terang"
+                            >
+                                ☀️
+                            </button>
+                            <button
+                                onClick={() => setSettings({ ...settings, theme: "sepia" })}
+                                className={cn(
+                                    "px-2 py-1 text-xs rounded-md transition-colors",
+                                    settings.theme === "sepia" ? "bg-[#f5f0e6] text-[#5c4b37] shadow" : "opacity-60 hover:opacity-100"
+                                )}
+                                title="Mode Sepia"
+                            >
+                                📜
+                            </button>
+                            <button
+                                onClick={() => setSettings({ ...settings, theme: "dark" })}
+                                className={cn(
+                                    "px-2 py-1 text-xs rounded-md transition-colors",
+                                    settings.theme === "dark" ? "bg-[#1a1a2e] text-white shadow" : "opacity-60 hover:opacity-100"
+                                )}
+                                title="Mode Gelap"
+                            >
+                                🌙
+                            </button>
+                        </div>
+                        {/* Mobile Theme Toggle */}
+                        <button
+                            onClick={() => {
+                                const themes: Array<"light" | "sepia" | "dark"> = ["light", "sepia", "dark"]
+                                const currentIndex = themes.indexOf(settings.theme)
+                                const nextTheme = themes[(currentIndex + 1) % themes.length]
+                                setSettings({ ...settings, theme: nextTheme })
+                            }}
+                            className="sm:hidden p-2 rounded-lg hover:bg-black/10 transition-colors"
+                            title="Ganti Tema"
+                        >
+                            {settings.theme === "light" ? "☀️" : settings.theme === "sepia" ? "📜" : "🌙"}
+                        </button>
                         <Link
                             href="/"
                             className="p-2 rounded-lg hover:bg-black/10 transition-colors"
