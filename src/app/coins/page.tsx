@@ -6,11 +6,11 @@ import Link from "next/link"
 import { Coins, Crown, Gift, Zap, LogIn, Check, Loader2 } from "lucide-react"
 
 const coinPackages = [
-    { id: 1, name: "Starter", coins: 100, price: 10000, bonus: 0 },
-    { id: 2, name: "Basic", coins: 250, price: 25000, bonus: 25 },
-    { id: 3, name: "Popular", coins: 500, price: 50000, bonus: 100, isPopular: true },
-    { id: 4, name: "Best Value", coins: 1000, price: 100000, bonus: 300 },
-    { id: 5, name: "Ultimate", coins: 2500, price: 200000, bonus: 1000 },
+    { id: 1, name: "Starter", coins: 100, price: 5000, bonus: 0 },
+    { id: 2, name: "Basic", coins: 250, price: 10000, bonus: 25 },
+    { id: 3, name: "Popular", coins: 500, price: 20000, bonus: 100, isPopular: true },
+    { id: 4, name: "Best Value", coins: 1000, price: 40000, bonus: 300 },
+    { id: 5, name: "Ultimate", coins: 2500, price: 80000, bonus: 1000 },
 ]
 
 const vipBenefits = [
@@ -24,7 +24,7 @@ const vipBenefits = [
 export default function CoinsPage() {
     const { data: session, status } = useSession()
     const [userCoins, setUserCoins] = useState<number | null>(null)
-    const [vipPrice, setVipPrice] = useState(49000) // Default
+    const [vipPrice, setVipPrice] = useState(20000) // Default
     const [isLoading, setIsLoading] = useState<number | null>(null) // Track which package is loading
     const [purchaseStatus, setPurchaseStatus] = useState<{ success?: boolean; message?: string } | null>(null)
 
