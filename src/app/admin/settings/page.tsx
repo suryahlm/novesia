@@ -413,13 +413,22 @@ export default function AdminSettingsPage() {
                         <div>
                             <label className="block text-sm font-medium mb-2">Link Donasi (Saweria/Trakteer)</label>
                             <p className="text-xs text-[var(--text-muted)] mb-2">Contoh: https://saweria.co/username</p>
-                            <input
-                                type="url"
-                                value={settings.donationLink}
-                                onChange={(e) => setSettings({ ...settings, donationLink: e.target.value })}
-                                placeholder="https://saweria.co/username"
-                                className="input w-full"
-                            />
+                            <div className="flex gap-2">
+                                <input
+                                    type="url"
+                                    value={settings.donationLink}
+                                    onChange={(e) => setSettings({ ...settings, donationLink: e.target.value })}
+                                    placeholder="https://saweria.co/username"
+                                    className="input flex-1"
+                                />
+                                <button
+                                    onClick={handleSave}
+                                    disabled={isSaving}
+                                    className="btn btn-primary px-4"
+                                >
+                                    {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
