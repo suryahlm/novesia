@@ -5,6 +5,7 @@ import Navbar from "@/components/ui/Navbar";
 import MobileNav from "@/components/ui/MobileNav";
 import Footer from "@/components/ui/Footer";
 import SessionProvider from "@/components/providers/SessionProvider";
+import RegisterSW from "@/components/pwa/RegisterSW";
 import { prisma } from "@/lib/prisma";
 
 const inter = Inter({
@@ -90,6 +91,7 @@ export default function RootLayout({
     <html lang="id" className={`${inter.variable} ${merriweather.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased min-h-screen pt-16 pb-24 md:pb-0">
         <SessionProvider>
+          <RegisterSW />
           <Navbar />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {children}
