@@ -359,40 +359,87 @@ export default function AdminSettingsPage() {
 
                 {/* Monetization Settings */}
                 <div className="card p-6">
-                    <h2 className="font-semibold mb-4 flex items-center gap-2">
-                        <Palette className="w-5 h-5 text-[var(--color-primary)]" />
-                        Monetisasi
-                    </h2>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">VIP Bulanan (Rp)</label>
-                                <input
-                                    type="number"
-                                    value={settings.vipMonthlyPrice}
-                                    onChange={(e) => setSettings({ ...settings, vipMonthlyPrice: parseInt(e.target.value) })}
-                                    className="input w-full"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-2">VIP 3 Bulan (Rp)</label>
-                                <input
-                                    type="number"
-                                    value={settings.vipQuarterlyPrice}
-                                    onChange={(e) => setSettings({ ...settings, vipQuarterlyPrice: parseInt(e.target.value) })}
-                                    className="input w-full"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-2">VIP Tahunan (Rp)</label>
-                                <input
-                                    type="number"
-                                    value={settings.vipYearlyPrice}
-                                    onChange={(e) => setSettings({ ...settings, vipYearlyPrice: parseInt(e.target.value) })}
-                                    className="input w-full"
-                                />
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold flex items-center gap-2">
+                            <Palette className="w-5 h-5 text-[var(--color-primary)]" />
+                            Monetisasi
+                        </h2>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="btn btn-primary px-4"
+                        >
+                            {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" />Simpan</>}
+                        </button>
+                    </div>
+                    <div className="space-y-6">
+                        {/* VIP Prices */}
+                        <div>
+                            <h3 className="text-sm font-medium mb-3">Harga VIP</h3>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-xs text-[var(--text-muted)] mb-1">VIP Bulanan (Rp)</label>
+                                    <input
+                                        type="number"
+                                        value={settings.vipMonthlyPrice}
+                                        onChange={(e) => setSettings({ ...settings, vipMonthlyPrice: parseInt(e.target.value) })}
+                                        className="input w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-[var(--text-muted)] mb-1">VIP 3 Bulan (Rp)</label>
+                                    <input
+                                        type="number"
+                                        value={settings.vipQuarterlyPrice}
+                                        onChange={(e) => setSettings({ ...settings, vipQuarterlyPrice: parseInt(e.target.value) })}
+                                        className="input w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-[var(--text-muted)] mb-1">VIP Tahunan (Rp)</label>
+                                    <input
+                                        type="number"
+                                        value={settings.vipYearlyPrice}
+                                        onChange={(e) => setSettings({ ...settings, vipYearlyPrice: parseInt(e.target.value) })}
+                                        className="input w-full"
+                                    />
+                                </div>
                             </div>
                         </div>
+
+                        {/* Coin Packages - Note: These are stored in code, shown for reference */}
+                        <div>
+                            <h3 className="text-sm font-medium mb-3">Paket Koin (Referensi)</h3>
+                            <p className="text-xs text-[var(--text-muted)] mb-3">Harga koin langsung ke kode. Hubungi developer untuk mengubah.</p>
+                            <div className="grid grid-cols-5 gap-2 text-center text-xs">
+                                <div className="bg-[var(--bg-secondary)] p-2 rounded">
+                                    <p className="font-medium">Starter</p>
+                                    <p className="text-amber-500">100 koin</p>
+                                    <p>Rp 5.000</p>
+                                </div>
+                                <div className="bg-[var(--bg-secondary)] p-2 rounded">
+                                    <p className="font-medium">Basic</p>
+                                    <p className="text-amber-500">250+25</p>
+                                    <p>Rp 10.000</p>
+                                </div>
+                                <div className="bg-[var(--bg-secondary)] p-2 rounded ring-2 ring-[var(--color-primary)]">
+                                    <p className="font-medium">Popular</p>
+                                    <p className="text-amber-500">500+100</p>
+                                    <p>Rp 20.000</p>
+                                </div>
+                                <div className="bg-[var(--bg-secondary)] p-2 rounded">
+                                    <p className="font-medium">Best Value</p>
+                                    <p className="text-amber-500">1000+300</p>
+                                    <p>Rp 40.000</p>
+                                </div>
+                                <div className="bg-[var(--bg-secondary)] p-2 rounded">
+                                    <p className="font-medium">Ultimate</p>
+                                    <p className="text-amber-500">2500+1000</p>
+                                    <p>Rp 80.000</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="font-medium">Pembelian Koin</p>
@@ -413,22 +460,13 @@ export default function AdminSettingsPage() {
                         <div>
                             <label className="block text-sm font-medium mb-2">Link Donasi (Saweria/Trakteer)</label>
                             <p className="text-xs text-[var(--text-muted)] mb-2">Contoh: https://saweria.co/username</p>
-                            <div className="flex gap-2">
-                                <input
-                                    type="url"
-                                    value={settings.donationLink}
-                                    onChange={(e) => setSettings({ ...settings, donationLink: e.target.value })}
-                                    placeholder="https://saweria.co/username"
-                                    className="input flex-1"
-                                />
-                                <button
-                                    onClick={handleSave}
-                                    disabled={isSaving}
-                                    className="btn btn-primary px-4"
-                                >
-                                    {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                </button>
-                            </div>
+                            <input
+                                type="url"
+                                value={settings.donationLink}
+                                onChange={(e) => setSettings({ ...settings, donationLink: e.target.value })}
+                                placeholder="https://saweria.co/username"
+                                className="input w-full"
+                            />
                         </div>
                     </div>
                 </div>
