@@ -17,6 +17,15 @@ export async function GET() {
             return acc
         }, {} as Record<string, unknown>)
 
+        // Default coin packages
+        const defaultCoinPackages = [
+            { id: 1, name: "Starter", coins: 100, price: 5000, bonus: 0 },
+            { id: 2, name: "Basic", coins: 250, price: 10000, bonus: 25 },
+            { id: 3, name: "Popular", coins: 500, price: 20000, bonus: 100, isPopular: true },
+            { id: 4, name: "Best Value", coins: 1000, price: 40000, bonus: 300 },
+            { id: 5, name: "Ultimate", coins: 2500, price: 80000, bonus: 1000 },
+        ]
+
         // Return with defaults
         return NextResponse.json({
             siteName: settingsObject.siteName || "Novesia",
@@ -25,14 +34,16 @@ export async function GET() {
             registrationEnabled: settingsObject.registrationEnabled !== false,
             requireEmailVerification: settingsObject.requireEmailVerification || false,
             defaultUserCoins: settingsObject.defaultUserCoins || 50,
-            vipMonthlyPrice: settingsObject.vipMonthlyPrice || 49000,
-            vipQuarterlyPrice: settingsObject.vipQuarterlyPrice || 120000,
-            vipYearlyPrice: settingsObject.vipYearlyPrice || 399000,
+            vipMonthlyPrice: settingsObject.vipMonthlyPrice || 20000,
+            vipQuarterlyPrice: settingsObject.vipQuarterlyPrice || 55000,
+            vipYearlyPrice: settingsObject.vipYearlyPrice || 190000,
+            coinPackages: settingsObject.coinPackages || defaultCoinPackages,
             coinPurchaseEnabled: settingsObject.coinPurchaseEnabled !== false,
             googleLoginEnabled: settingsObject.googleLoginEnabled !== false,
             maxUploadSize: settingsObject.maxUploadSize || 5,
             scraperEnabled: settingsObject.scraperEnabled !== false,
             translationEnabled: settingsObject.translationEnabled !== false,
+            donationLink: settingsObject.donationLink || "https://saweria.co/novesia",
         })
     } catch (error) {
         console.error("Error fetching settings:", error)

@@ -5,13 +5,14 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { Coins, Crown, Gift, Zap, LogIn, Check, Loader2 } from "lucide-react"
 
-const coinPackages = [
-    { id: 1, name: "Starter", coins: 100, price: 5000, bonus: 0 },
-    { id: 2, name: "Basic", coins: 250, price: 10000, bonus: 25 },
-    { id: 3, name: "Popular", coins: 500, price: 20000, bonus: 100, isPopular: true },
-    { id: 4, name: "Best Value", coins: 1000, price: 40000, bonus: 300 },
-    { id: 5, name: "Ultimate", coins: 2500, price: 80000, bonus: 1000 },
-]
+interface CoinPackage {
+    id: number
+    name: string
+    coins: number
+    price: number
+    bonus: number
+    isPopular?: boolean
+}
 
 const vipBenefits = [
     "Akses semua chapter premium",
@@ -24,16 +25,23 @@ const vipBenefits = [
 export default function CoinsPage() {
     const { data: session, status } = useSession()
     const [userCoins, setUserCoins] = useState<number | null>(null)
-    const [vipPrice, setVipPrice] = useState(20000) // Default
-    const [isLoading, setIsLoading] = useState<number | null>(null) // Track which package is loading
+    const [vipPrice, setVipPrice] = useState(20000)
+    const [coinPackages, setCoinPackages] = useState<CoinPackage[]>([])
+    const [isLoading, setIsLoading] = useState<number | null>(null)
     const [purchaseStatus, setPurchaseStatus] = useState<{ success?: boolean; message?: string } | null>(null)
 
     useEffect(() => {
-        // Fetch VIP price from settings
+        // Fetch settings including coin packages
         fetch("/api/settings")
             .then(res => res.json())
-            .then(data => setVipPrice(data.vipMonthlyPrice || 49000))
-            .catch(() => setVipPrice(49000))
+            .then(data => {
+                setVipPrice(data.vipMonthlyPrice || 20000)
+                setCoinPackages(data.coinPackages || [])
+            })
+            .catch(() => {
+                setVipPrice(20000)
+                setCoinPackages([])
+            })
 
         if (session) {
             fetch("/api/user/profile")

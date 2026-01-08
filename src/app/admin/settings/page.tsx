@@ -21,9 +21,16 @@ export default function AdminSettingsPage() {
         requireEmailVerification: false,
         defaultUserCoins: 50,
         vipMonthlyPrice: 20000,
-        vipQuarterlyPrice: 50000,
-        vipYearlyPrice: 180000,
+        vipQuarterlyPrice: 55000,
+        vipYearlyPrice: 190000,
         donationLink: "https://saweria.co/novesia",
+        coinPackages: [
+            { id: 1, name: "Starter", coins: 100, price: 5000, bonus: 0 },
+            { id: 2, name: "Basic", coins: 250, price: 10000, bonus: 25 },
+            { id: 3, name: "Popular", coins: 500, price: 20000, bonus: 100, isPopular: true },
+            { id: 4, name: "Best Value", coins: 1000, price: 40000, bonus: 300 },
+            { id: 5, name: "Ultimate", coins: 2500, price: 80000, bonus: 1000 },
+        ],
         coinPurchaseEnabled: true,
         googleLoginEnabled: true,
         maxUploadSize: 5,
@@ -407,36 +414,59 @@ export default function AdminSettingsPage() {
                             </div>
                         </div>
 
-                        {/* Coin Packages - Note: These are stored in code, shown for reference */}
+                        {/* Coin Packages - Editable */}
                         <div>
-                            <h3 className="text-sm font-medium mb-3">Paket Koin (Referensi)</h3>
-                            <p className="text-xs text-[var(--text-muted)] mb-3">Harga koin langsung ke kode. Hubungi developer untuk mengubah.</p>
-                            <div className="grid grid-cols-5 gap-2 text-center text-xs">
-                                <div className="bg-[var(--bg-secondary)] p-2 rounded">
-                                    <p className="font-medium">Starter</p>
-                                    <p className="text-amber-500">100 koin</p>
-                                    <p>Rp 5.000</p>
-                                </div>
-                                <div className="bg-[var(--bg-secondary)] p-2 rounded">
-                                    <p className="font-medium">Basic</p>
-                                    <p className="text-amber-500">250+25</p>
-                                    <p>Rp 10.000</p>
-                                </div>
-                                <div className="bg-[var(--bg-secondary)] p-2 rounded ring-2 ring-[var(--color-primary)]">
-                                    <p className="font-medium">Popular</p>
-                                    <p className="text-amber-500">500+100</p>
-                                    <p>Rp 20.000</p>
-                                </div>
-                                <div className="bg-[var(--bg-secondary)] p-2 rounded">
-                                    <p className="font-medium">Best Value</p>
-                                    <p className="text-amber-500">1000+300</p>
-                                    <p>Rp 40.000</p>
-                                </div>
-                                <div className="bg-[var(--bg-secondary)] p-2 rounded">
-                                    <p className="font-medium">Ultimate</p>
-                                    <p className="text-amber-500">2500+1000</p>
-                                    <p>Rp 80.000</p>
-                                </div>
+                            <h3 className="text-sm font-medium mb-3">Paket Koin</h3>
+                            <div className="space-y-3">
+                                {settings.coinPackages?.map((pkg: any, index: number) => (
+                                    <div key={pkg.id} className={`bg-[var(--bg-secondary)] p-3 rounded ${pkg.isPopular ? 'ring-2 ring-[var(--color-primary)]' : ''}`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="font-medium text-sm">{pkg.name}</span>
+                                            {pkg.isPopular && <span className="text-xs bg-[var(--color-primary)] text-white px-2 py-0.5 rounded">Popular</span>}
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="block text-xs text-[var(--text-muted)] mb-1">Koin</label>
+                                                <input
+                                                    type="number"
+                                                    value={pkg.coins}
+                                                    onChange={(e) => {
+                                                        const newPackages = [...settings.coinPackages]
+                                                        newPackages[index] = { ...pkg, coins: parseInt(e.target.value) || 0 }
+                                                        setSettings({ ...settings, coinPackages: newPackages })
+                                                    }}
+                                                    className="input w-full text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-[var(--text-muted)] mb-1">Harga (Rp)</label>
+                                                <input
+                                                    type="number"
+                                                    value={pkg.price}
+                                                    onChange={(e) => {
+                                                        const newPackages = [...settings.coinPackages]
+                                                        newPackages[index] = { ...pkg, price: parseInt(e.target.value) || 0 }
+                                                        setSettings({ ...settings, coinPackages: newPackages })
+                                                    }}
+                                                    className="input w-full text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-[var(--text-muted)] mb-1">Bonus</label>
+                                                <input
+                                                    type="number"
+                                                    value={pkg.bonus}
+                                                    onChange={(e) => {
+                                                        const newPackages = [...settings.coinPackages]
+                                                        newPackages[index] = { ...pkg, bonus: parseInt(e.target.value) || 0 }
+                                                        setSettings({ ...settings, coinPackages: newPackages })
+                                                    }}
+                                                    className="input w-full text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
