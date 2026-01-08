@@ -111,8 +111,10 @@ export async function PATCH(
             }
         }
 
-        // Set coins directly
-        if (typeof body.coins === "number") {
+        // Set coins directly (via setCoins or coins)
+        if (typeof body.setCoins === "number") {
+            updateData.coins = body.setCoins
+        } else if (typeof body.coins === "number") {
             updateData.coins = body.coins
         }
 

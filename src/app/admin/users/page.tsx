@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Users, Crown, Coins, Shield, Mail, Trash2, Plus, RefreshCw, Key } from "lucide-react"
+import { Users, Crown, Coins, Shield, Mail, Trash2, Plus, RefreshCw, Key, RotateCcw } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 
 interface User {
@@ -136,6 +136,30 @@ export default function AdminUsersPage() {
             }
         } catch (error) {
             alert("Gagal menambah koin")
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
+    const handleResetCoins = async (id: string, email: string) => {
+        if (!confirm(`Reset koin ${email} menjadi 0? Aksi ini tidak bisa dibatalkan.`)) return
+
+        setActionLoading(id)
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ setCoins: 0 }),
+            })
+            if (res.ok) {
+                fetchUsers()
+            } else {
+                const data = await res.json()
+                alert(data.error || "Gagal reset koin")
+            }
+        } catch (error) {
+            alert("Gagal reset koin")
         } finally {
             setActionLoading(null)
         }
@@ -318,6 +342,14 @@ export default function AdminUsersPage() {
                                                     title="Tambah Koin"
                                                 >
                                                     <Plus className="w-4 h-4 text-green-500" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleResetCoins(user.id, user.email)}
+                                                    disabled={actionLoading === user.id}
+                                                    className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                                                    title="Reset Koin ke 0"
+                                                >
+                                                    <RotateCcw className="w-4 h-4 text-red-500" />
                                                 </button>
                                             </div>
                                         </td>
