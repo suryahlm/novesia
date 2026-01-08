@@ -38,6 +38,7 @@ model User {
   transactions     Transaction[]
   unlockedChapters UnlockedChapter[]
   userBadges       UserBadge[]
+  forumPosts       ForumPost[]
 }
 
 model UserBadge {
@@ -332,6 +333,37 @@ model DailyTaskClaim {
 
   @@index([userId])
   @@index([claimedAt])
+}
+
+model ForumCategory {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  slug        String      @unique
+  description String?
+  icon        String?
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  posts       ForumPost[]
+}
+
+model ForumPost {
+  id         String        @id @default(cuid())
+  title      String
+  content    String
+  userId     String
+  categoryId String
+  views      Int           @default(0)
+  likes      Int           @default(0)
+  isPinned   Boolean       @default(false)
+  isLocked   Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([createdAt])
 }
 
 enum Role {

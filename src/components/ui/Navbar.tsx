@@ -17,6 +17,7 @@ import {
     Gift,
     Coins,
     LogOut,
+    MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import InstallAppButton from "@/components/ui/InstallAppButton"
@@ -34,6 +35,7 @@ const navItems = [
 
 const userNavItems = [
     { href: "/library", label: { id: "Pustaka", en: "Library" }, icon: Library },
+    { href: "/forum", label: { id: "Forum", en: "Forum" }, icon: MessageCircle },
     { href: "/rewards", label: { id: "Hadiah", en: "Rewards" }, icon: Gift },
 ]
 

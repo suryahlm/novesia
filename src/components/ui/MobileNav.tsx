@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Compass, Library, Gift, User } from "lucide-react"
+import { Home, Compass, Library, MessageCircle, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface MobileNavProps {
@@ -13,7 +13,7 @@ const navItems = [
     { href: "/", icon: Home, label: { id: "Beranda", en: "Home" } },
     { href: "/discover", icon: Compass, label: { id: "Jelajahi", en: "Discover" } },
     { href: "/library", icon: Library, label: { id: "Pustaka", en: "Library" } },
-    { href: "/rewards", icon: Gift, label: { id: "Hadiah", en: "Rewards" } },
+    { href: "/forum", icon: MessageCircle, label: { id: "Forum", en: "Forum" } },
     { href: "/profile", icon: User, label: { id: "Profil", en: "Profile" } },
 ]
 
