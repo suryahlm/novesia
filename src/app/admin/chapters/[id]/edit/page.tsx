@@ -10,7 +10,8 @@ interface Chapter {
     novelId: string
     chapterNumber: number
     title: string
-    contentTranslated: string
+    contentTranslated: string | null
+    contentOriginal: string | null
     isPremium: boolean
     coinCost: number
     novel: {
@@ -50,7 +51,7 @@ export default function EditChapterPage() {
                 setFormData({
                     chapterNumber: data.chapterNumber,
                     title: data.title,
-                    content: data.contentTranslated || "",
+                    content: data.contentTranslated || data.contentOriginal || "",
                     isPremium: data.isPremium,
                     coinCost: data.coinCost || 5,
                 })
