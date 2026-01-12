@@ -131,21 +131,14 @@ export default function ChapterReaderClient({ novel, chapter, prevChapter, nextC
                         </h1>
 
                         <div
-                            className="prose max-w-none leading-relaxed transition-all duration-300"
+                            className="prose prose-lg max-w-none leading-relaxed transition-all duration-300 chapter-content"
                             style={{
                                 fontSize: `${settings.fontSize}px`,
                                 fontFamily: fonts[settings.fontFamily as keyof typeof fonts],
                                 lineHeight: settings.lineHeight,
                             }}
-                        >
-                            {chapter.content.split('\n').map((paragraph, index) => (
-                                paragraph.trim() && (
-                                    <p key={index} className="mb-4">
-                                        {paragraph}
-                                    </p>
-                                )
-                            ))}
-                        </div>
+                            dangerouslySetInnerHTML={{ __html: chapter.content }}
+                        />
                     </article>
 
                     {!chapter.content && (

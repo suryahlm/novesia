@@ -378,3 +378,49 @@ body {
 .aspect-book {
   aspect-ratio: 2/3;
 }
+
+/* Chapter Content Styling - Clean scraped HTML */
+.chapter-content {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.chapter-content p {
+  margin-bottom: 1rem;
+}
+
+.chapter-content br {
+  content: "";
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* Hide unwanted elements from scraped content */
+.chapter-content script,
+.chapter-content style,
+.chapter-content iframe,
+.chapter-content .ads,
+.chapter-content .advertisement,
+.chapter-content .adsbygoogle,
+.chapter-content [class*="ads"],
+.chapter-content [id*="ads"],
+.chapter-content ins,
+.chapter-content .hidden {
+  display: none !important;
+}
+
+/* Clean up inline styles from scraped content */
+.chapter-content * {
+  font-family: inherit !important;
+  line-height: inherit !important;
+  color: inherit !important;
+  background: transparent !important;
+  border: none !important;
+  max-width: 100% !important;
+}
+
+/* Preserve text alignment */
+.chapter-content p,
+.chapter-content div {
+  text-align: justify;
+}
