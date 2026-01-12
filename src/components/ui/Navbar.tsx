@@ -30,6 +30,7 @@ interface NavbarProps {
 const navItems = [
     { href: "/", label: { id: "Beranda", en: "Home" }, icon: Home },
     { href: "/discover", label: { id: "Jelajahi", en: "Discover" }, icon: Compass },
+    { href: "/english-novels", label: { id: "English Novels", en: "English Novels" }, icon: Globe },
     { href: "/genre", label: { id: "Genre", en: "Genre" }, icon: BookOpen },
 ]
 

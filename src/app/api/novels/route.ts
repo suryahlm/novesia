@@ -13,9 +13,15 @@ export async function GET(request: NextRequest) {
         const genres = searchParams.get("genres") // comma-separated genre slugs
         const status = searchParams.get("status") // ONGOING, COMPLETED, HIATUS, DROPPED
         const sort = searchParams.get("sort") || "trending" // trending, newest, rating, az
+        const language = searchParams.get("language") // "id" or "en"
 
         // Build where clause
         const where: Prisma.NovelWhereInput = {}
+
+        // Language filter
+        if (language && ["id", "en"].includes(language)) {
+            where.language = language
+        }
 
         // Search query
         if (q) {

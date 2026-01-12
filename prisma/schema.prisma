@@ -104,6 +104,7 @@ model Novel {
   updatedAt        DateTime          @updatedAt
   coinCost         Int               @default(5)
   freeChapterLimit Int               @default(0)
+  language         String            @default("id") // "id" = Indonesia, "en" = English
   bookmarks        Bookmark[]
   chapters         Chapter[]
   collections      CollectionNovel[]
