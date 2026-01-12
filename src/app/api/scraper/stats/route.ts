@@ -24,7 +24,6 @@ export async function GET() {
             totalNovels,
             totalChapters,
             translatedChapters,
-            untranslatedChapters,
             recentNovels,
             recentChapters
         ] = await Promise.all([
@@ -35,30 +34,23 @@ export async function GET() {
                     contentTranslated: { not: "" }
                 }
             }),
-            prisma.chapter.count({
-                where: {
-                    OR: [
-                        { contentTranslated: null },
-                        { contentTranslated: "" }
-                    ]
-                }
-            }),
             prisma.novel.count({
                 where: {
                     createdAt: {
-                        gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+                        gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
                     }
                 }
             }),
             prisma.chapter.count({
                 where: {
                     createdAt: {
-                        gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+                        gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
                     }
                 }
             })
         ])
 
+        const untranslatedChapters = totalChapters - translatedChapters
         const translationProgress = totalChapters > 0
             ? Math.round((translatedChapters / totalChapters) * 100)
             : 0
