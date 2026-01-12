@@ -20,6 +20,34 @@ const themes = {
     dark: { bg: "#1a1a2e", text: "#e2e8f0" },
 }
 
+// Format content: convert newlines to paragraphs for proper spacing
+function formatContent(content: string): string {
+    if (!content) return ''
+
+    // If content already has HTML paragraph tags, just clean it
+    if (content.includes('<p>') || content.includes('<br')) {
+        return content
+    }
+
+    // Split by double newlines (paragraph breaks) or single newlines
+    const paragraphs = content
+        .split(/\n\n+/)
+        .map(p => p.trim())
+        .filter(p => p.length > 0)
+
+    // If no paragraphs found, try single newlines
+    if (paragraphs.length <= 1 && content.includes('\n')) {
+        return content
+            .split(/\n+/)
+            .map(p => p.trim())
+            .filter(p => p.length > 0)
+            .map(p => `<p>${p}</p>`)
+            .join('')
+    }
+
+    return paragraphs.map(p => `<p>${p}</p>`).join('')
+}
+
 interface ChapterReaderClientProps {
     novel: {
         id: string
@@ -137,7 +165,9 @@ export default function ChapterReaderClient({ novel, chapter, prevChapter, nextC
                                 fontFamily: fonts[settings.fontFamily as keyof typeof fonts],
                                 lineHeight: settings.lineHeight,
                             }}
-                            dangerouslySetInnerHTML={{ __html: chapter.content }}
+                            dangerouslySetInnerHTML={{
+                                __html: formatContent(chapter.content)
+                            }}
                         />
                     </article>
 
