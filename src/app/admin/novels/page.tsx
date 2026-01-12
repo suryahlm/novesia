@@ -1,9 +1,7 @@
 import Link from "next/link"
-import { Plus, Edit, Eye, BookOpen, FileText } from "lucide-react"
-import { formatNumber } from "@/lib/utils"
+import { Plus, BookOpen } from "lucide-react"
 import { prisma } from "@/lib/prisma"
-import { getProxiedImageUrl } from "@/lib/image-utils"
-import DeleteNovelButton from "@/components/admin/DeleteNovelButton"
+import NovelsTable from "@/components/admin/NovelsTable"
 
 async function getNovels() {
     const novels = await prisma.novel.findMany({
@@ -14,21 +12,6 @@ async function getNovels() {
         },
     })
     return novels
-}
-
-function getStatusBadge(status: string) {
-    switch (status) {
-        case "COMPLETED":
-            return "bg-green-500 text-white"
-        case "ONGOING":
-            return "badge-primary"
-        case "HIATUS":
-            return "bg-yellow-500 text-white"
-        case "DROPPED":
-            return "bg-red-500 text-white"
-        default:
-            return "badge-secondary"
-    }
 }
 
 export default async function AdminNovelsPage() {
@@ -62,97 +45,7 @@ export default async function AdminNovelsPage() {
                     </Link>
                 </div>
             ) : (
-                <div className="card overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-[var(--bg-tertiary)]">
-                                    <th className="text-left p-4 font-medium text-[var(--text-muted)]">Novel</th>
-                                    <th className="text-left p-4 font-medium text-[var(--text-muted)]">Author</th>
-                                    <th className="text-left p-4 font-medium text-[var(--text-muted)]">Status</th>
-                                    <th className="text-center p-4 font-medium text-[var(--text-muted)]">Chapters</th>
-                                    <th className="text-center p-4 font-medium text-[var(--text-muted)]">Views</th>
-                                    <th className="text-center p-4 font-medium text-[var(--text-muted)]">Premium</th>
-                                    <th className="text-right p-4 font-medium text-[var(--text-muted)]">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--bg-tertiary)]">
-                                {novels.map((novel) => (
-                                    <tr key={novel.id} className="hover:bg-[var(--bg-secondary)] transition-colors">
-                                        <td className="p-4 min-w-[200px]">
-                                            <div className="flex items-center gap-3">
-                                                {novel.cover ? (
-                                                    <img
-                                                        src={getProxiedImageUrl(novel.cover) || novel.cover}
-                                                        alt={novel.title}
-                                                        className="w-12 h-16 object-cover rounded flex-shrink-0"
-                                                    />
-                                                ) : (
-                                                    <div className="w-12 h-16 bg-[var(--bg-tertiary)] rounded flex items-center justify-center flex-shrink-0">
-                                                        <BookOpen className="w-6 h-6 text-[var(--text-muted)]" />
-                                                    </div>
-                                                )}
-                                                <div className="min-w-0">
-                                                    <p className="font-medium truncate max-w-[150px]">{novel.title}</p>
-                                                    <p className="text-sm text-[var(--text-muted)] truncate max-w-[150px]">
-                                                        {novel.genres.slice(0, 2).map(g => g.name).join(", ")}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-[var(--text-secondary)]">
-                                            {novel.author || "-"}
-                                        </td>
-                                        <td className="p-4">
-                                            <span className={`badge ${getStatusBadge(novel.status)}`}>
-                                                {novel.status}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {novel._count.chapters}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {formatNumber(novel.totalViews)}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            {novel.isPremium ? (
-                                                <span className="badge badge-premium">Premium</span>
-                                            ) : (
-                                                <span className="text-[var(--text-muted)]">-</span>
-                                            )}
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Link
-                                                    href={`/admin/novels/${novel.id}/chapters/new`}
-                                                    className="p-2 hover:bg-green-500/10 text-green-600 rounded-lg transition-colors"
-                                                    title="Tambah Chapter"
-                                                >
-                                                    <FileText className="w-4 h-4" />
-                                                </Link>
-                                                <Link
-                                                    href={`/novel/${novel.slug}`}
-                                                    className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
-                                                    title="Lihat"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </Link>
-                                                <Link
-                                                    href={`/admin/novels/${novel.id}/edit`}
-                                                    className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </Link>
-                                                <DeleteNovelButton novelId={novel.id} novelTitle={novel.title} />
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <NovelsTable novels={novels} />
             )}
         </div>
     )
