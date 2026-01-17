@@ -4,11 +4,12 @@ import prisma from "@/lib/prisma";
 // GET - Retrieve chapter detail for editing
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const chapter = await prisma.chapter.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 novel: {
                     select: {
@@ -42,9 +43,10 @@ export async function GET(
 // PATCH - Update chapter content and publish
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const body = await req.json();
         const { contentTranslated, isPublished } = body;
 
@@ -60,7 +62,7 @@ export async function PATCH(
 
         // Update chapter
         const updatedChapter = await prisma.chapter.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 contentTranslated,
                 wordCount,
@@ -94,12 +96,13 @@ export async function PATCH(
 // DELETE - Remove draft chapter
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         // Check if chapter exists and is draft
         const chapter = await prisma.chapter.findUnique({
-            where: { id: params.id },
+            where: { id },
             select: { id: true, isPublished: true },
         });
 
@@ -119,7 +122,7 @@ export async function DELETE(
 
         // Delete chapter
         await prisma.chapter.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({
