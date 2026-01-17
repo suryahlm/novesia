@@ -15,6 +15,7 @@ import {
     ShieldAlert,
     Tag,
     CloudDownload,
+    Languages,
 } from "lucide-react"
 import { LogoutButton } from "@/components/admin/LogoutButton"
 
@@ -24,6 +25,7 @@ const sidebarItems = [
     { href: "/admin/chapters", icon: FileText, label: "Chapter" },
     { href: "/admin/genres", icon: Tag, label: "Genre" },
     { href: "/admin/import", icon: CloudDownload, label: "Import R2" },
+    { href: "/admin/translations", icon: Languages, label: "Translations" },
     { href: "/admin/scraper", icon: Download, label: "Scraper" },
     { href: "/admin/users", icon: Users, label: "Users" },
     { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },

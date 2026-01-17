@@ -50,31 +50,46 @@ async function getDonationLink() {
 
 async function getFeaturedNovels() {
   return prisma.novel.findMany({
+    where: {
+      chapters: {
+        some: { isPublished: true },
+      },
+    },
     orderBy: { totalViews: "desc" },
     take: 5,
     include: {
       genres: true,
-      _count: { select: { chapters: true } },
+      _count: { select: { chapters: { where: { isPublished: true } } } },
     },
   })
 }
 
 async function getNewReleases() {
   return prisma.novel.findMany({
+    where: {
+      chapters: {
+        some: { isPublished: true },
+      },
+    },
     orderBy: { createdAt: "desc" },
     take: 5,
     include: {
       genres: true,
-      _count: { select: { chapters: true } },
+      _count: { select: { chapters: { where: { isPublished: true } } } },
     },
   })
 }
 
 async function getTopRated() {
   const novels = await prisma.novel.findMany({
+    where: {
+      chapters: {
+        some: { isPublished: true },
+      },
+    },
     include: {
       genres: true,
-      _count: { select: { chapters: true } },
+      _count: { select: { chapters: { where: { isPublished: true } } } },
     },
   })
 

@@ -29,12 +29,21 @@ export async function GET(
             )
         }
 
+        // Validate chapter is published
+        if (!chapter.isPublished) {
+            return NextResponse.json(
+                { error: "Chapter not published yet" },
+                { status: 404 }
+            )
+        }
+
         // Get prev and next chapters
         const [prevChapter, nextChapter] = await Promise.all([
             prisma.chapter.findFirst({
                 where: {
                     novelId: chapter.novelId,
                     chapterNumber: chapter.chapterNumber - 1,
+                    isPublished: true,
                 },
                 select: {
                     id: true,
@@ -48,6 +57,7 @@ export async function GET(
                 where: {
                     novelId: chapter.novelId,
                     chapterNumber: chapter.chapterNumber + 1,
+                    isPublished: true,
                 },
                 select: {
                     id: true,

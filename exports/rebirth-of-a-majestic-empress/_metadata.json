@@ -1,0 +1,15 @@
+{
+  "novelSlug": "rebirth-of-a-majestic-empress",
+  "novelTitle": "Rebirth of a Majestic Empress",
+  "totalChapters": 100,
+  "batchSize": 10,
+  "totalBatches": 10,
+  "exportedAt": "2026-01-12T09:28:11.240Z",
+  "instructions": [
+    "1. Open each batch-XX.json file",
+    "2. Copy the content array to Gemini",
+    "3. Prompt: 'Translate the content field of each chapter to Indonesian. Keep HTML tags and structure intact. Return the same JSON format.'",
+    "4. Save result as batch-XX_ID.json",
+    "5. Run: node import-translated.cjs rebirth-of-a-majestic-empress"
+  ]
+}

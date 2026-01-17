@@ -74,6 +74,7 @@ async function getNovel(slug: string) {
         include: {
             genres: true,
             chapters: {
+                where: { isPublished: true },
                 orderBy: { chapterNumber: "desc" },
                 select: {
                     id: true,
@@ -85,7 +86,7 @@ async function getNovel(slug: string) {
                 },
             },
             _count: {
-                select: { chapters: true, bookmarks: true, comments: true },
+                select: { chapters: { where: { isPublished: true } }, bookmarks: true, comments: true },
             },
         },
     })

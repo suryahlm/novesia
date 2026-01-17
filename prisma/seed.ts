@@ -29,6 +29,25 @@ async function main() {
     }
     console.log("✅ Genres created")
 
+    // Create admin user
+    const bcrypt = require("bcryptjs")
+    const adminEmail = "admin@novesia.com"
+    const adminPassword = await bcrypt.hash("admin123", 10)
+
+    await prisma.user.upsert({
+        where: { email: adminEmail },
+        update: {},
+        create: {
+            email: adminEmail,
+            password: adminPassword,
+            name: "Admin Novesia",
+            role: "ADMIN",
+            coins: 10000,
+            isVip: true,
+        },
+    })
+    console.log("✅ Admin user created (email: admin@novesia.com, password: admin123)")
+
     // Create sample novels
     const novels = [
         {
@@ -217,6 +236,8 @@ async function main() {
                 create: {
                     ...chapter,
                     novelId: tbate.id,
+                    isPublished: true,
+                    publishedAt: new Date(),
                 },
             })
         }
