@@ -7,15 +7,19 @@ export async function GET(req: NextRequest) {
         const filter = searchParams.get("filter") || "all"; // all | complete | ongoing
         const sort = searchParams.get("sort") || "drafts"; // drafts | latest | title
         const search = searchParams.get("search") || "";
+        const showAll = searchParams.get("showAll") === "true"; // Show all novels if true
 
         // Build where clause
-        const where: any = {
-            chapters: {
+        const where: any = {};
+
+        // Only filter by draft chapters if showAll is false
+        if (!showAll) {
+            where.chapters = {
                 some: {
                     isPublished: false, // Must have at least 1 draft chapter
                 },
-            },
-        };
+            };
+        }
 
         // Filter by novel status
         if (filter === "complete") {

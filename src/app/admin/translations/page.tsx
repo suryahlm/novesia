@@ -33,10 +33,11 @@ export default function TranslationsPage() {
     const [filter, setFilter] = useState("all");
     const [sort, setSort] = useState("drafts");
     const [search, setSearch] = useState("");
+    const [viewMode, setViewMode] = useState<"drafts" | "all">("all"); // "drafts" for only drafts, "all" for all novels
 
     useEffect(() => {
         fetchNovels();
-    }, [filter, sort, search]);
+    }, [filter, sort, search, viewMode]);
 
     const fetchNovels = async () => {
         setLoading(true);
@@ -45,6 +46,7 @@ export default function TranslationsPage() {
             if (filter) params.append("filter", filter);
             if (sort) params.append("sort", sort);
             if (search) params.append("search", search);
+            if (viewMode === "all") params.append("showAll", "true");
 
             const res = await fetch(`/api/admin/novels/pending?${params}`);
             const data = await res.json();
@@ -63,13 +65,35 @@ export default function TranslationsPage() {
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="mb-8">
+                <div className="mb-6">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
                         Translation Management
                     </h1>
                     <p className="text-gray-600">
                         Manage draft chapters and publish translated content
                     </p>
+                </div>
+
+                {/* Tabs */}
+                <div className="bg-white rounded-lg shadow-sm p-1 mb-6 inline-flex">
+                    <button
+                        onClick={() => setViewMode("all")}
+                        className={`px-4 py-2 rounded-md font-medium transition ${viewMode === "all"
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-600 hover:bg-gray-100"
+                            }`}
+                    >
+                        📚 All Novels ({novels.length})
+                    </button>
+                    <button
+                        onClick={() => setViewMode("drafts")}
+                        className={`px-4 py-2 rounded-md font-medium transition ${viewMode === "drafts"
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-600 hover:bg-gray-100"
+                            }`}
+                    >
+                        📝 With Drafts Only
+                    </button>
                 </div>
 
                 {/* Filter Bar */}
@@ -172,8 +196,8 @@ export default function TranslationsPage() {
                                     <div className="absolute top-2 right-2">
                                         <span
                                             className={`px-2 py-1 text-xs font-semibold rounded ${novel.status === "COMPLETED"
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-blue-100 text-blue-800"
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-blue-100 text-blue-800"
                                                 }`}
                                         >
                                             {novel.status}
