@@ -31,7 +31,7 @@ export async function POST() {
 
         if (fs.existsSync(translatedDir)) {
             const novelFiles = fs.readdirSync(translatedDir)
-                .filter(f => f.endsWith(".json") && !f.includes("_raw"))
+                .filter(f => f.endsWith(".json"))
 
             console.log(`Found ${novelFiles.length} novel files to import`)
 
