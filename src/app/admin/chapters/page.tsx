@@ -1,27 +1,42 @@
 import Link from "next/link"
-import { FileText, BookOpen, Eye, Plus } from "lucide-react"
+import { FileText, BookOpen, Eye, Plus, ChevronLeft, ChevronRight } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
 import NovelChapterAccordion from "@/components/admin/NovelChapterAccordion"
 
-async function getAllNovels() {
-    const novels = await prisma.novel.findMany({
-        orderBy: { createdAt: "desc" },
-        include: {
-            chapters: {
-                orderBy: { chapterNumber: "asc" },
-                select: {
-                    id: true,
-                    chapterNumber: true,
-                    title: true,
-                    wordCount: true,
-                    views: true,
-                    isPremium: true,
+const ITEMS_PER_PAGE = 10
+
+async function getNovels(page: number = 1) {
+    const skip = (page - 1) * ITEMS_PER_PAGE
+
+    const [novels, totalCount] = await Promise.all([
+        prisma.novel.findMany({
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: ITEMS_PER_PAGE,
+            include: {
+                chapters: {
+                    orderBy: { chapterNumber: "asc" },
+                    select: {
+                        id: true,
+                        chapterNumber: true,
+                        title: true,
+                        wordCount: true,
+                        views: true,
+                        isPremium: true,
+                    },
                 },
             },
-        },
-    })
-    return novels
+        }),
+        prisma.novel.count(),
+    ])
+
+    return {
+        novels,
+        totalCount,
+        totalPages: Math.ceil(totalCount / ITEMS_PER_PAGE),
+        currentPage: page,
+    }
 }
 
 async function getChapterStats() {
@@ -37,9 +52,70 @@ async function getChapterStats() {
     }
 }
 
-export default async function AdminChaptersPage() {
-    const novels = await getAllNovels()
+interface Props {
+    searchParams: Promise<{ page?: string }>
+}
+
+export default async function AdminChaptersPage({ searchParams }: Props) {
+    const params = await searchParams
+    const currentPage = Math.max(1, parseInt(params.page || "1"))
+
+    const { novels, totalPages } = await getNovels(currentPage)
     const stats = await getChapterStats()
+
+    // Generate page numbers to display
+    const getPageNumbers = () => {
+        const pages: (number | string)[] = []
+        const maxVisible = 5
+
+        if (totalPages <= maxVisible + 2) {
+            // Show all pages if total is small
+            for (let i = 1; i <= totalPages; i++) {
+                pages.push(i)
+            }
+        } else {
+            // Always show first page
+            pages.push(1)
+
+            // Calculate start and end of visible range
+            let start = Math.max(2, currentPage - 1)
+            let end = Math.min(totalPages - 1, currentPage + 1)
+
+            // Adjust if at the beginning
+            if (currentPage <= 3) {
+                start = 2
+                end = Math.min(maxVisible, totalPages - 1)
+            }
+
+            // Adjust if at the end
+            if (currentPage >= totalPages - 2) {
+                start = Math.max(2, totalPages - maxVisible + 1)
+                end = totalPages - 1
+            }
+
+            // Add ellipsis before if needed
+            if (start > 2) {
+                pages.push("...")
+            }
+
+            // Add middle pages
+            for (let i = start; i <= end; i++) {
+                pages.push(i)
+            }
+
+            // Add ellipsis after if needed
+            if (end < totalPages - 1) {
+                pages.push("...")
+            }
+
+            // Always show last page
+            if (totalPages > 1) {
+                pages.push(totalPages)
+            }
+        }
+
+        return pages
+    }
 
     return (
         <div className="py-6">
@@ -96,9 +172,74 @@ export default async function AdminChaptersPage() {
                     </Link>
                 </div>
             ) : (
-                <NovelChapterAccordion novels={novels} />
+                <>
+                    <NovelChapterAccordion novels={novels} />
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-6">
+                            {/* Previous Button */}
+                            {currentPage > 1 ? (
+                                <Link
+                                    href={`/admin/chapters?page=${currentPage - 1}`}
+                                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Prev</span>
+                                </Link>
+                            ) : (
+                                <span className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed opacity-50">
+                                    <ChevronLeft className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Prev</span>
+                                </span>
+                            )}
+
+                            {/* Page Numbers */}
+                            <div className="flex items-center gap-1">
+                                {getPageNumbers().map((page, index) => (
+                                    page === "..." ? (
+                                        <span key={`ellipsis-${index}`} className="px-3 py-2 text-[var(--text-muted)]">
+                                            ...
+                                        </span>
+                                    ) : (
+                                        <Link
+                                            key={page}
+                                            href={`/admin/chapters?page=${page}`}
+                                            className={`px-3 py-2 rounded-lg transition-colors ${currentPage === page
+                                                    ? "bg-[var(--color-primary)] text-white font-medium"
+                                                    : "bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)]"
+                                                }`}
+                                        >
+                                            {page}
+                                        </Link>
+                                    )
+                                ))}
+                            </div>
+
+                            {/* Next Button */}
+                            {currentPage < totalPages ? (
+                                <Link
+                                    href={`/admin/chapters?page=${currentPage + 1}`}
+                                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                                >
+                                    <span className="hidden sm:inline">Next</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                </Link>
+                            ) : (
+                                <span className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed opacity-50">
+                                    <span className="hidden sm:inline">Next</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                </span>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Page Info */}
+                    <p className="text-center text-sm text-[var(--text-muted)] mt-3">
+                        Halaman {currentPage} dari {totalPages}
+                    </p>
+                </>
             )}
         </div>
     )
 }
-
