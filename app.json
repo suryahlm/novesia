@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "Novesia",
+    "slug": "novesia-app",
+    "version": "1.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "novesiaapp",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3e5027ea-e732-4ecb-8de0-1635f030649c"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0a0f",
+        "foregroundImage": "./assets/images/adaptive-icon-foreground.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "navigationBarColor": "#000000",
+      "package": "com.suryahalim26.novesiaapp",
+      "versionCode": 8,
+      "usesCleartextTraffic": true
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "./plugins/withNetworkSecurityConfig",
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/logo-only.png",
+          "resizeMode": "contain",
+          "imageWidth": 180,
+          "backgroundColor": "#0a0a0f",
+          "dark": {
+            "image": "./assets/images/logo-only.png",
+            "backgroundColor": "#0a0a0f"
+          }
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3e5027ea-e732-4ecb-8de0-1635f030649c"
+      }
+    }
+  }
+}
