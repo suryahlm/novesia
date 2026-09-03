@@ -225,7 +225,7 @@ export default function HomeScreen() {
                 >
                   {/* Luxury Refined Logo (BarberChop Font from Komiku) */}
                   <View style={{ position: 'relative', alignSelf: 'flex-start' }}>
-                    {/* Clean single shadow layer directly underneath with exact subpixel alignment */}
+                    {/* Pure ambient shadow with transparent fill to prevent any black font poking out */}
                     <Text
                       numberOfLines={1}
                       style={[
@@ -235,11 +235,10 @@ export default function HomeScreen() {
                           top: 0,
                           fontSize: 26,
                           lineHeight: 34,
-                          color: '#000000',
-                          textShadowColor: 'rgba(0,0,0,0.85)',
-                          textShadowOffset: { width: 0, height: 2 },
-                          textShadowRadius: 8,
-                          includeFontPadding: false,
+                          color: 'transparent',
+                          textShadowColor: 'rgba(0,0,0,0.7)',
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 4,
                         },
                         logoFontStyle,
                       ]}
@@ -251,7 +250,6 @@ export default function HomeScreen() {
                         {
                           fontSize: 26,
                           lineHeight: 34,
-                          includeFontPadding: false,
                         },
                         logoFontStyle,
                       ]}
