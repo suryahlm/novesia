@@ -23,7 +23,7 @@ import { ContinueReadingCard } from '../../components/ContinueReadingCard';
 import { PopularGridCard } from '../../components/PopularGridCard';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
 import { useTheme } from '../../lib/ThemeProvider';
-import { usePopularNovels, useLatestNovels, NovelItem } from '../../lib/useNovelsQuery';
+import { usePopularNovels, useLatestNovels, useIndonesianNovels, NovelItem } from '../../lib/useNovelsQuery';
 import { getHistory, HistoryItem } from '../../lib/history';
 import { SkeletonCarousel, SkeletonNovelGrid, SkeletonBox } from '../../components/SkeletonLoader';
 
@@ -44,6 +44,7 @@ export default function HomeScreen() {
   // Fast TanStack Query with 5-minute memory cache
   const { data: novels = [], isLoading: loadingPopular } = usePopularNovels();
   const { data: latestNovels = [], isLoading: loadingLatest } = useLatestNovels();
+  const { data: indonesianNovels = [], isLoading: loadingIndonesian } = useIndonesianNovels();
 
   const [activeLang, setActiveLang] = useState<LanguageFilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -82,47 +83,18 @@ export default function HomeScreen() {
   );
 
   // Filter novels by language ("Semua" / "English" / "Indonesia")
+  // 1. "all" (Semua): Menampilkan semua novel tanpa memandang bulu dari terjemahan
+  // 2. "en" (English): Menampilkan novel bahasa inggris (meski sudah ada terjemahan indo tetap tampil)
+  // 3. "id" (Indonesia): HANYA menampilkan novel yang benar-benar punya terjemahan bahasa indonesia (walaupun baru 1 chapter)
   const filteredNovels = useMemo(() => {
-    if (activeLang === 'all') return novels;
-    if (activeLang === 'id') {
-      return novels.filter(
-        (n) =>
-          n.language?.toLowerCase().includes('indonesia') ||
-          n.translation_status === 'Completed' ||
-          (n.genres && n.genres.some((g) => g.toLowerCase().includes('indonesia')))
-      );
-    }
-    // 'en' (English)
-    return novels.filter(
-      (n) =>
-        !n.language ||
-        n.language.toLowerCase().includes('english') ||
-        n.language.toLowerCase().includes('chinese') ||
-        n.language.toLowerCase().includes('korean') ||
-        n.language.toLowerCase().includes('japanese')
-    );
-  }, [novels, activeLang]);
+    if (activeLang === 'id') return indonesianNovels;
+    return novels;
+  }, [novels, indonesianNovels, activeLang]);
 
   const filteredLatestNovels = useMemo(() => {
-    if (activeLang === 'all') return latestNovels;
-    if (activeLang === 'id') {
-      return latestNovels.filter(
-        (n) =>
-          n.language?.toLowerCase().includes('indonesia') ||
-          n.translation_status === 'Completed' ||
-          (n.genres && n.genres.some((g) => g.toLowerCase().includes('indonesia')))
-      );
-    }
-    // 'en' (English)
-    return latestNovels.filter(
-      (n) =>
-        !n.language ||
-        n.language.toLowerCase().includes('english') ||
-        n.language.toLowerCase().includes('chinese') ||
-        n.language.toLowerCase().includes('korean') ||
-        n.language.toLowerCase().includes('japanese')
-    );
-  }, [latestNovels, activeLang]);
+    if (activeLang === 'id') return indonesianNovels;
+    return latestNovels;
+  }, [latestNovels, indonesianNovels, activeLang]);
 
   const featuredList = useMemo(() => filteredNovels.slice(0, 10), [filteredNovels]);
   const trendingList = useMemo(() => filteredNovels.slice(0, 10), [filteredNovels]);

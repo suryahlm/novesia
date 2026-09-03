@@ -12,6 +12,7 @@ export interface NovelItem {
   genres?: string[];
   author?: string;
   synopsis?: string;
+  synopsis_translated?: string | null;
   total_views?: number;
   source?: string;
   language?: string | null;
@@ -21,10 +22,10 @@ export interface NovelItem {
 export async function fetchAllNovels(): Promise<NovelItem[]> {
   const { data, error } = await supabase
     .from('nu_novels')
-    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, total_views, source, language, translation_status')
+    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status')
     .neq('status', 'draft')
     .order('rating', { ascending: false, nullsFirst: false })
-    .limit(40);
+    .limit(100);
 
   if (error) {
     console.error('Error fetching novels:', error);
@@ -36,10 +37,10 @@ export async function fetchAllNovels(): Promise<NovelItem[]> {
 export async function fetchLatestNovelsList(): Promise<NovelItem[]> {
   const { data, error } = await supabase
     .from('nu_novels')
-    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, total_views, source, language, translation_status, updated_at')
+    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
     .neq('status', 'draft')
     .order('updated_at', { ascending: false })
-    .limit(40);
+    .limit(100);
 
   if (error) {
     console.error('Error fetching latest novels:', error);
@@ -106,3 +107,31 @@ export function useNovelDetail(slug: string) {
     staleTime: 1000 * 60 * 5,
   });
 }
+
+/**
+ * Hook Novel Terjemahan Bahasa Indonesia
+ * Menampilkan seluruh novel yang memiliki terjemahan bahasa Indonesia (bahkan sejak 1 chapter)
+ */
+export async function fetchIndonesianNovels(): Promise<NovelItem[]> {
+  const { data, error } = await supabase
+    .from('nu_novels')
+    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
+    .neq('status', 'draft')
+    .or('translation_status.eq.id_translated,synopsis_translated.not.is.null')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching indonesian novels:', error);
+    return [];
+  }
+  return data || [];
+}
+
+export function useIndonesianNovels() {
+  return useQuery({
+    queryKey: ['novels', 'indonesian'],
+    queryFn: fetchIndonesianNovels,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
