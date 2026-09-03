@@ -26,7 +26,7 @@ export async function fetchAllNovels(): Promise<NovelItem[]> {
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status')
     .eq('is_blacklisted', false)
-    .not('status', 'in', '("draft","dropped","blacklisted")')
+    .in('status', ['active', 'completed', 'ongoing', 'published'])
     .order('rating', { ascending: false, nullsFirst: false })
     .limit(100);
 
@@ -42,7 +42,7 @@ export async function fetchLatestNovelsList(): Promise<NovelItem[]> {
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
     .eq('is_blacklisted', false)
-    .not('status', 'in', '("draft","dropped","blacklisted")')
+    .in('status', ['active', 'completed', 'ongoing', 'published'])
     .order('updated_at', { ascending: false })
     .limit(100);
 
@@ -59,7 +59,7 @@ export async function fetchNovelDetail(slug: string): Promise<NovelItem | null> 
     .select('*')
     .eq('nu_slug', slug)
     .eq('is_blacklisted', false)
-    .not('status', 'in', '("draft","dropped","blacklisted")')
+    .in('status', ['active', 'completed', 'ongoing', 'published'])
     .maybeSingle();
 
   if (error) {
@@ -123,7 +123,7 @@ export async function fetchIndonesianNovels(): Promise<NovelItem[]> {
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
     .eq('is_blacklisted', false)
-    .not('status', 'in', '("draft","dropped","blacklisted")')
+    .in('status', ['active', 'completed', 'ongoing', 'published'])
     .or('translation_status.eq.id_translated,synopsis_translated.not.is.null')
     .order('updated_at', { ascending: false });
 
@@ -152,7 +152,7 @@ export async function fetchPopularNovelsPage(page: number = 1, pageSize: number 
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status')
     .eq('is_blacklisted', false)
-    .not('status', 'in', '("draft","dropped","blacklisted")')
+    .in('status', ['active', 'completed', 'ongoing', 'published'])
     .order('rating', { ascending: false, nullsFirst: false })
     .range(from, to);
 
@@ -180,7 +180,7 @@ export async function fetchLatestNovelsPage(page: number = 1, pageSize: number =
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
     .eq('is_blacklisted', false)
-    .not('status', 'in', '("draft","dropped","blacklisted")')
+    .in('status', ['active', 'completed', 'ongoing', 'published'])
     .order('updated_at', { ascending: false })
     .range(from, to);
 

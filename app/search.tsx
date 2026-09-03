@@ -91,15 +91,19 @@ export default function SearchScreen() {
     try {
       const { data: results, error } = await supabase
         .from('nu_novels')
-        .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, synopsis, author, status, total_views')
+        .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, synopsis, author, status, total_views, is_blacklisted')
         .eq('is_blacklisted', false)
-        .not('status', 'in', '("draft","dropped","blacklisted")')
+        .in('status', ['active', 'completed', 'ongoing', 'published'])
         .ilike('title', `%${trimmed}%`)
         .order('total_chapters', { ascending: false })
         .limit(30);
 
       if (!error && results) {
-        setData(results);
+        // Double filter client-side just in case
+        const cleanResults = results.filter(
+          (n: any) => !n.is_blacklisted && n.status !== 'dropped' && n.status !== 'draft' && n.status !== 'blacklisted'
+        );
+        setData(cleanResults);
         recent.add(trimmed);
       }
     } catch (e) {

@@ -58,7 +58,7 @@ export default function LatestUpdatesScreen() {
         .from('nu_novels')
         .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, author, status, total_views')
         .eq('is_blacklisted', false)
-        .not('status', 'in', '("draft","dropped","blacklisted")')
+        .in('status', ['active', 'completed', 'ongoing', 'published'])
         .order('updated_at', { ascending: false })
         .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
