@@ -349,7 +349,7 @@ export default function HomeScreen() {
               <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>
                 Trending &amp; Populer
               </Text>
-              <Pressable onPress={() => router.push('/(tabs)/explore' as any)}>
+              <Pressable onPress={() => router.push('/lihat-semua/trending' as any)} hitSlop={8}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
                   Lihat semua
                 </Text>
@@ -436,7 +436,7 @@ export default function HomeScreen() {
               <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>
                 Populer Minggu Ini
               </Text>
-              <Pressable onPress={() => router.push('/(tabs)/explore' as any)}>
+              <Pressable onPress={() => router.push('/lihat-semua/populer' as any)} hitSlop={8}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
                   Lihat semua
                 </Text>
@@ -487,7 +487,7 @@ export default function HomeScreen() {
                     color={colors.primary}
                   />
                 </Pressable>
-                <Pressable onPress={() => router.push('/(tabs)/explore' as any)} hitSlop={8}>
+                <Pressable onPress={() => router.push('/lihat-semua/terbaru' as any)} hitSlop={8}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
                     Lihat semua
                   </Text>

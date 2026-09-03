@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { supabase } from './supabase';
+
+export const INFINITE_PAGE_SIZE = 18;
 
 export interface NovelItem {
   id: string;
@@ -134,4 +136,62 @@ export function useIndonesianNovels() {
     staleTime: 1000 * 60 * 5,
   });
 }
+
+/**
+ * Hook Infinite Scroll untuk Halaman Lihat Semua (Trending, Populer, Update Terbaru)
+ */
+export async function fetchPopularNovelsPage(page: number = 1, pageSize: number = INFINITE_PAGE_SIZE): Promise<NovelItem[]> {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const { data, error } = await supabase
+    .from('nu_novels')
+    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status')
+    .neq('status', 'draft')
+    .order('rating', { ascending: false, nullsFirst: false })
+    .range(from, to);
+
+  if (error) {
+    console.error('Error fetching popular novels page:', error);
+    return [];
+  }
+  return data || [];
+}
+
+export function usePopularNovelsInfinite() {
+  return useInfiniteQuery({
+    queryKey: ['novels', 'popular', 'infinite'],
+    queryFn: ({ pageParam = 1 }) => fetchPopularNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: NovelItem[], _pages, lastPageParam) =>
+      lastPage.length < INFINITE_PAGE_SIZE ? undefined : (lastPageParam as number) + 1,
+  });
+}
+
+export async function fetchLatestNovelsPage(page: number = 1, pageSize: number = INFINITE_PAGE_SIZE): Promise<NovelItem[]> {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const { data, error } = await supabase
+    .from('nu_novels')
+    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
+    .neq('status', 'draft')
+    .order('updated_at', { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    console.error('Error fetching latest novels page:', error);
+    return [];
+  }
+  return data || [];
+}
+
+export function useLatestNovelsInfinite() {
+  return useInfiniteQuery({
+    queryKey: ['novels', 'latest', 'infinite'],
+    queryFn: ({ pageParam = 1 }) => fetchLatestNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: NovelItem[], _pages, lastPageParam) =>
+      lastPage.length < INFINITE_PAGE_SIZE ? undefined : (lastPageParam as number) + 1,
+  });
+}
+
 
