@@ -210,15 +210,16 @@ export default function HomeScreen() {
                   }}
                 >
                   {/* Luxury Refined Logo (BarberChop Font from Komiku) */}
-                  <View style={{ position: 'relative' }}>
+                  <View style={{ position: 'relative', alignSelf: 'flex-start' }}>
                     {[
-                      { left: -0.4, top: -0.4 },
-                      { left: 0.4, top: -0.4 },
-                      { left: -0.4, top: 0.4 },
-                      { left: 0.4, top: 0.4 },
+                      { left: -0.5, top: -0.5 },
+                      { left: 0.5, top: -0.5 },
+                      { left: -0.5, top: 0.5 },
+                      { left: 0.5, top: 0.5 },
                     ].map((offset, i) => (
                       <Text
                         key={i}
+                        numberOfLines={1}
                         style={[
                           {
                             position: 'absolute',
@@ -226,7 +227,8 @@ export default function HomeScreen() {
                             top: offset.top,
                             fontSize: 26,
                             lineHeight: 34,
-                            color: 'rgba(0,0,0,0.4)',
+                            color: 'rgba(0,0,0,0.5)',
+                            includeFontPadding: false,
                           },
                           logoFontStyle,
                         ]}
@@ -239,6 +241,7 @@ export default function HomeScreen() {
                         {
                           fontSize: 26,
                           lineHeight: 34,
+                          includeFontPadding: false,
                         },
                         logoFontStyle,
                       ]}

@@ -17,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../lib/i18n';
 import { formatViews } from '../../lib/utils';
 import { CustomDialog } from '../../components/CustomDialog';
-
+import { useTheme } from '../../lib/ThemeProvider';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -51,6 +51,7 @@ export default function NovelDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const { t, lang } = useLanguage();
+  const { colors } = useTheme();
   const [novel, setNovel] = useState<Novel | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,25 +166,25 @@ export default function NovelDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#d4a843" />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   if (!novel) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <Text style={styles.errorText}>{t.novel_not_found}</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← {t.back}</Text>
+          <Text style={[styles.backBtnText, { color: colors.primary }]}>← {t.back}</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       {/* Cover + Overlay */}
       <View style={styles.heroContainer}>
         {novel.cover_url && (
@@ -219,16 +220,16 @@ export default function NovelDetailScreen() {
           <Text style={styles.novelAuthor}>{novel.author || 'Unknown Author'}</Text>
           <View style={styles.statRow}>
             {novel.rating && (
-              <View style={styles.statBadge}>
-                <Text style={styles.statText}>★ {typeof novel.rating === 'number' ? novel.rating.toFixed(1) : novel.rating}</Text>
+              <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
+                <Text style={[styles.statText, { color: colors.primary }]}>★ {typeof novel.rating === 'number' ? novel.rating.toFixed(1) : novel.rating}</Text>
               </View>
             )}
-            <View style={styles.statBadge}>
-              <Text style={styles.statText}>{novel.total_chapters} ch</Text>
+            <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
+              <Text style={[styles.statText, { color: colors.primary }]}>{novel.total_chapters} ch</Text>
             </View>
             {novel.year && (
-              <View style={styles.statBadge}>
-                <Text style={styles.statText}>{novel.year}</Text>
+              <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
+                <Text style={[styles.statText, { color: colors.primary }]}>{novel.year}</Text>
               </View>
             )}
             {novel.total_views !== undefined && (
@@ -255,8 +256,17 @@ export default function NovelDetailScreen() {
                 );
               })()}
               {/* Save to Library */}
-              <TouchableOpacity style={[styles.saveBadge, isSaved && styles.saveBadgeActive]} onPress={toggleSave}>
-                <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={14} color={isSaved ? '#d4a843' : '#94a3b8'} />
+              <TouchableOpacity
+                style={[
+                  styles.saveBadge,
+                  isSaved && {
+                    backgroundColor: colors.primaryMuted,
+                    borderColor: colors.primary + '60',
+                  },
+                ]}
+                onPress={toggleSave}
+              >
+                <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={14} color={isSaved ? colors.primary : '#94a3b8'} />
               </TouchableOpacity>
               {/* Share */}
               <TouchableOpacity style={styles.saveBadge} onPress={() => {
@@ -349,8 +359,8 @@ export default function NovelDetailScreen() {
                 style={[
                   styles.loadChapterBtn,
                   expandedGroups.size === Math.ceil(chapters.length / 20) && {
-                    backgroundColor: 'rgba(212,168,67,0.15)',
-                    borderColor: '#d4a843',
+                    backgroundColor: colors.primaryMuted,
+                    borderColor: colors.primary,
                   },
                 ]}
                 onPress={() => {
@@ -366,7 +376,7 @@ export default function NovelDetailScreen() {
                 <Text
                   style={[
                     styles.loadChapterBtnText,
-                    expandedGroups.size === Math.ceil(chapters.length / 20) && { color: '#d4a843' },
+                    expandedGroups.size === Math.ceil(chapters.length / 20) && { color: colors.primary },
                   ]}
                 >
                   {expandedGroups.size === Math.ceil(chapters.length / 20) ? t.close_all : t.all_chapters}
@@ -383,7 +393,11 @@ export default function NovelDetailScreen() {
               return (
                 <View key={gi}>
                   <TouchableOpacity
-                    style={[styles.groupBtn, isOpen && styles.groupBtnActive, hasLastRead && !isOpen && styles.groupBtnLastRead]}
+                    style={[
+                      styles.groupBtn,
+                      isOpen && { backgroundColor: colors.primaryMuted, borderColor: colors.primary },
+                      hasLastRead && !isOpen && styles.groupBtnLastRead,
+                    ]}
                     onPress={() => {
                       setExpandedGroups(prev => {
                         const next = new Set(prev);
@@ -393,7 +407,7 @@ export default function NovelDetailScreen() {
                       });
                     }}
                   >
-                    <Text style={[styles.groupBtnText, isOpen && { color: '#d4a843' }, hasLastRead && !isOpen && { color: '#22c55e' }]}>
+                    <Text style={[styles.groupBtnText, isOpen && { color: colors.primary }, hasLastRead && !isOpen && { color: '#22c55e' }]}>
                       Chapter {start + 1} - {end} {hasLastRead && !isOpen ? `(Ch-${lastReadChapter})` : ''} {isOpen ? '▲' : '▼'}
                     </Text>
                   </TouchableOpacity>
@@ -410,7 +424,7 @@ export default function NovelDetailScreen() {
                       >
                         <View style={styles.chapterLeft}>
                           <View style={[styles.chapterDot, { backgroundColor: hasContent ? '#22c55e' : '#334155' }]} />
-                          <Text style={[styles.chapterNum, !hasContent && { color: '#475569' }]}>#{ch.chapter_number}</Text>
+                          <Text style={[styles.chapterNum, { color: colors.primary }, !hasContent && { color: '#475569' }]}>#{ch.chapter_number}</Text>
                           <Text style={[styles.chapterTitle, !hasContent && { color: '#475569' }]} numberOfLines={1}>
                             {ch.chapter_title || `Chapter ${ch.chapter_number}`}
                           </Text>
@@ -446,11 +460,11 @@ export default function NovelDetailScreen() {
 
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0f' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a0f' },
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { color: '#94a3b8', fontSize: 16 },
   backBtn: { marginTop: 16, padding: 12 },
-  backBtnText: { color: '#d4a843', fontSize: 14, fontWeight: '600' },
+  backBtnText: { fontSize: 14, fontWeight: '600' },
 
   heroContainer: { minHeight: 220, position: 'relative' },
   heroBg: { position: 'absolute', width: '100%', height: '100%' },
@@ -469,20 +483,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
-  saveBadgeActive: {
-    backgroundColor: 'rgba(212,168,67,0.15)',
-    borderColor: 'rgba(212,168,67,0.3)',
-  },
   statRow: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' },
   statBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    backgroundColor: 'rgba(212,168,67,0.12)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.25)',
   },
-  statText: { fontSize: 11.5, fontWeight: '700', color: '#d4a843' },
+  statText: { fontSize: 11.5, fontWeight: '700' },
 
   genreContainer: { paddingHorizontal: 20, paddingTop: 16 },
   genreParagraph: {
@@ -508,7 +516,6 @@ const styles = StyleSheet.create({
     marginBottom: 4, borderWidth: 1, borderColor: '#1e1e2e',
     alignItems: 'center',
   },
-  groupBtnActive: { backgroundColor: 'rgba(212,168,67,0.08)', borderColor: '#d4a843' },
   groupBtnLastRead: { backgroundColor: 'rgba(34,197,94,0.08)', borderColor: '#22c55e' },
   groupBtnText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
   synopsisText: { fontSize: 14, color: '#94a3b8', lineHeight: 22 },
@@ -539,7 +546,7 @@ const styles = StyleSheet.create({
   chapterLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   chapterDot: { width: 8, height: 8, borderRadius: 4 },
   chapterPending: { opacity: 0.5 },
-  chapterNum: { fontSize: 12, fontWeight: '700', color: '#d4a843', width: 30 },
+  chapterNum: { fontSize: 12, fontWeight: '700', width: 30 },
   chapterTitle: { fontSize: 14, color: '#e2e8f0', flex: 1 },
   chapterWords: { fontSize: 11, color: '#64748b' },
   chapterStatusPending: { fontSize: 10, color: '#475569', fontWeight: '600' },

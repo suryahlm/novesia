@@ -19,13 +19,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
+import { useTheme } from '../lib/ThemeProvider';
 
 const LIBRARY_KEY = 'novesia_library';
 
 const { width, height } = Dimensions.get('window');
-
-const GOLD = '#d4a843';
-const DARK_BG = '#0a0a0f';
 
 interface Novel {
   id: string;
@@ -51,6 +49,7 @@ interface Props {
 
 export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onAddToLibrary }: Props) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const [synopsis, setSynopsis] = useState<string | null>(null);
   const [loadingSynopsis, setLoadingSynopsis] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -145,14 +144,14 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 24) + 28 }]}>
           {/* Top accent line */}
           <LinearGradient
-            colors={['transparent', GOLD, 'transparent']}
+            colors={['transparent', colors.primary, 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.topAccent}
           />
 
           {/* Drag Handle */}
-          <View style={styles.dragHandle} />
+          <View style={[styles.dragHandle, { backgroundColor: colors.primary + '50' }]} />
 
           {/* Close button */}
           <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
@@ -200,9 +199,9 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
                   <Text style={styles.metaText}>{novel.total_chapters}</Text>
                 </View>
                 {novel.rating && novel.rating > 0 && (
-                  <View style={[styles.metaChip, styles.ratingChip]}>
-                    <Ionicons name="star" size={10} color={GOLD} />
-                    <Text style={[styles.metaText, { color: GOLD }]}>{novel.rating.toFixed(1)}</Text>
+                  <View style={[styles.metaChip, styles.ratingChip, { borderColor: colors.primary + '40', backgroundColor: colors.primaryMuted }]}>
+                    <Ionicons name="star" size={10} color={colors.primary} />
+                    <Text style={[styles.metaText, { color: colors.primary }]}>{novel.rating.toFixed(1)}</Text>
                   </View>
                 )}
               </View>
@@ -221,11 +220,14 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
               {/* Extra Action Icons (Save & Share) */}
               <View style={styles.extraActionRow}>
                 <TouchableOpacity
-                  style={[styles.smallIconBtn, isSaved && { borderColor: GOLD, backgroundColor: 'rgba(212,168,67,0.1)' }]}
+                  style={[
+                    styles.smallIconBtn,
+                    isSaved && { borderColor: colors.primary, backgroundColor: colors.primaryMuted },
+                  ]}
                   onPress={toggleSave}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={18} color={isSaved ? GOLD : "#94a3b8"} />
+                  <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={18} color={isSaved ? colors.primary : "#94a3b8"} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.smallIconBtn}
@@ -240,7 +242,7 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
 
           {/* Divider */}
           <LinearGradient
-            colors={['transparent', 'rgba(212,168,67,0.15)', 'transparent']}
+            colors={['transparent', colors.primary + '30', 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.divider}
@@ -249,11 +251,11 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
           {/* Synopsis */}
           <View style={styles.synopsisContainer}>
             <View style={styles.synopsisHeader}>
-              <Ionicons name="document-text-outline" size={14} color={GOLD} />
-              <Text style={styles.synopsisLabel}>Synopsis</Text>
+              <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+              <Text style={[styles.synopsisLabel, { color: colors.primary }]}>Synopsis</Text>
             </View>
             {loadingSynopsis ? (
-              <ActivityIndicator size="small" color={GOLD} style={{ marginTop: 16 }} />
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 16 }} />
             ) : synopsis ? (
               <ScrollView
                 style={styles.synopsisScroll}
@@ -281,7 +283,7 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
               activeOpacity={0.85}
             >
               <LinearGradient
-                colors={['#d4a843', '#c49b38', '#b8902f']}
+                colors={[colors.gradientLight, colors.gradientDark]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.readBtnGradient}
