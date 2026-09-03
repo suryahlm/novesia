@@ -29,6 +29,8 @@ import { useTheme } from '../../lib/ThemeProvider';
 import { usePopularNovels, useLatestNovels, useIndonesianNovels, NovelItem } from '../../lib/useNovelsQuery';
 import { useHomeBanners } from '../../lib/useBannersQuery';
 import { HomeBannerCarousel } from '../../components/HomeBannerCarousel';
+import { useNotifications } from '../../lib/useNotificationsQuery';
+import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 import { getHistory, HistoryItem } from '../../lib/history';
 import { SkeletonCarousel, SkeletonNovelGrid, SkeletonBox } from '../../components/SkeletonLoader';
 
@@ -54,11 +56,17 @@ export default function HomeScreen() {
   const { data: latestNovels = [], isLoading: loadingLatest } = useLatestNovels();
   const { data: indonesianNovels = [], isLoading: loadingIndonesian } = useIndonesianNovels();
   const homeBanners = useHomeBanners();
+  const notifications = useNotifications();
 
   const [activeLang, setActiveLang] = useState<LanguageFilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [continueReading, setContinueReading] = useState<HistoryItem[]>([]);
   const [previewNovel, setPreviewNovel] = useState<NovelItem | null>(null);
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<Set<string>>(new Set());
+  const dismissNotification = useCallback((id: string) => {
+    setDismissedNotificationIds((prev) => new Set(prev).add(id));
+  }, []);
+
   const [updateViewMode, setUpdateViewMode] = useState<GridViewMode>(3);
   const cycleUpdateViewMode = useCallback(
     () => setUpdateViewMode((m) => (m === 3 ? 2 : m === 2 ? 'list' : 3)),
@@ -73,9 +81,11 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    setDismissedNotificationIds(new Set());
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['novels'] }),
       queryClient.invalidateQueries({ queryKey: ['banners'] }),
+      queryClient.invalidateQueries({ queryKey: ['notifications'] }),
       getHistory().then(setContinueReading),
     ]);
     setRefreshing(false);
@@ -354,6 +364,15 @@ export default function HomeScreen() {
               );
             })}
           </View>
+
+          {/* ═══ SECTION: BROADCAST NOTIFIKASI / PENGUMUMAN ADMIN (Komiku style) ═══ */}
+          {(notifications.data?.length ?? 0) > 0 && (
+            <AnnouncementBanner
+              announcements={notifications.data ?? []}
+              dismissedIds={dismissedNotificationIds}
+              onDismiss={dismissNotification}
+            />
+          )}
 
           {/* ═══ SECTION 1: TRENDING & POPULER (Big stylized ranks 1, 2, 3) ═══ */}
           <View style={{ marginBottom: 24 }}>
