@@ -3,18 +3,17 @@ import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../lib/ThemeProvider';
-import { AppNotification, NotificationType } from '../lib/useNotificationsQuery';
+import { AppNotification } from '../lib/useNotificationsQuery';
 
-const TYPE_ICON: Record<NotificationType, keyof typeof Ionicons.glyphMap> = {
+const TYPE_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   info: 'information-circle',
-  warning: 'warning',
+  INFO: 'information-circle',
   maintenance: 'construct',
-};
-
-const TYPE_ACCENT: Record<NotificationType, string> = {
-  info: '#8B5CF6',
-  warning: '#F59E0B',
-  maintenance: '#3B82F6',
+  MAINTENANCE: 'construct',
+  warning: 'warning',
+  WARNING: 'warning',
+  success: 'checkmark-circle',
+  SUCCESS: 'checkmark-circle',
 };
 
 interface AnnouncementBannerProps {
@@ -24,10 +23,8 @@ interface AnnouncementBannerProps {
 }
 
 /**
- * Banner notifikasi/pengumuman in-app di Beranda (seperti di Komiku):
- * - Tampil di bawah tab filter Bahasa dan di atas Trending & Populer.
- * - Warna dan ikon dinamis sesuai tipe ('info' | 'warning' | 'maintenance').
- * - Dapat di-dismiss per sesi dan muncul kembali saat pull-to-refresh.
+ * Stack pengumuman admin di Beranda - persis sama dengan Komiku (AnnouncementBanner.tsx).
+ * Tampilan flat translucent yang bersih tanpa kotak bayangan/elevation di dalam card.
  */
 export function AnnouncementBanner({ announcements, dismissedIds, onDismiss }: AnnouncementBannerProps) {
   const { colors } = useTheme();
@@ -35,37 +32,43 @@ export function AnnouncementBanner({ announcements, dismissedIds, onDismiss }: A
 
   if (!visible.length) return null;
 
+  const typeAccent: Record<string, string> = {
+    info: colors.info || '#6F9FC8',
+    INFO: colors.info || '#6F9FC8',
+    maintenance: colors.warning || '#E5A94B',
+    MAINTENANCE: colors.warning || '#E5A94B',
+    warning: colors.danger || '#D86666',
+    WARNING: colors.danger || '#D86666',
+    success: colors.success || '#66C47A',
+    SUCCESS: colors.success || '#66C47A',
+  };
+
   return (
-    <View style={{ paddingHorizontal: 16, gap: 10, marginBottom: 20 }}>
+    <View style={{ paddingHorizontal: 16, gap: 8, marginBottom: 20 }}>
       {visible.map((a) => {
-        const accent = TYPE_ACCENT[a.type] || colors.primary;
-        const iconName = TYPE_ICON[a.type] || 'information-circle';
+        const key = a.type || 'info';
+        const accent = typeAccent[key] || colors.info || '#6F9FC8';
+        const iconName = TYPE_ICON[key] || 'information-circle';
 
         return (
           <View
             key={a.id}
             style={{
               flexDirection: 'row',
-              alignItems: 'flex-start',
-              gap: 12,
-              padding: 14,
-              borderRadius: 12,
-              backgroundColor: `${accent}18`,
+              gap: 8,
+              padding: 12,
+              borderRadius: 16,
+              backgroundColor: `${accent}1A`,
               borderWidth: 1,
-              borderColor: `${accent}50`,
-              shadowColor: accent,
-              shadowOpacity: 0.15,
-              shadowRadius: 6,
-              shadowOffset: { width: 0, height: 2 },
-              elevation: 2,
+              borderColor: `${accent}59`,
             }}
           >
-            <Ionicons name={iconName} size={22} color={accent} style={{ marginTop: 1 }} />
+            <Ionicons name={iconName} size={20} color={accent} style={{ marginTop: 1 }} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
                 {a.title}
               </Text>
-              <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 3, lineHeight: 18 }}>
+              <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2, lineHeight: 18 }}>
                 {a.message}
               </Text>
             </View>
@@ -74,14 +77,9 @@ export function AnnouncementBanner({ announcements, dismissedIds, onDismiss }: A
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel="Tutup pengumuman"
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.5 : 0.8,
-                padding: 4,
-                marginTop: -2,
-                marginRight: -4,
-              })}
+              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 2 })}
             >
-              <Ionicons name="close" size={18} color={colors.textMuted} />
+              <Ionicons name="close" size={16} color={colors.textMuted} />
             </Pressable>
           </View>
         );
