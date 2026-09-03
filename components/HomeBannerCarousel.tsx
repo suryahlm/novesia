@@ -9,7 +9,6 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useIsFocused } from '@react-navigation/native';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { useTheme } from '../lib/ThemeProvider';
@@ -40,7 +39,6 @@ export interface HomeBannerCarouselProps {
 export function HomeBannerCarousel({ banners }: HomeBannerCarouselProps) {
   const { colors } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const isFocused = useIsFocused();
   const reducedMotion = useReducedMotion();
 
   const listRef = useRef<FlatList<HomeBanner>>(null);
@@ -60,7 +58,7 @@ export function HomeBannerCarousel({ banners }: HomeBannerCarouselProps) {
     listRef.current?.scrollToOffset({ offset: 0, animated: false });
   }, [bannerSetKey]);
 
-  const shouldAutoSlide = isFocused && !reducedMotion && banners.length > 1;
+  const shouldAutoSlide = !reducedMotion && banners.length > 1;
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startAutoSlide = useCallback(() => {
