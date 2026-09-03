@@ -290,7 +290,7 @@ export default function ReadChapterScreen() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: currentTheme.bg }]}>
-        <ActivityIndicator size="large" color="#7c3aed" />
+        <ActivityIndicator size="large" color="#d4a843" />
       </View>
     );
   }
@@ -300,7 +300,7 @@ export default function ReadChapterScreen() {
       <View style={styles.loadingContainer}>
         <Text style={{ color: '#94a3b8', fontSize: 15 }}>{t.chapter_not_found}</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-          <Text style={{ color: '#7c3aed', fontWeight: '600' }}>← {t.back}</Text>
+          <Text style={{ color: '#d4a843', fontWeight: '600' }}>← {t.back}</Text>
         </TouchableOpacity>
       </View>
     );

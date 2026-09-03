@@ -166,7 +166,7 @@ export default function NovelDetailScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7c3aed" />
+        <ActivityIndicator size="large" color="#d4a843" />
       </View>
     );
   }
@@ -202,40 +202,40 @@ export default function NovelDetailScreen() {
           {novel.cover_url ? (
             <Image 
               source={{ 
-                uri: novel.cover_url, 
-                headers: { 'User-Agent': 'NovesiaApp/1.0' }
-              }} 
-              style={styles.coverImage} 
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <View style={[styles.coverImage, styles.noCover]}>
-              <Text style={{ fontSize: 40 }}>📕</Text>
-            </View>
-          )}
-          <View style={styles.heroInfo}>
-            <Text style={styles.novelTitle}>{novel.title}</Text>
-            <Text style={styles.novelAuthor}>{novel.author || 'Unknown Author'}</Text>
-            <View style={styles.statRow}>
-              {novel.rating && (
-                <View style={styles.statBadge}>
-                  <Text style={styles.statText}>★ {novel.rating}</Text>
-                </View>
-              )}
+              uri: novel.cover_url, 
+              headers: { 'User-Agent': 'NovesiaApp/1.0' }
+            }} 
+            style={styles.coverImage} 
+            contentFit="cover"
+            transition={200}
+          />
+        ) : (
+          <View style={[styles.coverImage, styles.noCover]}>
+            <Text style={{ fontSize: 40 }}>📕</Text>
+          </View>
+        )}
+        <View style={styles.heroInfo}>
+          <Text style={styles.novelTitle}>{novel.title}</Text>
+          <Text style={styles.novelAuthor}>{novel.author || 'Unknown Author'}</Text>
+          <View style={styles.statRow}>
+            {novel.rating && (
               <View style={styles.statBadge}>
-                <Text style={styles.statText}>{novel.total_chapters} ch</Text>
+                <Text style={styles.statText}>★ {typeof novel.rating === 'number' ? novel.rating.toFixed(1) : novel.rating}</Text>
               </View>
-              {novel.year && (
-                <View style={styles.statBadge}>
-                  <Text style={styles.statText}>{novel.year}</Text>
-                </View>
-              )}
-              {novel.total_views !== undefined && (
-                <View style={[styles.statBadge, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                  <Text style={[styles.statText, { color: '#e2e8f0' }]}>👁 {formatViews(novel.total_views)}</Text>
-                </View>
-              )}
+            )}
+            <View style={styles.statBadge}>
+              <Text style={styles.statText}>{novel.total_chapters} ch</Text>
+            </View>
+            {novel.year && (
+              <View style={styles.statBadge}>
+                <Text style={styles.statText}>{novel.year}</Text>
+              </View>
+            )}
+            {novel.total_views !== undefined && (
+              <View style={[styles.statBadge, { backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                <Text style={[styles.statText, { color: '#e2e8f0' }]}>👁 {formatViews(novel.total_views)}</Text>
+              </View>
+            )}
               {(() => {
                 const eff = (novel.status && novel.status !== 'draft') ? novel.status
                   : (['completed','complete','finished'].includes((novel.original_status||'').toLowerCase())) ? 'completed'
@@ -346,7 +346,13 @@ export default function NovelDetailScreen() {
             {/* Semua Chapter button */}
             <View style={{ flexDirection: 'row', marginBottom: 12 }}>
               <TouchableOpacity
-                style={[styles.loadChapterBtn, expandedGroups.size === Math.ceil(chapters.length / 20) && { backgroundColor: 'rgba(124,58,237,0.2)', borderColor: '#7c3aed' }]}
+                style={[
+                  styles.loadChapterBtn,
+                  expandedGroups.size === Math.ceil(chapters.length / 20) && {
+                    backgroundColor: 'rgba(212,168,67,0.15)',
+                    borderColor: '#d4a843',
+                  },
+                ]}
                 onPress={() => {
                   if (expandedGroups.size === Math.ceil(chapters.length / 20)) {
                     setExpandedGroups(new Set());
@@ -357,7 +363,12 @@ export default function NovelDetailScreen() {
                   }
                 }}
               >
-                <Text style={[styles.loadChapterBtnText, expandedGroups.size === Math.ceil(chapters.length / 20) && { color: '#a78bfa' }]}>
+                <Text
+                  style={[
+                    styles.loadChapterBtnText,
+                    expandedGroups.size === Math.ceil(chapters.length / 20) && { color: '#d4a843' },
+                  ]}
+                >
                   {expandedGroups.size === Math.ceil(chapters.length / 20) ? t.close_all : t.all_chapters}
                 </Text>
               </TouchableOpacity>
@@ -439,7 +450,7 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a0f' },
   errorText: { color: '#94a3b8', fontSize: 16 },
   backBtn: { marginTop: 16, padding: 12 },
-  backBtnText: { color: '#7c3aed', fontSize: 14, fontWeight: '600' },
+  backBtnText: { color: '#d4a843', fontSize: 14, fontWeight: '600' },
 
   heroContainer: { minHeight: 220, position: 'relative' },
   heroBg: { position: 'absolute', width: '100%', height: '100%' },
@@ -466,10 +477,12 @@ const styles = StyleSheet.create({
   statBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    backgroundColor: 'rgba(124,58,237,0.2)',
-    borderRadius: 10,
+    backgroundColor: 'rgba(212,168,67,0.12)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(212,168,67,0.25)',
   },
-  statText: { fontSize: 11, fontWeight: '700', color: '#a78bfa' },
+  statText: { fontSize: 11.5, fontWeight: '700', color: '#d4a843' },
 
   genreContainer: { paddingHorizontal: 20, paddingTop: 16 },
   genreParagraph: {
@@ -526,7 +539,7 @@ const styles = StyleSheet.create({
   chapterLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   chapterDot: { width: 8, height: 8, borderRadius: 4 },
   chapterPending: { opacity: 0.5 },
-  chapterNum: { fontSize: 12, fontWeight: '700', color: '#7c3aed', width: 30 },
+  chapterNum: { fontSize: 12, fontWeight: '700', color: '#d4a843', width: 30 },
   chapterTitle: { fontSize: 14, color: '#e2e8f0', flex: 1 },
   chapterWords: { fontSize: 11, color: '#64748b' },
   chapterStatusPending: { fontSize: 10, color: '#475569', fontWeight: '600' },
