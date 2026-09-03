@@ -14,12 +14,14 @@ export interface NovelItem {
   synopsis?: string;
   total_views?: number;
   source?: string;
+  language?: string | null;
+  translation_status?: string | null;
 }
 
 export async function fetchAllNovels(): Promise<NovelItem[]> {
   const { data, error } = await supabase
     .from('nu_novels')
-    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, total_views, source')
+    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, total_views, source, language, translation_status')
     .neq('status', 'draft')
     .order('rating', { ascending: false, nullsFirst: false })
     .limit(40);
@@ -34,7 +36,7 @@ export async function fetchAllNovels(): Promise<NovelItem[]> {
 export async function fetchLatestNovelsList(): Promise<NovelItem[]> {
   const { data, error } = await supabase
     .from('nu_novels')
-    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, total_views, source, updated_at')
+    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, total_views, source, language, translation_status, updated_at')
     .neq('status', 'draft')
     .order('updated_at', { ascending: false })
     .limit(40);

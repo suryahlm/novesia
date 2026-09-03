@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { GradientBackground } from '../../components/GradientBackground';
 import { FeaturedCarousel } from '../../components/FeaturedCarousel';
 import { ShimmerText } from '../../components/ShimmerText';
+import { GoldSurface } from '../../components/GoldSurface';
 import { TrendingRankCard } from '../../components/TrendingRankCard';
 import { ContinueReadingCard } from '../../components/ContinueReadingCard';
 import { PopularGridCard } from '../../components/PopularGridCard';
@@ -25,6 +26,14 @@ import { useTheme } from '../../lib/ThemeProvider';
 import { usePopularNovels, useLatestNovels, NovelItem } from '../../lib/useNovelsQuery';
 import { getHistory, HistoryItem } from '../../lib/history';
 import { SkeletonCarousel, SkeletonNovelGrid, SkeletonBox } from '../../components/SkeletonLoader';
+
+const LANGUAGE_FILTERS = [
+  { key: 'all', label: 'Semua' },
+  { key: 'en', label: 'English' },
+  { key: 'id', label: 'Indonesia' },
+] as const;
+
+type LanguageFilterKey = typeof LANGUAGE_FILTERS[number]['key'];
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -36,6 +45,7 @@ export default function HomeScreen() {
   const { data: novels = [], isLoading: loadingPopular } = usePopularNovels();
   const { data: latestNovels = [], isLoading: loadingLatest } = useLatestNovels();
 
+  const [activeLang, setActiveLang] = useState<LanguageFilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [continueReading, setContinueReading] = useState<HistoryItem[]>([]);
   const [previewNovel, setPreviewNovel] = useState<NovelItem | null>(null);
@@ -71,8 +81,52 @@ export default function HomeScreen() {
     [router]
   );
 
-  const featuredList = useMemo(() => novels.slice(0, 10), [novels]);
-  const trendingList = useMemo(() => novels.slice(0, 10), [novels]);
+  // Filter novels by language ("Semua" / "English" / "Indonesia")
+  const filteredNovels = useMemo(() => {
+    if (activeLang === 'all') return novels;
+    if (activeLang === 'id') {
+      return novels.filter(
+        (n) =>
+          n.language?.toLowerCase().includes('indonesia') ||
+          n.translation_status === 'Completed' ||
+          (n.genres && n.genres.some((g) => g.toLowerCase().includes('indonesia')))
+      );
+    }
+    // 'en' (English)
+    return novels.filter(
+      (n) =>
+        !n.language ||
+        n.language.toLowerCase().includes('english') ||
+        n.language.toLowerCase().includes('chinese') ||
+        n.language.toLowerCase().includes('korean') ||
+        n.language.toLowerCase().includes('japanese')
+    );
+  }, [novels, activeLang]);
+
+  const filteredLatestNovels = useMemo(() => {
+    if (activeLang === 'all') return latestNovels;
+    if (activeLang === 'id') {
+      return latestNovels.filter(
+        (n) =>
+          n.language?.toLowerCase().includes('indonesia') ||
+          n.translation_status === 'Completed' ||
+          (n.genres && n.genres.some((g) => g.toLowerCase().includes('indonesia')))
+      );
+    }
+    // 'en' (English)
+    return latestNovels.filter(
+      (n) =>
+        !n.language ||
+        n.language.toLowerCase().includes('english') ||
+        n.language.toLowerCase().includes('chinese') ||
+        n.language.toLowerCase().includes('korean') ||
+        n.language.toLowerCase().includes('japanese')
+    );
+  }, [latestNovels, activeLang]);
+
+  const featuredList = useMemo(() => filteredNovels.slice(0, 10), [filteredNovels]);
+  const trendingList = useMemo(() => filteredNovels.slice(0, 10), [filteredNovels]);
+  const weeklyList = useMemo(() => (filteredNovels.length > 10 ? filteredNovels.slice(10, 22) : filteredNovels), [filteredNovels]);
 
   const gridGap = 12;
   const gridColumns = viewMode;
@@ -241,6 +295,74 @@ export default function HomeScreen() {
             />
           </View>
 
+          {/* ═══ LANGUAGE FILTER TABS ("Semua" - "English" - "Indonesia") ═══ */}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              gap: 10,
+              paddingHorizontal: 16,
+              marginTop: -6,
+              marginBottom: 22,
+            }}
+          >
+            {LANGUAGE_FILTERS.map((option) => {
+              const active = option.key === activeLang;
+              return (
+                <Pressable
+                  key={option.key}
+                  onPress={() => setActiveLang(option.key)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  style={{ minWidth: 96 }}
+                >
+                  {active ? (
+                    <GoldSurface
+                      shimmer
+                      style={{
+                        paddingVertical: 7,
+                        paddingHorizontal: 20,
+                        borderRadius: 999,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        shadowColor: colors.primary,
+                        shadowOpacity: 0.45,
+                        shadowRadius: 8,
+                        shadowOffset: { width: 0, height: 2 },
+                        elevation: 5,
+                      }}
+                    >
+                      <ShimmerText
+                        style={{ fontSize: 13, fontWeight: '800' }}
+                        baseColor="#000000"
+                        shineColor="rgba(255,250,230,0.95)"
+                      >
+                        {option.label}
+                      </ShimmerText>
+                    </GoldSurface>
+                  ) : (
+                    <View
+                      style={{
+                        paddingVertical: 7,
+                        paddingHorizontal: 20,
+                        borderRadius: 999,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderWidth: 1,
+                        borderColor: 'rgba(255,255,255,0.12)',
+                        backgroundColor: 'rgba(20,24,33,0.85)',
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, color: '#94a3b8', fontWeight: '600' }}>
+                        {option.label}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+
           {/* ═══ SECTION 1: TRENDING & POPULER (Big stylized ranks 1, 2, 3) ═══ */}
           <View style={{ marginBottom: 24 }}>
             <View
@@ -350,7 +472,7 @@ export default function HomeScreen() {
             </View>
 
             <FlatList
-              data={novels.slice(10, 22)}
+              data={weeklyList}
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.id + '_weekly'}
@@ -408,7 +530,7 @@ export default function HomeScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              {latestNovels.slice(0, 18).map((item, index) => (
+              {filteredLatestNovels.slice(0, 18).map((item, index) => (
                 <View
                   key={item.id}
                   style={{
