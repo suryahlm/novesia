@@ -87,7 +87,8 @@ export default function SemuaScreen() {
       const { data } = await supabase
         .from('nu_novels')
         .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, author, status')
-        .neq('status', 'draft')
+        .eq('is_blacklisted', false)
+        .not('status', 'in', '("draft","dropped","blacklisted")')
         .order('title', { ascending: true });
       setNovels(data || []);
     } catch (e) {}

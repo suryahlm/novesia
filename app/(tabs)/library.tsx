@@ -72,6 +72,8 @@ export default function LibraryScreen() {
       const { data } = await supabase
         .from('nu_novels')
         .select('id, title, nu_slug, cover_url, total_chapters, author, status, rating, total_views')
+        .eq('is_blacklisted', false)
+        .not('status', 'in', '("draft","dropped","blacklisted")')
         .in('id', savedIds);
 
       const map = new Map((data || []).map((n) => [n.id, n]));

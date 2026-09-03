@@ -191,10 +191,16 @@ export default function ReadChapterScreen() {
 
       const { data: novelData } = await supabase
         .from('nu_novels')
-        .select('title, cover_url')
+        .select('title, cover_url, is_blacklisted, status')
         .eq('id', data.novel_id)
-        .single();
+        .maybeSingle();
       
+      if (!novelData || novelData.is_blacklisted || novelData.status === 'dropped' || novelData.status === 'blacklisted') {
+        setError("Novel ini tidak lagi tersedia.");
+        setLoading(false);
+        return;
+      }
+
       if (novelData) {
         setNovelTitle(novelData.title);
         

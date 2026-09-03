@@ -25,7 +25,8 @@ export async function fetchAllNovels(): Promise<NovelItem[]> {
   const { data, error } = await supabase
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status')
-    .neq('status', 'draft')
+    .eq('is_blacklisted', false)
+    .not('status', 'in', '("draft","dropped","blacklisted")')
     .order('rating', { ascending: false, nullsFirst: false })
     .limit(100);
 
@@ -40,7 +41,8 @@ export async function fetchLatestNovelsList(): Promise<NovelItem[]> {
   const { data, error } = await supabase
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
-    .neq('status', 'draft')
+    .eq('is_blacklisted', false)
+    .not('status', 'in', '("draft","dropped","blacklisted")')
     .order('updated_at', { ascending: false })
     .limit(100);
 
@@ -56,7 +58,9 @@ export async function fetchNovelDetail(slug: string): Promise<NovelItem | null> 
     .from('nu_novels')
     .select('*')
     .eq('nu_slug', slug)
-    .single();
+    .eq('is_blacklisted', false)
+    .not('status', 'in', '("draft","dropped","blacklisted")')
+    .maybeSingle();
 
   if (error) {
     console.error('Error fetching novel detail:', error);
@@ -118,7 +122,8 @@ export async function fetchIndonesianNovels(): Promise<NovelItem[]> {
   const { data, error } = await supabase
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
-    .neq('status', 'draft')
+    .eq('is_blacklisted', false)
+    .not('status', 'in', '("draft","dropped","blacklisted")')
     .or('translation_status.eq.id_translated,synopsis_translated.not.is.null')
     .order('updated_at', { ascending: false });
 
@@ -146,7 +151,8 @@ export async function fetchPopularNovelsPage(page: number = 1, pageSize: number 
   const { data, error } = await supabase
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status')
-    .neq('status', 'draft')
+    .eq('is_blacklisted', false)
+    .not('status', 'in', '("draft","dropped","blacklisted")')
     .order('rating', { ascending: false, nullsFirst: false })
     .range(from, to);
 
@@ -173,7 +179,8 @@ export async function fetchLatestNovelsPage(page: number = 1, pageSize: number =
   const { data, error } = await supabase
     .from('nu_novels')
     .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
-    .neq('status', 'draft')
+    .eq('is_blacklisted', false)
+    .not('status', 'in', '("draft","dropped","blacklisted")')
     .order('updated_at', { ascending: false })
     .range(from, to);
 

@@ -151,15 +151,18 @@ export default function NovelDetailScreen() {
       .from('nu_novels')
       .select('*')
       .eq('nu_slug', slug)
-      .single();
+      .eq('is_blacklisted', false)
+      .not('status', 'in', '("draft","dropped","blacklisted")')
+      .maybeSingle();
 
     if (novelData) {
       setNovel(novelData);
-      // Show ALL chapters
+      // Show ALL non-blacklisted chapters
       const { data: chapterData } = await supabase
         .from('nu_chapter_content')
         .select('id, chapter_number, chapter_title, translation_status, word_count_original, word_count_translated')
         .eq('novel_id', novelData.id)
+        .eq('is_blacklisted', false)
         .order('chapter_number', { ascending: true });
       setChapters(chapterData || []);
     }

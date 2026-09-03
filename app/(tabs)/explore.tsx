@@ -176,7 +176,8 @@ export default function ExploreScreen() {
       let query = supabase
         .from('nu_novels')
         .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, synopsis, author, status, total_views')
-        .neq('status', 'draft')
+        .eq('is_blacklisted', false)
+        .not('status', 'in', '("draft","dropped","blacklisted")')
         .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
       if (activeSort === 'POPULAR') {

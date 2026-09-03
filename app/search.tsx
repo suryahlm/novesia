@@ -92,7 +92,8 @@ export default function SearchScreen() {
       const { data: results, error } = await supabase
         .from('nu_novels')
         .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, synopsis, author, status, total_views')
-        .neq('status', 'draft')
+        .eq('is_blacklisted', false)
+        .not('status', 'in', '("draft","dropped","blacklisted")')
         .ilike('title', `%${trimmed}%`)
         .order('total_chapters', { ascending: false })
         .limit(30);
