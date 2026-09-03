@@ -21,10 +21,92 @@ import { useInterstitialAd } from '../../lib/useInterstitialAd';
 type ThemeMode = 'dark' | 'light' | 'sepia';
 type Language = 'en' | 'id';
 
-const THEMES: Record<ThemeMode, { bg: string; text: string; label: string }> = {
-  dark: { bg: '#0a0a0f', text: '#d4d4d8', label: 'Dark' },
-  light: { bg: '#fafafa', text: '#1a1a2e', label: 'Light' },
-  sepia: { bg: '#f5f0e8', text: '#3d3225', label: 'Sepia' },
+export interface ReaderThemeConfig {
+  bg: string;
+  text: string;
+  textMuted: string;
+  cardBg: string;
+  cardBgActive: string;
+  cardBorder: string;
+  surfaceBorder: string;
+  sheetBg: string;
+  headerBorder: string;
+  stepperBg: string;
+  stepperBorder: string;
+  sliderTrack: string;
+  goldAccent: string;
+  closeCircleBg: string;
+  chipBg: string;
+  chipBgActive: string;
+  navBtnBg: string;
+  navBtnBorder: string;
+  badgeBg: string;
+}
+
+const THEMES: Record<ThemeMode, ReaderThemeConfig> = {
+  dark: {
+    bg: '#0a0a0f',
+    text: '#d4d4d8',
+    textMuted: '#64748b',
+    cardBg: '#161B20',
+    cardBgActive: '#1B222A',
+    cardBorder: 'rgba(255,255,255,0.08)',
+    surfaceBorder: 'rgba(212,168,67,0.22)',
+    sheetBg: '#12161A',
+    headerBorder: 'rgba(255,255,255,0.06)',
+    stepperBg: '#181E24',
+    stepperBorder: 'rgba(255,255,255,0.08)',
+    sliderTrack: '#1E242B',
+    goldAccent: '#d4a843',
+    closeCircleBg: '#1A2026',
+    chipBg: '#161B20',
+    chipBgActive: '#1E252D',
+    navBtnBg: '#11151A',
+    navBtnBorder: 'rgba(255,255,255,0.08)',
+    badgeBg: 'rgba(212,168,67,0.12)',
+  },
+  light: {
+    bg: '#fafafa',
+    text: '#1a1a2e',
+    textMuted: '#64748b',
+    cardBg: '#F1F5F9',
+    cardBgActive: '#FFFBEB',
+    cardBorder: 'rgba(0,0,0,0.08)',
+    surfaceBorder: 'rgba(212,168,67,0.3)',
+    sheetBg: '#FFFFFF',
+    headerBorder: 'rgba(0,0,0,0.06)',
+    stepperBg: '#F1F5F9',
+    stepperBorder: 'rgba(0,0,0,0.08)',
+    sliderTrack: '#E2E8F0',
+    goldAccent: '#d4a843',
+    closeCircleBg: '#F1F5F9',
+    chipBg: '#F1F5F9',
+    chipBgActive: '#FEF3C7',
+    navBtnBg: '#FFFFFF',
+    navBtnBorder: 'rgba(0,0,0,0.1)',
+    badgeBg: 'rgba(212,168,67,0.15)',
+  },
+  sepia: {
+    bg: '#f5f0e8',
+    text: '#3d3225',
+    textMuted: '#786551',
+    cardBg: '#EDE4D6',
+    cardBgActive: '#FFF8EA',
+    cardBorder: 'rgba(133,77,14,0.12)',
+    surfaceBorder: 'rgba(202,138,4,0.3)',
+    sheetBg: '#FAF6F0',
+    headerBorder: 'rgba(133,77,14,0.1)',
+    stepperBg: '#E8DECE',
+    stepperBorder: 'rgba(133,77,14,0.15)',
+    sliderTrack: '#DFD3C3',
+    goldAccent: '#b45309',
+    closeCircleBg: '#EDE4D6',
+    chipBg: '#EDE4D6',
+    chipBgActive: '#FEF3C7',
+    navBtnBg: '#FAF5EE',
+    navBtnBorder: 'rgba(133,77,14,0.18)',
+    badgeBg: 'rgba(180,83,9,0.12)',
+  },
 };
 
 interface ChapterData {
@@ -401,20 +483,20 @@ export default function ReadChapterScreen() {
             <View style={styles.navRow}>
               {prevChapter ? (
                 <TouchableOpacity
-                  style={styles.navBtn}
+                  style={[styles.navBtn, { backgroundColor: currentTheme.navBtnBg, borderColor: currentTheme.navBtnBorder }]}
                   onPress={() => navigateChapter(prevChapter.id)}
                 >
-                  <Text style={styles.navBtnText}>← Ch {prevChapter.chapter_number}</Text>
+                  <Text style={[styles.navBtnText, { color: currentTheme.text }]}>← Ch {prevChapter.chapter_number}</Text>
                 </TouchableOpacity>
               ) : (
                 <View />
               )}
               {nextChapter ? (
                 <TouchableOpacity
-                  style={[styles.navBtn, styles.navBtnPrimary]}
+                  style={[styles.navBtn, { backgroundColor: currentTheme.goldAccent, borderColor: currentTheme.goldAccent }]}
                   onPress={() => navigateChapter(nextChapter.id)}
                 >
-                  <Text style={[styles.navBtnText, styles.navBtnPrimaryText]}>
+                  <Text style={[styles.navBtnText, { color: '#0D1012' }]}>
                     Ch {nextChapter.chapter_number} →
                   </Text>
                 </TouchableOpacity>
@@ -426,7 +508,7 @@ export default function ReadChapterScreen() {
         </>
       )}
 
-      {/* ═══ LUXURY READING PREFERENCES MODAL ═══ */}
+      {/* ═══ LUXURY READING PREFERENCES MODAL (THEME-REACTIVE) ═══ */}
       <Modal
         visible={showSettings}
         transparent
@@ -440,71 +522,98 @@ export default function ReadChapterScreen() {
             onPress={() => setShowSettings(false)}
           />
 
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: currentTheme.sheetBg, borderColor: currentTheme.surfaceBorder }]}>
             {/* Sheet Handle */}
-            <View style={styles.sheetHandle} />
+            <View
+              style={[
+                styles.sheetHandle,
+                { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)' },
+              ]}
+            />
 
             {/* Header */}
-            <View style={styles.modalHeaderRow}>
+            <View style={[styles.modalHeaderRow, { borderBottomColor: currentTheme.headerBorder }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={styles.modalHeaderIconBadge}>
-                  <Ionicons name="options-outline" size={17} color="#d4a843" />
+                <View style={[styles.modalHeaderIconBadge, { backgroundColor: currentTheme.badgeBg }]}>
+                  <Ionicons name="options-outline" size={17} color={currentTheme.goldAccent} />
                 </View>
-                <Text style={styles.modalTitle}>
+                <Text style={[styles.modalTitle, { color: currentTheme.text }]}>
                   {t.reading_preferences || 'Reading Preferences'}
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={() => setShowSettings(false)}
                 hitSlop={8}
-                style={styles.modalCloseCircle}
+                style={[styles.modalCloseCircle, { backgroundColor: currentTheme.closeCircleBg }]}
               >
-                <Ionicons name="close" size={18} color="#94a3b8" />
+                <Ionicons name="close" size={18} color={currentTheme.textMuted} />
               </TouchableOpacity>
             </View>
 
             {/* 1. Language Preference */}
             <View style={styles.settingSection}>
               <View style={styles.settingLabelRow}>
-                <Ionicons name="language-outline" size={15} color="#d4a843" />
-                <Text style={styles.settingLabel}>{t.language || 'Bahasa Teks'}</Text>
+                <Ionicons name="language-outline" size={15} color={currentTheme.goldAccent} />
+                <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.language || 'Bahasa Teks'}</Text>
               </View>
               <View style={styles.langGridRow}>
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  style={[styles.langCard, language === 'en' && styles.langCardActive]}
+                  style={[
+                    styles.langCard,
+                    {
+                      backgroundColor: language === 'en' ? currentTheme.cardBgActive : currentTheme.cardBg,
+                      borderColor: language === 'en' ? currentTheme.goldAccent : currentTheme.cardBorder,
+                    },
+                  ]}
                   onPress={() => setLanguage('en')}
                 >
                   <Text style={styles.langCardFlag}>🇬🇧</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.langCardTitle, language === 'en' && styles.langCardTitleActive]}>
+                    <Text
+                      style={[
+                        styles.langCardTitle,
+                        { color: language === 'en' ? currentTheme.text : currentTheme.textMuted },
+                      ]}
+                    >
                       English
                     </Text>
-                    <Text style={styles.langCardSubtitle}>Original Text</Text>
+                    <Text style={[styles.langCardSubtitle, { color: currentTheme.textMuted }]}>Original Text</Text>
                   </View>
                   {language === 'en' ? (
-                    <Ionicons name="checkmark-circle" size={18} color="#d4a843" />
+                    <Ionicons name="checkmark-circle" size={18} color={currentTheme.goldAccent} />
                   ) : (
-                    <View style={styles.radioUnchecked} />
+                    <View style={[styles.radioUnchecked, { borderColor: currentTheme.textMuted }]} />
                   )}
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  style={[styles.langCard, language === 'id' && styles.langCardActive]}
+                  style={[
+                    styles.langCard,
+                    {
+                      backgroundColor: language === 'id' ? currentTheme.cardBgActive : currentTheme.cardBg,
+                      borderColor: language === 'id' ? currentTheme.goldAccent : currentTheme.cardBorder,
+                    },
+                  ]}
                   onPress={() => setLanguage('id')}
                 >
                   <Text style={styles.langCardFlag}>🇮🇩</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.langCardTitle, language === 'id' && styles.langCardTitleActive]}>
+                    <Text
+                      style={[
+                        styles.langCardTitle,
+                        { color: language === 'id' ? currentTheme.text : currentTheme.textMuted },
+                      ]}
+                    >
                       Indonesia
                     </Text>
-                    <Text style={styles.langCardSubtitle}>Terjemahan</Text>
+                    <Text style={[styles.langCardSubtitle, { color: currentTheme.textMuted }]}>Terjemahan</Text>
                   </View>
                   {language === 'id' ? (
-                    <Ionicons name="checkmark-circle" size={18} color="#d4a843" />
+                    <Ionicons name="checkmark-circle" size={18} color={currentTheme.goldAccent} />
                   ) : (
-                    <View style={styles.radioUnchecked} />
+                    <View style={[styles.radioUnchecked, { borderColor: currentTheme.textMuted }]} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -514,43 +623,46 @@ export default function ReadChapterScreen() {
             <View style={styles.settingSection}>
               <View style={styles.settingLabelRow}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="text-outline" size={15} color="#d4a843" />
-                  <Text style={styles.settingLabel}>{t.font_size || 'Ukuran Teks'}</Text>
+                  <Ionicons name="text-outline" size={15} color={currentTheme.goldAccent} />
+                  <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.font_size || 'Ukuran Teks'}</Text>
                 </View>
-                <View style={styles.badgePill}>
-                  <Text style={styles.badgePillText}>{fontSize}px</Text>
+                <View style={[styles.badgePill, { backgroundColor: currentTheme.badgeBg, borderColor: currentTheme.goldAccent + '40' }]}>
+                  <Text style={[styles.badgePillText, { color: currentTheme.goldAccent }]}>{fontSize}px</Text>
                 </View>
               </View>
               <View style={styles.stepperRow}>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  style={styles.stepperBtn}
+                  style={[styles.stepperBtn, { backgroundColor: currentTheme.stepperBg, borderColor: currentTheme.stepperBorder }]}
                   onPress={() => {
                     const v = Math.max(12, fontSize - 1);
                     setFontSize(v);
                     saveSettings(v, theme, lineHeight);
                   }}
                 >
-                  <Text style={styles.stepperBtnText}>A-</Text>
+                  <Text style={[styles.stepperBtnText, { color: currentTheme.goldAccent }]}>A-</Text>
                 </TouchableOpacity>
-                <View style={styles.sliderTrack}>
+                <View style={[styles.sliderTrack, { backgroundColor: currentTheme.sliderTrack }]}>
                   <View
                     style={[
                       styles.sliderProgress,
-                      { width: `${((fontSize - 12) / 16) * 100}%` },
+                      {
+                        width: `${((fontSize - 12) / 16) * 100}%`,
+                        backgroundColor: currentTheme.goldAccent,
+                      },
                     ]}
                   />
                 </View>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  style={styles.stepperBtn}
+                  style={[styles.stepperBtn, { backgroundColor: currentTheme.stepperBg, borderColor: currentTheme.stepperBorder }]}
                   onPress={() => {
                     const v = Math.min(28, fontSize + 1);
                     setFontSize(v);
                     saveSettings(v, theme, lineHeight);
                   }}
                 >
-                  <Text style={styles.stepperBtnText}>A+</Text>
+                  <Text style={[styles.stepperBtnText, { color: currentTheme.goldAccent }]}>A+</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -558,8 +670,8 @@ export default function ReadChapterScreen() {
             {/* 3. Theme Mode */}
             <View style={styles.settingSection}>
               <View style={styles.settingLabelRow}>
-                <Ionicons name="color-palette-outline" size={15} color="#d4a843" />
-                <Text style={styles.settingLabel}>{t.theme || 'Tema Latar'}</Text>
+                <Ionicons name="color-palette-outline" size={15} color={currentTheme.goldAccent} />
+                <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.theme || 'Tema Latar'}</Text>
               </View>
               <View style={styles.themeGridRow}>
                 <TouchableOpacity
@@ -568,7 +680,7 @@ export default function ReadChapterScreen() {
                     styles.themeCard,
                     {
                       backgroundColor: '#0A0D10',
-                      borderColor: theme === 'dark' ? '#d4a843' : 'rgba(255,255,255,0.08)',
+                      borderColor: theme === 'dark' ? currentTheme.goldAccent : 'rgba(255,255,255,0.1)',
                     },
                   ]}
                   onPress={() => {
@@ -578,7 +690,7 @@ export default function ReadChapterScreen() {
                 >
                   <Ionicons name="moon" size={18} color="#d4a843" />
                   <Text style={[styles.themeCardText, { color: '#E2E8F0' }]}>Dark</Text>
-                  {theme === 'dark' && <View style={styles.themeCheckDot} />}
+                  {theme === 'dark' && <View style={[styles.themeCheckDot, { backgroundColor: currentTheme.goldAccent }]} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -587,7 +699,7 @@ export default function ReadChapterScreen() {
                     styles.themeCard,
                     {
                       backgroundColor: '#FAFAFA',
-                      borderColor: theme === 'light' ? '#d4a843' : 'rgba(0,0,0,0.1)',
+                      borderColor: theme === 'light' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
                     },
                   ]}
                   onPress={() => {
@@ -597,7 +709,7 @@ export default function ReadChapterScreen() {
                 >
                   <Ionicons name="sunny" size={18} color="#D97706" />
                   <Text style={[styles.themeCardText, { color: '#0F172A' }]}>Light</Text>
-                  {theme === 'light' && <View style={styles.themeCheckDot} />}
+                  {theme === 'light' && <View style={[styles.themeCheckDot, { backgroundColor: currentTheme.goldAccent }]} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -606,7 +718,7 @@ export default function ReadChapterScreen() {
                     styles.themeCard,
                     {
                       backgroundColor: '#F5EFE6',
-                      borderColor: theme === 'sepia' ? '#d4a843' : 'rgba(0,0,0,0.1)',
+                      borderColor: theme === 'sepia' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
                     },
                   ]}
                   onPress={() => {
@@ -616,7 +728,7 @@ export default function ReadChapterScreen() {
                 >
                   <Ionicons name="book-outline" size={18} color="#854D0E" />
                   <Text style={[styles.themeCardText, { color: '#451A03' }]}>Sepia</Text>
-                  {theme === 'sepia' && <View style={styles.themeCheckDot} />}
+                  {theme === 'sepia' && <View style={[styles.themeCheckDot, { backgroundColor: currentTheme.goldAccent }]} />}
                 </TouchableOpacity>
               </View>
             </View>
@@ -625,11 +737,11 @@ export default function ReadChapterScreen() {
             <View style={styles.settingSection}>
               <View style={styles.settingLabelRow}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="reorder-three-outline" size={17} color="#d4a843" />
-                  <Text style={styles.settingLabel}>{t.line_spacing || 'Jarak Baris'}</Text>
+                  <Ionicons name="reorder-three-outline" size={17} color={currentTheme.goldAccent} />
+                  <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.line_spacing || 'Jarak Baris'}</Text>
                 </View>
-                <View style={styles.badgePill}>
-                  <Text style={styles.badgePillText}>{lineHeight.toFixed(1)}x</Text>
+                <View style={[styles.badgePill, { backgroundColor: currentTheme.badgeBg, borderColor: currentTheme.goldAccent + '40' }]}>
+                  <Text style={[styles.badgePillText, { color: currentTheme.goldAccent }]}>{lineHeight.toFixed(1)}x</Text>
                 </View>
               </View>
               <View style={styles.lineSpacingRow}>
@@ -639,7 +751,13 @@ export default function ReadChapterScreen() {
                     <TouchableOpacity
                       key={val}
                       activeOpacity={0.7}
-                      style={[styles.lineSpacingChip, active && styles.lineSpacingChipActive]}
+                      style={[
+                        styles.lineSpacingChip,
+                        {
+                          backgroundColor: active ? currentTheme.chipBgActive : currentTheme.chipBg,
+                          borderColor: active ? currentTheme.goldAccent : currentTheme.cardBorder,
+                        },
+                      ]}
                       onPress={() => {
                         setLineHeight(val);
                         saveSettings(fontSize, theme, val);
@@ -648,7 +766,10 @@ export default function ReadChapterScreen() {
                       <Text
                         style={[
                           styles.lineSpacingChipText,
-                          active && styles.lineSpacingChipTextActive,
+                          {
+                            color: active ? currentTheme.goldAccent : currentTheme.textMuted,
+                            fontWeight: active ? '800' : '600',
+                          },
                         ]}
                       >
                         {val.toFixed(1)}
