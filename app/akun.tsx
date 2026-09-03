@@ -28,6 +28,7 @@ import { useAuthStore } from '../lib/useAuthStore';
 import { useTheme } from '../lib/ThemeProvider';
 import { updateUserName, uploadUserAvatar, deleteUserAccount } from '../lib/authService';
 import { getHistory } from '../lib/history';
+import { getUserGamificationStats, UserGamificationStats } from '../lib/gamification';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -104,6 +105,7 @@ export default function AkunScreen() {
   const [tab, setTab] = useState<AccountTab>('info');
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [historyCount, setHistoryCount] = useState(0);
+  const [gamification, setGamification] = useState<UserGamificationStats | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const uploadingRef = useRef(false);
 
@@ -137,11 +139,15 @@ export default function AkunScreen() {
 
   const loadCounts = async () => {
     try {
-      const lib = await AsyncStorage.getItem(LIBRARY_KEY);
+      const [lib, hist, gamifyData] = await Promise.all([
+        AsyncStorage.getItem(LIBRARY_KEY),
+        getHistory(),
+        getUserGamificationStats(),
+      ]);
       const bookmarks: string[] = lib ? JSON.parse(lib) : [];
       setBookmarkCount(bookmarks.length);
-      const hist = await getHistory();
       setHistoryCount(hist.length);
+      setGamification(gamifyData);
     } catch {
       setBookmarkCount(0);
       setHistoryCount(0);
@@ -435,7 +441,7 @@ export default function AkunScreen() {
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
             <StatCard icon="bookmark" label="Bookmark" value={bookmarkCount} />
             <StatCard icon="book" label="Lanjut Baca" value={historyCount} />
-            <StatCard icon="trophy" label="Level" value={user ? 'Lv.1' : '-'} />
+            <StatCard icon="trophy" label="Level" value={gamification ? `Lv.${gamification.level}` : 'Lv.1'} />
           </View>
 
           {/* Level dan Rank Card */}
@@ -451,51 +457,57 @@ export default function AkunScreen() {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Ionicons name="trophy-outline" size={18} color={colors.primary} />
+              <Ionicons name="trophy" size={18} color={colors.primary} />
               <Text style={{ fontSize: 14.5, fontWeight: '700', color: colors.textPrimary }}>
                 Level dan Rank Pembaca
               </Text>
             </View>
 
-            {!user ? (
-              <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 18 }}>
-                Daftar atau masuk akun untuk mulai mengumpulkan XP dari membaca bab novel, naik level, dan meraih gelar Rank.
-              </Text>
-            ) : (
+            {gamification ? (
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.textSecondary }}>
-                    Level 1
+                  <Text style={{ fontSize: 13.5, fontWeight: '800', color: colors.textSecondary }}>
+                    Level {gamification.level}
                   </Text>
-                  <Text style={{ fontSize: 11, color: colors.textMuted }}>
-                    120 / 300 XP
+                  <Text style={{ fontSize: 11.5, color: colors.textMuted }}>
+                    {gamification.xpIntoLevel} / {gamification.xpForCurrentLevel} XP
                   </Text>
                 </View>
 
                 {/* Progress Bar */}
-                <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' }}>
+                <View style={{ height: 6, borderRadius: 999, backgroundColor: colors.border, overflow: 'hidden' }}>
                   <View
                     style={{
                       height: '100%',
-                      width: '40%',
+                      width: `${gamification.progressPercentage}%`,
                       backgroundColor: colors.primary,
-                      borderRadius: 3,
+                      borderRadius: 999,
                     }}
                   />
                 </View>
 
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <RankBadge rank="F" size="sm" />
-                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>120 XP musim ini</Text>
+                    <RankBadge rank={gamification.rank} size="sm" />
+                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                      {gamification.totalXp} Total XP
+                    </Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Ionicons name="flame-outline" size={14} color={colors.primary} />
-                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>1 hari beruntun</Text>
+                    <Ionicons name="flame" size={14} color={colors.primary} />
+                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                      {gamification.currentStreak} hari beruntun
+                    </Text>
                   </View>
                 </View>
+
+                {gamification.nextRank && (
+                  <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                    {gamification.xpToNextRank} XP lagi ke Rank {gamification.nextRank}
+                  </Text>
+                )}
               </>
-            )}
+            ) : null}
           </View>
 
           {/* Tab Switcher (Info vs Komentar) */}

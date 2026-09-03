@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../lib/ThemeProvider';
+import { trackBookmarkAdded } from '../lib/gamification';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -89,6 +90,7 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
       } else {
         saved.unshift(novel.id);
         setIsSaved(true);
+        trackBookmarkAdded(novel.id);
       }
       await AsyncStorage.setItem(LIBRARY_KEY, JSON.stringify(saved));
     } catch {

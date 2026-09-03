@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addHistory } from '../../lib/history';
+import { trackChapterRead } from '../../lib/gamification';
 import { useLanguage } from '../../lib/i18n';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
 
@@ -205,6 +206,9 @@ export default function ReadChapterScreen() {
           last_chapter: data.chapter_number,
           last_chapter_id: data.id
         });
+
+        // Record gamification stats & XP
+        trackChapterRead(data.novel_id, data.id, data.chapter_number);
       }
 
       // Save last read chapter to AsyncStorage (Legacy/Per-novel)

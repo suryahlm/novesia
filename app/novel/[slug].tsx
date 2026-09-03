@@ -18,6 +18,7 @@ import { useLanguage } from '../../lib/i18n';
 import { formatViews } from '../../lib/utils';
 import { CustomDialog } from '../../components/CustomDialog';
 import { useTheme } from '../../lib/ThemeProvider';
+import { trackBookmarkAdded } from '../../lib/gamification';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -114,6 +115,7 @@ export default function NovelDetailScreen() {
       } else {
         saved.unshift(novel.id);
         setIsSaved(true);
+        trackBookmarkAdded(novel.id);
       }
       await AsyncStorage.setItem(LIBRARY_KEY, JSON.stringify(saved));
     } catch {

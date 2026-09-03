@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +28,7 @@ import { useAuthStore } from '../../lib/useAuthStore';
 import { useTheme } from '../../lib/ThemeProvider';
 import { signOutUser } from '../../lib/authService';
 import { getHistory, HistoryItem, clearHistory } from '../../lib/history';
+import { getUserGamificationStats, UserGamificationStats } from '../../lib/gamification';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -37,6 +39,7 @@ export default function ProfileScreen() {
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [gamification, setGamification] = useState<UserGamificationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isVip, setIsVip] = useState(false);
@@ -68,11 +71,13 @@ export default function ProfileScreen() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [histData, libData] = await Promise.all([
+      const [histData, libData, gamifyData] = await Promise.all([
         getHistory(),
         AsyncStorage.getItem(LIBRARY_KEY),
+        getUserGamificationStats(),
       ]);
       setHistory(histData);
+      setGamification(gamifyData);
       if (libData) {
         try {
           const parsed = JSON.parse(libData);
@@ -311,7 +316,7 @@ export default function ProfileScreen() {
                 </Pressable>
               )}
 
-              {loggedIn && (
+              {loggedIn && gamification && (
                 <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
                   <View
                     style={{
@@ -324,7 +329,7 @@ export default function ProfileScreen() {
                     }}
                   >
                     <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
-                      Lv.1
+                      Lv.{gamification.level}
                     </Text>
                   </View>
                   <View
@@ -338,7 +343,7 @@ export default function ProfileScreen() {
                     }}
                   >
                     <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
-                      Rank F
+                      Rank {gamification.rank}
                     </Text>
                   </View>
                 </View>
@@ -358,22 +363,79 @@ export default function ProfileScreen() {
           {/* Hairline Separator */}
           <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 18 }} />
 
-          {/* VIP Card with continuous rotating glow */}
-          <VipCard
-            isVip={userIsVip}
-            onUpgrade={() => {
-              setIsVip(!isVip);
-              showPopup({
-                title: isVip ? 'Mode VIP Dimatikan' : 'VIP Berhasil Diaktifkan!',
-                message: isVip
-                  ? 'Akun beralih kembali ke mode gratis.'
-                  : 'Selamat! Anda kini dapat menikmati seluruh novel dan fitur eksklusif VIP tanpa batas.',
-                tone: 'gold',
-                icon: 'sparkles',
-                showCancel: false,
-              });
+          {/* Level dan Rank Card (Komiku Pattern) */}
+          <Pressable
+            onPress={() => (user ? router.push('/akun') : setAuthModalVisible(true))}
+            style={{
+              borderRadius: 16,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.border,
+              padding: 16,
+              marginBottom: 20,
+              gap: 10,
             }}
-          />
+            accessibilityRole="button"
+            accessibilityLabel="Buka detail Level dan Rank"
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="trophy" size={18} color={colors.primary} />
+                <Text style={{ fontSize: 14.5, fontWeight: '700', color: colors.textPrimary }}>
+                  Level dan Rank
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </View>
+
+            {loading ? (
+              <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
+            ) : gamification ? (
+              <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 13.5, fontWeight: '800', color: colors.textPrimary }}>
+                    Level {gamification.level}
+                  </Text>
+                  <Text style={{ fontSize: 11.5, color: colors.textMuted }}>
+                    {gamification.xpIntoLevel} / {gamification.xpForCurrentLevel} XP
+                  </Text>
+                </View>
+
+                {/* Progress Bar */}
+                <View style={{ height: 6, borderRadius: 999, backgroundColor: colors.border, overflow: 'hidden' }}>
+                  <View
+                    style={{
+                      height: '100%',
+                      width: `${gamification.progressPercentage}%`,
+                      backgroundColor: colors.primary,
+                      borderRadius: 999,
+                    }}
+                  />
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <RankBadge rank={gamification.rank} size="sm" />
+                    <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                      {gamification.totalXp} Total XP
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="flame" size={13} color={colors.primary} />
+                    <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                      {gamification.currentStreak} hari beruntun
+                    </Text>
+                  </View>
+                </View>
+
+                {gamification.nextRank && (
+                  <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                    {gamification.xpToNextRank} XP lagi ke Rank {gamification.nextRank}
+                  </Text>
+                )}
+              </>
+            ) : null}
+          </Pressable>
 
           {/* Reading Statistics Row (Komiku StatCard Pattern) */}
           <View
@@ -385,7 +447,11 @@ export default function ProfileScreen() {
           >
             <StatCard icon="bookmark" label="Bookmark" value={bookmarkCount} />
             <StatCard icon="book" label="Lanjut Baca" value={totalNovels} />
-            <StatCard icon="flame" label="Streak" value={history.length > 0 ? 1 : 0} />
+            <StatCard
+              icon="flame"
+              label="Streak"
+              value={gamification && gamification.currentStreak > 0 ? `${gamification.currentStreak} Hari` : '0 Hari'}
+            />
           </View>
 
           {/* Menu Options (Unified Rounded Container) */}
