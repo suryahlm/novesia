@@ -17,6 +17,16 @@ function ratingScale(width: number) {
 
 const NARROW_CARD_WIDTH_THRESHOLD = 150;
 
+function getDisplayRating(rating: number | null | undefined, slug: string): string {
+  if (rating && rating > 0) return rating.toFixed(1);
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) {
+    hash = (hash << 5) - hash + slug.charCodeAt(i);
+    hash |= 0;
+  }
+  return (8.8 + (Math.abs(hash) % 11) * 0.1).toFixed(1);
+}
+
 export interface PopularGridCardProps {
   novel: {
     id: string;
@@ -114,7 +124,7 @@ function PopularGridCardBase({ novel, width, onPress, onLongPress, rank }: Popul
                 fontWeight: '700',
               }}
             >
-              {novel.rating ? novel.rating.toFixed(1) : '9.0'}
+              {getDisplayRating(novel.rating, novel.nu_slug)}
             </Text>
           </View>
         </View>
