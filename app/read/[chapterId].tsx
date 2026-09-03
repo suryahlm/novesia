@@ -10,6 +10,8 @@ import {
   PanResponder,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addHistory } from '../../lib/history';
@@ -20,9 +22,9 @@ type ThemeMode = 'dark' | 'light' | 'sepia';
 type Language = 'en' | 'id';
 
 const THEMES: Record<ThemeMode, { bg: string; text: string; label: string }> = {
-  dark: { bg: '#0a0a0f', text: '#d4d4d8', label: '🌙' },
-  light: { bg: '#fafafa', text: '#1a1a2e', label: '☀️' },
-  sepia: { bg: '#f5f0e8', text: '#3d3225', label: '📜' },
+  dark: { bg: '#0a0a0f', text: '#d4d4d8', label: 'Dark' },
+  light: { bg: '#fafafa', text: '#1a1a2e', label: 'Light' },
+  sepia: { bg: '#f5f0e8', text: '#3d3225', label: 'Sepia' },
 };
 
 interface ChapterData {
@@ -225,50 +227,123 @@ export default function ReadChapterScreen() {
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.bg }]}>
       {/* Top Bar */}
-      <View style={[styles.topBar, { backgroundColor: currentTheme.bg, borderBottomColor: theme === 'dark' ? '#1e1e2e' : '#e2e8f0' }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.topBtn}>
-          <Text style={[styles.topBtnText, { color: currentTheme.text }]}>←</Text>
+      <View
+        style={[
+          styles.topBar,
+          {
+            backgroundColor: currentTheme.bg,
+            borderBottomColor: theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={8}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Kembali"
+          style={[styles.topIconButton, { borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}
+        >
+          <Ionicons name="arrow-back" size={19} color={currentTheme.text} />
         </TouchableOpacity>
+
         <View style={styles.topCenter}>
           <Text style={[styles.topTitle, { color: currentTheme.text }]} numberOfLines={1}>
             {novelTitle}
           </Text>
-          <Text style={styles.topChapter}>Chapter {chapter.chapter_number}</Text>
+          <Text style={[styles.topChapter, { color: theme === 'dark' ? '#d4a843' : '#b45309' }]}>
+            Chapter {chapter.chapter_number}
+          </Text>
         </View>
+
+        {/* Language quick switcher */}
         <TouchableOpacity
           onPress={() => setLanguage(language === 'en' ? 'id' : 'en')}
-          style={styles.langToggle}
+          activeOpacity={0.7}
+          style={[
+            styles.topPillBtn,
+            {
+              backgroundColor: theme === 'dark' ? 'rgba(212,168,67,0.12)' : 'rgba(0,0,0,0.05)',
+              borderColor: theme === 'dark' ? 'rgba(212,168,67,0.3)' : 'rgba(0,0,0,0.1)',
+            },
+          ]}
         >
-          <Text style={styles.langFlag}>{language === 'en' ? '🇬🇧' : '🇮🇩'}</Text>
+          <Text style={{ fontSize: 13 }}>{language === 'en' ? '🇬🇧' : '🇮🇩'}</Text>
+          <Text
+            style={{
+              fontSize: 11.5,
+              fontWeight: '700',
+              color: theme === 'dark' ? '#d4a843' : '#334155',
+              marginLeft: 4,
+            }}
+          >
+            {language.toUpperCase()}
+          </Text>
         </TouchableOpacity>
-        {/* Font Size Controls */}
+
+        {/* Font size quick steppers */}
         <TouchableOpacity
-          onPress={() => { const v = Math.max(12, fontSize - 1); setFontSize(v); saveSettings(v, theme, lineHeight); }}
-          style={styles.topSizeBtn}
+          onPress={() => {
+            const v = Math.max(12, fontSize - 1);
+            setFontSize(v);
+            saveSettings(v, theme, lineHeight);
+          }}
+          activeOpacity={0.7}
+          style={[styles.topSizeBtn, { borderColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }]}
         >
-          <Text style={styles.topSizeBtnText}>A-</Text>
+          <Text style={[styles.topSizeBtnText, { color: theme === 'dark' ? '#d4d4d8' : '#334155' }]}>A-</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          onPress={() => { const v = Math.min(28, fontSize + 1); setFontSize(v); saveSettings(v, theme, lineHeight); }}
-          style={styles.topSizeBtn}
+          onPress={() => {
+            const v = Math.min(28, fontSize + 1);
+            setFontSize(v);
+            saveSettings(v, theme, lineHeight);
+          }}
+          activeOpacity={0.7}
+          style={[styles.topSizeBtn, { borderColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }]}
         >
-          <Text style={styles.topSizeBtnText}>A+</Text>
+          <Text style={[styles.topSizeBtnText, { color: theme === 'dark' ? '#d4d4d8' : '#334155' }]}>A+</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowSettings(true)} style={styles.topBtn}>
-          <Text style={{ fontSize: 20 }}>⚙️</Text>
+
+        {/* Settings button */}
+        <TouchableOpacity
+          onPress={() => setShowSettings(true)}
+          activeOpacity={0.7}
+          hitSlop={8}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Pengaturan Membaca"
+          style={[
+            styles.topIconButton,
+            {
+              backgroundColor: theme === 'dark' ? 'rgba(212,168,67,0.12)' : 'rgba(0,0,0,0.05)',
+              borderColor: theme === 'dark' ? 'rgba(212,168,67,0.3)' : 'rgba(0,0,0,0.1)',
+            },
+          ]}
+        >
+          <Ionicons name="options-outline" size={18} color={theme === 'dark' ? '#d4a843' : '#334155'} />
         </TouchableOpacity>
       </View>
 
       {/* Reading Progress Bar */}
       <View style={styles.progressBarBg}>
-        <View style={[styles.progressBarFill, { width: `${readProgress}%`, backgroundColor: theme === 'dark' ? '#d4a843' : '#7c3aed' }]} />
+        <View
+          style={[
+            styles.progressBarFill,
+            {
+              width: `${readProgress}%`,
+              backgroundColor: theme === 'dark' ? '#d4a843' : '#b45309',
+            },
+          ]}
+        />
       </View>
 
       {/* Language Info Banner */}
       {language === 'id' && !hasTranslation && (
         <View style={styles.langBanner}>
           <Text style={styles.langBannerText}>
-            🇮🇩 {language === 'id' ? 'Terjemahan tidak tersedia - menampilkan versi Inggris' : 'Translation not available — showing English'}
+            🇮🇩 {language === 'id' ? 'Terjemahan belum tersedia — menampilkan versi original Inggris' : 'Translation not available — showing English'}
           </Text>
         </View>
       )}
@@ -351,99 +426,253 @@ export default function ReadChapterScreen() {
         </>
       )}
 
-      {/* Settings Modal */}
-      <Modal visible={showSettings} transparent animationType="slide">
+      {/* ═══ LUXURY READING PREFERENCES MODAL ═══ */}
+      <Modal
+        visible={showSettings}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSettings(false)}
+      >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme === 'dark' ? '#111118' : '#fff' }]}>
-            <Text style={[styles.modalTitle, { color: theme === 'dark' ? '#e2e8f0' : '#1a1a2e' }]}>
-              ⚙️ {t.reading_preferences}
-            </Text>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setShowSettings(false)}
+          />
 
-            {/* Language */}
-            <Text style={[styles.settingLabel, { color: theme === 'dark' ? '#94a3b8' : '#64748b' }]}>
-              {t.language}
-            </Text>
-            <View style={styles.settingRow}>
-              <TouchableOpacity
-                style={[styles.langBtn, language === 'en' && styles.langBtnActive]}
-                onPress={() => setLanguage('en')}
-              >
-                <Text style={styles.langBtnText}>🇬🇧 English</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.langBtn, language === 'id' && styles.langBtnActive]}
-                onPress={() => setLanguage('id')}
-              >
-                <Text style={styles.langBtnText}>🇮🇩 Indonesia</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.modalContent}>
+            {/* Sheet Handle */}
+            <View style={styles.sheetHandle} />
 
-            {/* Font Size */}
-            <Text style={[styles.settingLabel, { color: theme === 'dark' ? '#94a3b8' : '#64748b' }]}>
-              {t.font_size}: {fontSize}px
-            </Text>
-            <View style={styles.settingRow}>
-              <TouchableOpacity
-                style={styles.settingBtn}
-                onPress={() => { const v = Math.max(12, fontSize - 1); setFontSize(v); saveSettings(v, theme, lineHeight); }}
-              >
-                <Text style={styles.settingBtnText}>A-</Text>
-              </TouchableOpacity>
-              <View style={styles.settingSlider}>
-                <View style={[styles.settingSliderFill, { width: `${((fontSize - 12) / 16) * 100}%` }]} />
+            {/* Header */}
+            <View style={styles.modalHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={styles.modalHeaderIconBadge}>
+                  <Ionicons name="options-outline" size={17} color="#d4a843" />
+                </View>
+                <Text style={styles.modalTitle}>
+                  {t.reading_preferences || 'Reading Preferences'}
+                </Text>
               </View>
               <TouchableOpacity
-                style={styles.settingBtn}
-                onPress={() => { const v = Math.min(28, fontSize + 1); setFontSize(v); saveSettings(v, theme, lineHeight); }}
+                onPress={() => setShowSettings(false)}
+                hitSlop={8}
+                style={styles.modalCloseCircle}
               >
-                <Text style={styles.settingBtnText}>A+</Text>
+                <Ionicons name="close" size={18} color="#94a3b8" />
               </TouchableOpacity>
             </View>
 
-            {/* Theme */}
-            <Text style={[styles.settingLabel, { color: theme === 'dark' ? '#94a3b8' : '#64748b' }]}>
-              {t.theme}
-            </Text>
-            <View style={styles.settingRow}>
-              {(Object.keys(THEMES) as ThemeMode[]).map((t) => (
+            {/* 1. Language Preference */}
+            <View style={styles.settingSection}>
+              <View style={styles.settingLabelRow}>
+                <Ionicons name="language-outline" size={15} color="#d4a843" />
+                <Text style={styles.settingLabel}>{t.language || 'Bahasa Teks'}</Text>
+              </View>
+              <View style={styles.langGridRow}>
                 <TouchableOpacity
-                  key={t}
-                  style={[
-                    styles.themeBtn,
-                    { backgroundColor: THEMES[t].bg, borderColor: theme === t ? '#7c3aed' : '#333' },
-                  ]}
-                  onPress={() => { setTheme(t); saveSettings(fontSize, t, lineHeight); }}
+                  activeOpacity={0.8}
+                  style={[styles.langCard, language === 'en' && styles.langCardActive]}
+                  onPress={() => setLanguage('en')}
                 >
-                  <Text style={{ fontSize: 18 }}>{THEMES[t].label}</Text>
+                  <Text style={styles.langCardFlag}>🇬🇧</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.langCardTitle, language === 'en' && styles.langCardTitleActive]}>
+                      English
+                    </Text>
+                    <Text style={styles.langCardSubtitle}>Original Text</Text>
+                  </View>
+                  {language === 'en' ? (
+                    <Ionicons name="checkmark-circle" size={18} color="#d4a843" />
+                  ) : (
+                    <View style={styles.radioUnchecked} />
+                  )}
                 </TouchableOpacity>
-              ))}
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[styles.langCard, language === 'id' && styles.langCardActive]}
+                  onPress={() => setLanguage('id')}
+                >
+                  <Text style={styles.langCardFlag}>🇮🇩</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.langCardTitle, language === 'id' && styles.langCardTitleActive]}>
+                      Indonesia
+                    </Text>
+                    <Text style={styles.langCardSubtitle}>Terjemahan</Text>
+                  </View>
+                  {language === 'id' ? (
+                    <Ionicons name="checkmark-circle" size={18} color="#d4a843" />
+                  ) : (
+                    <View style={styles.radioUnchecked} />
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Line Height */}
-            <Text style={[styles.settingLabel, { color: theme === 'dark' ? '#94a3b8' : '#64748b' }]}>
-              {t.line_spacing}: {lineHeight.toFixed(1)}
-            </Text>
-            <View style={styles.settingRow}>
-              <TouchableOpacity
-                style={styles.settingBtn}
-                onPress={() => { const v = Math.max(1.2, lineHeight - 0.2); setLineHeight(v); saveSettings(fontSize, theme, v); }}
-              >
-                <Text style={styles.settingBtnText}>-</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.settingBtn}
-                onPress={() => { const v = Math.min(2.6, lineHeight + 0.2); setLineHeight(v); saveSettings(fontSize, theme, v); }}
-              >
-                <Text style={styles.settingBtnText}>+</Text>
-              </TouchableOpacity>
+            {/* 2. Font Size */}
+            <View style={styles.settingSection}>
+              <View style={styles.settingLabelRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="text-outline" size={15} color="#d4a843" />
+                  <Text style={styles.settingLabel}>{t.font_size || 'Ukuran Teks'}</Text>
+                </View>
+                <View style={styles.badgePill}>
+                  <Text style={styles.badgePillText}>{fontSize}px</Text>
+                </View>
+              </View>
+              <View style={styles.stepperRow}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={styles.stepperBtn}
+                  onPress={() => {
+                    const v = Math.max(12, fontSize - 1);
+                    setFontSize(v);
+                    saveSettings(v, theme, lineHeight);
+                  }}
+                >
+                  <Text style={styles.stepperBtnText}>A-</Text>
+                </TouchableOpacity>
+                <View style={styles.sliderTrack}>
+                  <View
+                    style={[
+                      styles.sliderProgress,
+                      { width: `${((fontSize - 12) / 16) * 100}%` },
+                    ]}
+                  />
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={styles.stepperBtn}
+                  onPress={() => {
+                    const v = Math.min(28, fontSize + 1);
+                    setFontSize(v);
+                    saveSettings(v, theme, lineHeight);
+                  }}
+                >
+                  <Text style={styles.stepperBtnText}>A+</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Close */}
+            {/* 3. Theme Mode */}
+            <View style={styles.settingSection}>
+              <View style={styles.settingLabelRow}>
+                <Ionicons name="color-palette-outline" size={15} color="#d4a843" />
+                <Text style={styles.settingLabel}>{t.theme || 'Tema Latar'}</Text>
+              </View>
+              <View style={styles.themeGridRow}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
+                    styles.themeCard,
+                    {
+                      backgroundColor: '#0A0D10',
+                      borderColor: theme === 'dark' ? '#d4a843' : 'rgba(255,255,255,0.08)',
+                    },
+                  ]}
+                  onPress={() => {
+                    setTheme('dark');
+                    saveSettings(fontSize, 'dark', lineHeight);
+                  }}
+                >
+                  <Ionicons name="moon" size={18} color="#d4a843" />
+                  <Text style={[styles.themeCardText, { color: '#E2E8F0' }]}>Dark</Text>
+                  {theme === 'dark' && <View style={styles.themeCheckDot} />}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
+                    styles.themeCard,
+                    {
+                      backgroundColor: '#FAFAFA',
+                      borderColor: theme === 'light' ? '#d4a843' : 'rgba(0,0,0,0.1)',
+                    },
+                  ]}
+                  onPress={() => {
+                    setTheme('light');
+                    saveSettings(fontSize, 'light', lineHeight);
+                  }}
+                >
+                  <Ionicons name="sunny" size={18} color="#D97706" />
+                  <Text style={[styles.themeCardText, { color: '#0F172A' }]}>Light</Text>
+                  {theme === 'light' && <View style={styles.themeCheckDot} />}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
+                    styles.themeCard,
+                    {
+                      backgroundColor: '#F5EFE6',
+                      borderColor: theme === 'sepia' ? '#d4a843' : 'rgba(0,0,0,0.1)',
+                    },
+                  ]}
+                  onPress={() => {
+                    setTheme('sepia');
+                    saveSettings(fontSize, 'sepia', lineHeight);
+                  }}
+                >
+                  <Ionicons name="book-outline" size={18} color="#854D0E" />
+                  <Text style={[styles.themeCardText, { color: '#451A03' }]}>Sepia</Text>
+                  {theme === 'sepia' && <View style={styles.themeCheckDot} />}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* 4. Line Spacing */}
+            <View style={styles.settingSection}>
+              <View style={styles.settingLabelRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="reorder-three-outline" size={17} color="#d4a843" />
+                  <Text style={styles.settingLabel}>{t.line_spacing || 'Jarak Baris'}</Text>
+                </View>
+                <View style={styles.badgePill}>
+                  <Text style={styles.badgePillText}>{lineHeight.toFixed(1)}x</Text>
+                </View>
+              </View>
+              <View style={styles.lineSpacingRow}>
+                {[1.4, 1.6, 1.8, 2.0, 2.2].map((val) => {
+                  const active = Math.abs(lineHeight - val) < 0.05;
+                  return (
+                    <TouchableOpacity
+                      key={val}
+                      activeOpacity={0.7}
+                      style={[styles.lineSpacingChip, active && styles.lineSpacingChipActive]}
+                      onPress={() => {
+                        setLineHeight(val);
+                        saveSettings(fontSize, theme, val);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.lineSpacingChipText,
+                          active && styles.lineSpacingChipTextActive,
+                        ]}
+                      >
+                        {val.toFixed(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Done / Close Button */}
             <TouchableOpacity
-              style={styles.closeBtn}
+              activeOpacity={0.85}
+              style={styles.doneBtn}
               onPress={() => setShowSettings(false)}
             >
-              <Text style={styles.closeBtnText}>{t.close}</Text>
+              <LinearGradient
+                colors={['#E5B84B', '#B88728']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.doneBtnGradient}
+              >
+                <Text style={styles.doneBtnText}>{t.close || 'Tutup & Simpan'}</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -454,49 +683,63 @@ export default function ReadChapterScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a0f' },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0a0a0f',
+  },
 
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
+    paddingTop: 48,
     paddingHorizontal: 12,
-    paddingBottom: 12,
+    paddingBottom: 10,
     borderBottomWidth: 1,
+    gap: 6,
   },
-  topBtn: { padding: 8, width: 40, alignItems: 'center' },
-  topBtnText: { fontSize: 20, fontWeight: '700' },
-  topCenter: { flex: 1, alignItems: 'center' },
-  topTitle: { fontSize: 14, fontWeight: '600' },
-  topChapter: { fontSize: 11, color: '#7c3aed', marginTop: 2, fontWeight: '600' },
+  topIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  topCenter: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
+  topTitle: { fontSize: 13.5, fontWeight: '700' },
+  topChapter: { fontSize: 11, marginTop: 1, fontWeight: '600' },
 
-  // Language toggle in top bar
-  langToggle: {
-    padding: 6,
+  // Top bar quick controls
+  topPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: 'rgba(124,58,237,0.15)',
-    marginRight: 4,
+    borderWidth: 1,
   },
-  langFlag: { fontSize: 18 },
-
-  // Font size +/- in top bar
   topSizeBtn: {
-    padding: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: 'rgba(124,58,237,0.15)',
-    marginRight: 2,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  topSizeBtnText: { fontSize: 13, fontWeight: '800', color: '#a78bfa' },
+  topSizeBtnText: { fontSize: 11.5, fontWeight: '800' },
 
   // Language info banner
   langBanner: {
-    backgroundColor: 'rgba(124,58,237,0.1)',
+    backgroundColor: 'rgba(212,168,67,0.12)',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(124,58,237,0.2)',
+    borderBottomColor: 'rgba(212,168,67,0.25)',
   },
-  langBannerText: { fontSize: 12, color: '#a78bfa', textAlign: 'center' },
+  langBannerText: { fontSize: 11.5, color: '#d4a843', textAlign: 'center', fontWeight: '500' },
 
   // No content state
   noContentContainer: {
@@ -507,9 +750,8 @@ const styles = StyleSheet.create({
   },
   noContentIcon: { fontSize: 48, marginBottom: 16 },
   noContentText: { fontSize: 16, color: '#64748b', fontWeight: '600', textAlign: 'center' },
-  noContentHint: { fontSize: 13, color: '#475569', marginTop: 8, textAlign: 'center' },
   noContentBtn: { marginTop: 24, padding: 12 },
-  noContentBtnText: { color: '#7c3aed', fontWeight: '700', fontSize: 14 },
+  noContentBtnText: { color: '#d4a843', fontWeight: '700', fontSize: 14 },
 
   content: { flex: 1 },
   chapterHeading: {
@@ -533,84 +775,16 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   navBtn: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#111118',
+    backgroundColor: '#11151A',
     borderWidth: 1,
-    borderColor: '#1e1e2e',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
-  navBtnPrimary: { backgroundColor: '#7c3aed', borderColor: '#7c3aed' },
+  navBtnPrimary: { backgroundColor: '#d4a843', borderColor: '#d4a843' },
   navBtnText: { fontSize: 13, fontWeight: '700', color: '#94a3b8' },
-  navBtnPrimaryText: { color: '#fff' },
-
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  settingLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 16 },
-  settingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  settingBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(124,58,237,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  settingBtnText: { fontSize: 16, fontWeight: '700', color: '#a78bfa' },
-  settingSlider: {
-    flex: 1,
-    height: 6,
-    backgroundColor: '#1e1e2e',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  settingSliderFill: { height: '100%', backgroundColor: '#7c3aed', borderRadius: 3 },
-
-  // Language buttons in settings
-  langBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(30,30,46,0.5)',
-  },
-  langBtnActive: { borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.15)' },
-  langBtnText: { fontSize: 14, fontWeight: '700', color: '#e2e8f0' },
-
-  themeBtn: {
-    flex: 1,
-    height: 50,
-    borderRadius: 14,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeBtn: {
-    marginTop: 24,
-    padding: 14,
-    borderRadius: 14,
-    backgroundColor: '#7c3aed',
-    alignItems: 'center',
-  },
-  closeBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  navBtnPrimaryText: { color: '#0D1012' },
 
   // Reading Progress Bar
   progressBarBg: {
@@ -629,4 +803,253 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 4,
   },
+
+  // ══════════════════════════════════════════════════════════════
+  // LUXURY READING PREFERENCES MODAL STYLES
+  // ══════════════════════════════════════════════════════════════
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.72)',
+  },
+  modalContent: {
+    backgroundColor: '#12161A',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(212,168,67,0.22)',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 36,
+  },
+  sheetHandle: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    marginBottom: 16,
+  },
+  modalHeaderIconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    backgroundColor: 'rgba(212,168,67,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: 16.5,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    letterSpacing: 0.2,
+  },
+  modalCloseCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1A2026',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  settingSection: {
+    marginBottom: 18,
+  },
+  settingLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    gap: 6,
+  },
+  settingLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#E2E8F0',
+    flex: 1,
+  },
+  badgePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: 'rgba(212,168,67,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(212,168,67,0.25)',
+  },
+  badgePillText: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#d4a843',
+  },
+
+  // Language Cards
+  langGridRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  langCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: '#161B20',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    gap: 8,
+  },
+  langCardActive: {
+    backgroundColor: '#1B222A',
+    borderColor: '#d4a843',
+  },
+  langCardFlag: {
+    fontSize: 20,
+  },
+  langCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#CBD5E1',
+  },
+  langCardTitleActive: {
+    color: '#F8FAFC',
+  },
+  langCardSubtitle: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  radioUnchecked: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#475569',
+  },
+
+  // Stepper & Slider
+  stepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  stepperBtn: {
+    width: 42,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#181E24',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#d4a843',
+  },
+  sliderTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#1E242B',
+    overflow: 'hidden',
+  },
+  sliderProgress: {
+    height: '100%',
+    backgroundColor: '#d4a843',
+    borderRadius: 3,
+  },
+
+  // Theme Cards
+  themeGridRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  themeCard: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    position: 'relative',
+  },
+  themeCardText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  themeCheckDot: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#d4a843',
+  },
+
+  // Line Spacing Chips
+  lineSpacingRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  lineSpacingChip: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#161B20',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lineSpacingChipActive: {
+    backgroundColor: '#1E252D',
+    borderColor: '#d4a843',
+  },
+  lineSpacingChipText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  lineSpacingChipTextActive: {
+    color: '#d4a843',
+    fontWeight: '800',
+  },
+
+  // Done Button
+  doneBtn: {
+    marginTop: 6,
+    borderRadius: 13,
+    overflow: 'hidden',
+    shadowColor: '#d4a843',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  doneBtnGradient: {
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  doneBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0D1012',
+    letterSpacing: 0.3,
+  },
 });
+
