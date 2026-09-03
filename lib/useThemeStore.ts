@@ -16,7 +16,7 @@ interface ThemeStoreState {
 export const useThemeStore = create<ThemeStoreState>()(
   persist(
     (set) => ({
-      accentId: 'gold',
+      accentId: 'peridot',
       mode: 'dark',
       setAccent: (accentId) => set({ accentId }),
       setMode: (mode) => set({ mode }),

@@ -14,7 +14,7 @@ export interface Theme {
 const ThemeContext = createContext<Theme | null>(null);
 
 function buildTheme(accentId: AccentId, mode: ThemeMode): Theme {
-  const accent = ACCENT_REGISTRY[accentId] || ACCENT_REGISTRY.gold;
+  const accent = ACCENT_REGISTRY[accentId] || ACCENT_REGISTRY.peridot;
   const base = mode === 'light' ? lightColors : darkColors;
   return {
     colors: {
@@ -40,8 +40,8 @@ export function ThemeProvider({ children, isVip = false }: ThemeProviderProps) {
   const accentId = useThemeStore((s) => s.accentId);
   const mode = useThemeStore((s) => s.mode);
 
-  // Gating in render: if not VIP and accent is VIP-only, fallback to gold
-  const effectiveAccentId = isVip || isAccentFree(accentId) ? accentId : 'gold';
+  // Gating in render: if not VIP and accent is VIP-only, fallback to peridot
+  const effectiveAccentId = isVip || isAccentFree(accentId) ? accentId : 'peridot';
   const theme = useMemo(() => buildTheme(effectiveAccentId, mode), [effectiveAccentId, mode]);
 
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
@@ -51,7 +51,7 @@ export function useTheme(): Theme {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
     // Return fallback dark theme if used outside provider
-    return buildTheme('gold', 'dark');
+    return buildTheme('peridot', 'dark');
   }
   return ctx;
 }

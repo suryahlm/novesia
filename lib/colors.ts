@@ -55,13 +55,17 @@ export interface ColorScheme {
   info: string;
 }
 
+import { ACCENT_REGISTRY } from './accents';
+
+const peridot = ACCENT_REGISTRY.peridot;
+
 const sharedBrandColors = {
-  primary: gold[300],
-  primaryMuted: 'rgba(212,148,12,0.14)',
-  primaryPressed: gold[200],
+  primary: peridot.primary,
+  primaryMuted: peridot.primaryMuted,
+  primaryPressed: peridot.primaryPressed,
   textOnPrimary: '#17130D',
-  gradientLight: gold[200],
-  gradientDark: gold[300],
+  gradientLight: peridot.gradientLight,
+  gradientDark: peridot.gradientDark,
   ...semantic,
 };
 
