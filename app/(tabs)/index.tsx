@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 
 import { GradientBackground } from '../../components/GradientBackground';
 import { FeaturedCarousel } from '../../components/FeaturedCarousel';
@@ -42,6 +43,9 @@ export default function HomeScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const { colors } = useTheme();
   const queryClient = useQueryClient();
+
+  const [logoFontLoaded] = useFonts({ BarberChop: require('../../assets/fonts/BarberChop.otf') });
+  const logoFontStyle = logoFontLoaded ? { fontFamily: 'BarberChop', fontWeight: '400' as const } : { fontWeight: '700' as const };
 
   // Fast TanStack Query with 5-minute memory cache
   const { data: novels = [], isLoading: loadingPopular } = usePopularNovels();
@@ -205,7 +209,7 @@ export default function HomeScreen() {
                     paddingTop: 16,
                   }}
                 >
-                  {/* Luxury Refined Logo */}
+                  {/* Luxury Refined Logo (BarberChop Font from Komiku) */}
                   <View style={{ position: 'relative' }}>
                     {[
                       { left: -0.4, top: -0.4 },
@@ -215,29 +219,33 @@ export default function HomeScreen() {
                     ].map((offset, i) => (
                       <Text
                         key={i}
-                        style={{
-                          position: 'absolute',
-                          left: offset.left,
-                          top: offset.top,
-                          fontSize: 22,
-                          fontWeight: '900',
-                          letterSpacing: 1.5,
-                          color: 'rgba(0,0,0,0.35)',
-                        }}
+                        style={[
+                          {
+                            position: 'absolute',
+                            left: offset.left,
+                            top: offset.top,
+                            fontSize: 26,
+                            lineHeight: 34,
+                            color: 'rgba(0,0,0,0.4)',
+                          },
+                          logoFontStyle,
+                        ]}
                       >
-                        NOVESIA
+                        Novesia
                       </Text>
                     ))}
                     <ShimmerText
-                      style={{
-                        fontSize: 22,
-                        fontWeight: '900',
-                        letterSpacing: 1.5,
-                      }}
+                      style={[
+                        {
+                          fontSize: 26,
+                          lineHeight: 34,
+                        },
+                        logoFontStyle,
+                      ]}
                       baseColor={colors.primary}
                       shineColor="rgba(255,250,230,0.95)"
                     >
-                      NOVESIA
+                      Novesia
                     </ShimmerText>
                   </View>
 
