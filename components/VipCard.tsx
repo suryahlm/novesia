@@ -41,8 +41,8 @@ function RotatingGoldGradient({ intensity = 'strong' }: { intensity?: 'strong' |
       : (['rgba(255,255,255,0)', 'rgba(255,255,255,0.22)', 'rgba(255,255,255,0)'] as const);
 
   return (
-    <View style={[StyleSheet.absoluteFillObject, { overflow: 'hidden' }]} pointerEvents="none">
-      <View style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center' }]}>
+    <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
         {!reducedMotion && (
           <Animated.View style={[{ width: '300%', height: '300%' }, style]}>
             <LinearGradient
@@ -50,7 +50,7 @@ function RotatingGoldGradient({ intensity = 'strong' }: { intensity?: 'strong' |
               locations={[0.3, 0.5, 0.7]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
+              style={StyleSheet.absoluteFill}
             />
           </Animated.View>
         )}

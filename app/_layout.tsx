@@ -27,7 +27,9 @@ function RootStack() {
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
-    NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark').catch(() => {});
+    if (typeof (NavigationBar as any).setButtonStyleAsync === 'function') {
+      (NavigationBar as any).setButtonStyleAsync(isDark ? 'light' : 'dark').catch(() => {});
+    }
   }, [colors.background, isDark]);
 
 

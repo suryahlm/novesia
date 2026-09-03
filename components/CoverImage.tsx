@@ -48,7 +48,7 @@ function LocalCoverPlaceholder({ title, width, height, borderRadius = 6 }: Omit<
         name="book"
         size={width * 0.75}
         color={colors.primaryMuted}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
       <Text
         style={{

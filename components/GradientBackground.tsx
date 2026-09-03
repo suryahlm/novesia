@@ -11,7 +11,7 @@ export function GradientBackground() {
       colors={colors.backgroundGradient}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
-      style={StyleSheet.absoluteFillObject}
+      style={StyleSheet.absoluteFill}
       pointerEvents="none"
     />
   );

@@ -92,7 +92,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}
       >
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
         <View
           style={[

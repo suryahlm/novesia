@@ -157,7 +157,7 @@ export default function ProfileScreen() {
         locations={[0, 0.35, 0.7]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
       {/* Accent ambient shimmer bawah - lebih tipis, dari pojok kanan bawah */}
@@ -166,7 +166,7 @@ export default function ProfileScreen() {
         locations={[0.5, 0.78, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>

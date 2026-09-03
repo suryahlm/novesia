@@ -58,12 +58,12 @@ export function BottomSheet({ visible, onClose, title, icon, children }: BottomS
   if (!mounted) return null;
 
   return (
-    <View style={StyleSheet.absoluteFillObject}>
+    <View style={StyleSheet.absoluteFill}>
       <Animated.View
-        style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.65)' }, backdropStyle]}
+        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.65)' }, backdropStyle]}
       >
         <Pressable
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel="Tutup"

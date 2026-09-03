@@ -287,7 +287,7 @@ export default function AkunScreen() {
         locations={[0, 0.35, 0.7]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
       {/* Ambient shimmer bottom-right */}
@@ -296,7 +296,7 @@ export default function AkunScreen() {
         locations={[0, 0.5, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
 
@@ -646,7 +646,7 @@ export default function AkunScreen() {
             padding: 20,
           }}
         >
-          <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setEditingName(false)} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setEditingName(false)} />
           <View
             style={{
               width: '100%',

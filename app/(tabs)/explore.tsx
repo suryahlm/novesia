@@ -251,7 +251,7 @@ export default function ExploreScreen() {
         locations={[0, 0.35, 0.7]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
       {/* Ambient shimmer bottom-right */}
@@ -260,7 +260,7 @@ export default function ExploreScreen() {
         locations={[0.5, 0.78, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
 

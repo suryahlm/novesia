@@ -17,20 +17,20 @@ function TabIcon({
 }: {
   name: React.ComponentProps<typeof Ionicons>['name'];
   focused: boolean;
-  color: string;
+  color: any;
   size: number;
   badge?: number;
 }) {
   return focused ? (
-    <ShimmerIcon name={name} size={size} baseColor={color} />
+    <ShimmerIcon name={name} size={size} baseColor={String(color)} />
   ) : (
     <Ionicons name={name} color={color} size={size} />
   );
 }
 
-function TabLabel({ label, focused, color }: { label: string; focused: boolean; color: string }) {
+function TabLabel({ label, focused, color }: { label: string; focused: boolean; color: any }) {
   return focused ? (
-    <ShimmerText style={TAB_LABEL_STYLE} baseColor={color} shineColor="rgba(255,250,230,0.95)">
+    <ShimmerText style={TAB_LABEL_STYLE} baseColor={String(color)} shineColor="rgba(255,250,230,0.95)">
       {label}
     </ShimmerText>
   ) : (

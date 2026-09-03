@@ -92,22 +92,22 @@ export function CustomDialog({
       : 'sparkles');
 
   return (
-    <View style={StyleSheet.absoluteFillObject}>
+    <View style={StyleSheet.absoluteFill}>
       {/* Dark Backdrop */}
       <Animated.View
         style={[
-          StyleSheet.absoluteFillObject,
+          StyleSheet.absoluteFill,
           { backgroundColor: 'rgba(0, 0, 0, 0.72)', zIndex: 998 },
           backdropStyle,
         ]}
       >
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
 
       {/* Centered Modal Card */}
       <View
         style={{
-          ...StyleSheet.absoluteFillObject,
+          ...StyleSheet.absoluteFill,
           justifyContent: 'center',
           alignItems: 'center',
           padding: 24,

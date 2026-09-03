@@ -54,7 +54,7 @@ export function GoldSurface({ style, children, shimmer = false }: GoldSurfacePro
         locations={[0, 0.4, 0.75]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
       {shimmer && !reducedMotion && width > 0 && (
@@ -66,7 +66,7 @@ export function GoldSurface({ style, children, shimmer = false }: GoldSurfacePro
             colors={['transparent', 'rgba(255,255,255,0.65)', 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
         </Animated.View>
       )}
