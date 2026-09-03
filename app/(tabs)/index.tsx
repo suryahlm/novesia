@@ -225,31 +225,27 @@ export default function HomeScreen() {
                 >
                   {/* Luxury Refined Logo (BarberChop Font from Komiku) */}
                   <View style={{ position: 'relative', alignSelf: 'flex-start' }}>
-                    {[
-                      { left: -0.4, top: -0.4 },
-                      { left: 0.4, top: -0.4 },
-                      { left: -0.4, top: 0.4 },
-                      { left: 0.4, top: 0.4 },
-                    ].map((offset, i) => (
-                      <Text
-                        key={i}
-                        numberOfLines={1}
-                        style={[
-                          {
-                            position: 'absolute',
-                            left: offset.left,
-                            top: offset.top,
-                            fontSize: 26,
-                            lineHeight: 34,
-                            color: 'rgba(0,0,0,0.4)',
-                            includeFontPadding: false,
-                          },
-                          logoFontStyle,
-                        ]}
-                      >
-                        Novesia
-                      </Text>
-                    ))}
+                    {/* Clean single shadow layer directly underneath with exact subpixel alignment */}
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        {
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          fontSize: 26,
+                          lineHeight: 34,
+                          color: '#000000',
+                          textShadowColor: 'rgba(0,0,0,0.85)',
+                          textShadowOffset: { width: 0, height: 2 },
+                          textShadowRadius: 8,
+                          includeFontPadding: false,
+                        },
+                        logoFontStyle,
+                      ]}
+                    >
+                      Novesia
+                    </Text>
                     <ShimmerText
                       style={[
                         {
