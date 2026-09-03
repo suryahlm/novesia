@@ -21,6 +21,8 @@ import { GoldSurface } from '../../components/GoldSurface';
 import { TrendingRankCard } from '../../components/TrendingRankCard';
 import { ContinueReadingCard } from '../../components/ContinueReadingCard';
 import { PopularGridCard } from '../../components/PopularGridCard';
+import { NovelListRow } from '../../components/NovelListRow';
+import { ViewModeToggle, GridViewMode } from '../../components/ViewModeToggle';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
 import { useTheme } from '../../lib/ThemeProvider';
 import { usePopularNovels, useLatestNovels, useIndonesianNovels, NovelItem } from '../../lib/useNovelsQuery';
@@ -50,8 +52,11 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [continueReading, setContinueReading] = useState<HistoryItem[]>([]);
   const [previewNovel, setPreviewNovel] = useState<NovelItem | null>(null);
-  const [viewMode, setViewMode] = useState<2 | 3>(3);
-  const [visibleLatest, setVisibleLatest] = useState(30);
+  const [updateViewMode, setUpdateViewMode] = useState<GridViewMode>(3);
+  const cycleUpdateViewMode = useCallback(
+    () => setUpdateViewMode((m) => (m === 3 ? 2 : m === 2 ? 'list' : 3)),
+    []
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -101,9 +106,9 @@ export default function HomeScreen() {
   const weeklyList = useMemo(() => (filteredNovels.length > 10 ? filteredNovels.slice(10, 22) : filteredNovels), [filteredNovels]);
 
   const gridGap = 12;
-  const gridColumns = viewMode;
-  const gridItemWidth = Math.floor(
-    (screenWidth - 16 * 2 - gridGap * (gridColumns - 1)) / gridColumns
+  const updateGridColumns = updateViewMode === 'list' ? 3 : updateViewMode;
+  const updateGridItemWidth = Math.floor(
+    (screenWidth - 16 * 2 - gridGap * (updateGridColumns - 1)) / updateGridColumns
   );
 
   const isInitialLoading = loadingPopular && novels.length === 0;
@@ -156,8 +161,8 @@ export default function HomeScreen() {
               </View>
               <SkeletonNovelGrid
                 count={6}
-                cardWidth={gridItemWidth}
-                cardHeight={Math.round(gridItemWidth * 1.3)}
+                cardWidth={updateGridItemWidth}
+                cardHeight={Math.round(updateGridItemWidth * 1.3)}
                 columnGap={12}
                 rowGap={12}
               />
@@ -462,6 +467,7 @@ export default function HomeScreen() {
           </View>
 
           {/* ═══ SECTION 4: UPDATE TERBARU (Komiku Pattern: Top 18 Items + Lihat Semua) ═══ */}
+          {/* ═══ SECTION 4: UPDATE TERBARU (Komiku Pattern: 3-Mode View Toggle + Top 18 Items + Lihat Semua) ═══ */}
           <View style={{ marginBottom: 20 }}>
             <View
               style={{
@@ -476,17 +482,11 @@ export default function HomeScreen() {
                 Update Terbaru
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Pressable
-                  onPress={() => setViewMode((m) => (m === 3 ? 2 : 3))}
-                  style={{ padding: 4 }}
-                  hitSlop={8}
-                >
-                  <Ionicons
-                    name={viewMode === 3 ? 'grid' : 'grid-outline'}
-                    size={20}
-                    color={colors.primary}
-                  />
-                </Pressable>
+                <ViewModeToggle
+                  mode={updateViewMode}
+                  accessibilityLabel={`Tampilkan ${updateViewMode === 3 ? '2 kolom' : updateViewMode === 2 ? 'mode list' : '3 kolom'}`}
+                  onPress={cycleUpdateViewMode}
+                />
                 <Pressable onPress={() => router.push('/lihat-semua/terbaru' as any)} hitSlop={8}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
                     Lihat semua
@@ -495,31 +495,44 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <View
-              style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                paddingHorizontal: 16,
-              }}
-            >
-              {filteredLatestNovels.slice(0, 18).map((item, index) => (
-                <View
-                  key={item.id}
-                  style={{
-                    width: gridItemWidth,
-                    marginBottom: 14,
-                    marginRight: index % gridColumns !== gridColumns - 1 ? gridGap : 0,
-                  }}
-                >
-                  <PopularGridCard
+            {updateViewMode === 'list' ? (
+              <View>
+                {filteredLatestNovels.slice(0, 18).map((item) => (
+                  <NovelListRow
+                    key={item.id}
                     novel={item}
-                    width={gridItemWidth}
                     onPress={openNovel}
                     onLongPress={() => setPreviewNovel(item)}
                   />
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            ) : (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  paddingHorizontal: 16,
+                }}
+              >
+                {filteredLatestNovels.slice(0, 18).map((item, index) => (
+                  <View
+                    key={item.id}
+                    style={{
+                      width: updateGridItemWidth,
+                      marginBottom: 14,
+                      marginRight: index % updateGridColumns !== updateGridColumns - 1 ? gridGap : 0,
+                    }}
+                  >
+                    <PopularGridCard
+                      novel={item}
+                      width={updateGridItemWidth}
+                      onPress={openNovel}
+                      onLongPress={() => setPreviewNovel(item)}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
