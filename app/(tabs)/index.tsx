@@ -215,11 +215,32 @@ export default function HomeScreen() {
                 >
                   {/* Luxury Refined Logo (BarberChop Font from Komiku) */}
                   <View style={{ position: 'relative', alignSelf: 'flex-start' }}>
+                    {/* Soft dark drop shadow behind text */}
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        {
+                          position: 'absolute',
+                          left: 0,
+                          top: 1,
+                          fontSize: 26,
+                          lineHeight: 34,
+                          color: 'rgba(0,0,0,0.85)',
+                          textShadowColor: 'rgba(0,0,0,0.9)',
+                          textShadowOffset: { width: 0, height: 1.5 },
+                          textShadowRadius: 6,
+                          includeFontPadding: false,
+                        },
+                        logoFontStyle,
+                      ]}
+                    >
+                      Novesia
+                    </Text>
                     {[
-                      { left: -0.5, top: -0.5 },
-                      { left: 0.5, top: -0.5 },
-                      { left: -0.5, top: 0.5 },
-                      { left: 0.5, top: 0.5 },
+                      { left: -0.6, top: -0.6 },
+                      { left: 0.6, top: -0.6 },
+                      { left: -0.6, top: 0.6 },
+                      { left: 0.6, top: 0.6 },
                     ].map((offset, i) => (
                       <Text
                         key={i}
@@ -231,7 +252,7 @@ export default function HomeScreen() {
                             top: offset.top,
                             fontSize: 26,
                             lineHeight: 34,
-                            color: 'rgba(0,0,0,0.5)',
+                            color: 'rgba(0,0,0,0.65)',
                             includeFontPadding: false,
                           },
                           logoFontStyle,
