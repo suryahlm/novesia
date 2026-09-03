@@ -196,7 +196,7 @@ export default function ReadChapterScreen() {
         .maybeSingle();
       
       if (!novelData || novelData.is_blacklisted || novelData.status === 'dropped' || novelData.status === 'blacklisted') {
-        setError("Novel ini tidak lagi tersedia.");
+        setChapter(null);
         setLoading(false);
         return;
       }

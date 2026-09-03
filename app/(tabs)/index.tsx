@@ -27,6 +27,8 @@ import { ViewModeToggle, GridViewMode } from '../../components/ViewModeToggle';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
 import { useTheme } from '../../lib/ThemeProvider';
 import { usePopularNovels, useLatestNovels, useIndonesianNovels, NovelItem } from '../../lib/useNovelsQuery';
+import { useHomeBanners } from '../../lib/useBannersQuery';
+import { HomeBannerCarousel } from '../../components/HomeBannerCarousel';
 import { getHistory, HistoryItem } from '../../lib/history';
 import { SkeletonCarousel, SkeletonNovelGrid, SkeletonBox } from '../../components/SkeletonLoader';
 
@@ -51,6 +53,7 @@ export default function HomeScreen() {
   const { data: novels = [], isLoading: loadingPopular } = usePopularNovels();
   const { data: latestNovels = [], isLoading: loadingLatest } = useLatestNovels();
   const { data: indonesianNovels = [], isLoading: loadingIndonesian } = useIndonesianNovels();
+  const homeBanners = useHomeBanners();
 
   const [activeLang, setActiveLang] = useState<LanguageFilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -72,6 +75,7 @@ export default function HomeScreen() {
     setRefreshing(true);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['novels'] }),
+      queryClient.invalidateQueries({ queryKey: ['banners'] }),
       getHistory().then(setContinueReading),
     ]);
     setRefreshing(false);
@@ -436,6 +440,11 @@ export default function HomeScreen() {
                 }}
               />
             </View>
+          )}
+
+          {/* ═══ SECTION: BANNER PROMO / IKLAN BERANDA (Komiku style) ═══ */}
+          {(homeBanners.data?.length ?? 0) > 0 && (
+            <HomeBannerCarousel banners={homeBanners.data ?? []} />
           )}
 
           {/* ═══ SECTION 3: POPULER MINGGU INI (Recommended with frame cards) ═══ */}
