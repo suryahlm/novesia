@@ -28,6 +28,7 @@ export interface FeaturedNovel {
   title: string;
   nu_slug: string;
   cover_url: string | null;
+  cover_landscape_url?: string | null;
   total_chapters: number;
   rating: number | null;
   genres?: string[];
@@ -49,6 +50,7 @@ const CarouselSlide = React.memo(function CarouselSlide({
   onPress,
 }: CarouselSlideProps) {
   const { colors } = useTheme();
+  const coverUri = novel.cover_landscape_url || novel.cover_url;
 
   return (
     <View style={{ width: slotWidth, paddingHorizontal: BANNER_MARGIN }}>
@@ -67,10 +69,10 @@ const CarouselSlide = React.memo(function CarouselSlide({
           backgroundColor: colors.surface,
         }}
       >
-        {novel.cover_url ? (
+        {coverUri ? (
           <Image
             source={{
-              uri: novel.cover_url,
+              uri: coverUri,
               headers: { 'User-Agent': 'NovesiaApp/1.0' },
             }}
             style={{ width: cardWidth, height: cardHeight }}

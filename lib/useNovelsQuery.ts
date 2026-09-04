@@ -8,6 +8,7 @@ export interface NovelItem {
   title: string;
   nu_slug: string;
   cover_url: string | null;
+  cover_landscape_url?: string | null;
   total_chapters: number;
   rating: number | null;
   status: string | null;
@@ -89,7 +90,7 @@ export async function fetchFeaturedBanner(lang: string = 'all'): Promise<NovelIt
   try {
     let query = supabase
       .from('nu_novels')
-      .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
+      .select('id, title, nu_slug, cover_url, cover_landscape_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
       .eq('is_blacklisted', false)
       .in('status', ['active', 'completed', 'ongoing', 'published'])
       .gt('total_chapters', 0)
@@ -115,8 +116,16 @@ export async function fetchFeaturedBanner(lang: string = 'all'): Promise<NovelIt
     }
 
     if (!data || data.length === 0) return [];
-    // Random 10 dari pool top 60 (Pola Komiku)
-    return shuffleSample(data, Math.min(10, data.length));
+
+    // Prioritaskan novel yang sudah punya cover landscape (Pola Komiku)
+    const withLandscape = data.filter((n) => Boolean(n.cover_landscape_url));
+    const withoutLandscape = data.filter((n) => !n.cover_landscape_url);
+
+    const shuffledLandscape = shuffleSample(withLandscape, withLandscape.length);
+    const needed = 10 - shuffledLandscape.length;
+    const shuffledOthers = needed > 0 ? shuffleSample(withoutLandscape, needed) : [];
+
+    return [...shuffledLandscape, ...shuffledOthers].slice(0, 10);
   } catch (err) {
     console.error('Error in fetchFeaturedBanner:', err);
     return [];
