@@ -212,8 +212,8 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
               {novel.genres && novel.genres.length > 0 && (
                 <View style={styles.genreRow}>
                   {novel.genres.slice(0, 3).map((g, i) => (
-                    <View key={i} style={styles.genreChip}>
-                      <Text style={styles.genreText}>{g}</Text>
+                    <View key={i} style={[styles.genreChip, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '30' }]}>
+                      <Text style={[styles.genreText, { color: colors.primary }]}>{g}</Text>
                     </View>
                   ))}
                 </View>

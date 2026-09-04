@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { addHistory } from '../../lib/history';
 import { trackChapterRead } from '../../lib/gamification';
 import { useLanguage } from '../../lib/i18n';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
+import { useTheme } from '../../lib/ThemeProvider';
 
 type ThemeMode = 'dark' | 'light' | 'sepia';
 type Language = 'en' | 'id';
@@ -129,6 +130,7 @@ interface SiblingChapter {
 export default function ReadChapterScreen() {
   const { chapterId } = useLocalSearchParams<{ chapterId: string }>();
   const router = useRouter();
+  const { colors } = useTheme();
   const { lang: globalLang, t } = useLanguage();
   const { onChapterRead } = useInterstitialAd();
 
@@ -295,12 +297,22 @@ export default function ReadChapterScreen() {
   const hasTranslation = chapter?.content_translated != null;
   const { text: displayContent, wordCount: displayWordCount } = getContent();
 
-  const currentTheme = THEMES[theme];
+  const currentTheme = useMemo(() => {
+    const base = THEMES[theme];
+    const accent = colors.primary;
+    const accentMuted = colors.primaryMuted || (colors.primary + '1F');
+    return {
+      ...base,
+      goldAccent: accent,
+      surfaceBorder: colors.primary + '38',
+      badgeBg: accentMuted,
+    };
+  }, [theme, colors]);
 
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: currentTheme.bg }]}>
-        <ActivityIndicator size="large" color="#d4a843" />
+        <ActivityIndicator size="large" color={currentTheme.goldAccent} />
       </View>
     );
   }
@@ -310,7 +322,7 @@ export default function ReadChapterScreen() {
       <View style={styles.loadingContainer}>
         <Text style={{ color: '#94a3b8', fontSize: 15 }}>{t.chapter_not_found}</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-          <Text style={{ color: '#d4a843', fontWeight: '600' }}>← {t.back}</Text>
+          <Text style={{ color: currentTheme.goldAccent, fontWeight: '600' }}>← {t.back}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -324,7 +336,7 @@ export default function ReadChapterScreen() {
           styles.topBar,
           {
             backgroundColor: currentTheme.bg,
-            borderBottomColor: theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+            borderBottomColor: currentTheme.headerBorder,
           },
         ]}
       >
@@ -343,7 +355,7 @@ export default function ReadChapterScreen() {
           <Text style={[styles.topTitle, { color: currentTheme.text }]} numberOfLines={1}>
             {novelTitle}
           </Text>
-          <Text style={[styles.topChapter, { color: theme === 'dark' ? '#d4a843' : '#b45309' }]}>
+          <Text style={[styles.topChapter, { color: currentTheme.goldAccent }]}>
             Chapter {chapter.chapter_number}
           </Text>
         </View>
@@ -355,8 +367,8 @@ export default function ReadChapterScreen() {
           style={[
             styles.topPillBtn,
             {
-              backgroundColor: theme === 'dark' ? 'rgba(212,168,67,0.12)' : 'rgba(0,0,0,0.05)',
-              borderColor: theme === 'dark' ? 'rgba(212,168,67,0.3)' : 'rgba(0,0,0,0.1)',
+              backgroundColor: currentTheme.badgeBg,
+              borderColor: currentTheme.goldAccent + '4D',
             },
           ]}
         >
@@ -365,7 +377,7 @@ export default function ReadChapterScreen() {
             style={{
               fontSize: 11.5,
               fontWeight: '700',
-              color: theme === 'dark' ? '#d4a843' : '#334155',
+              color: currentTheme.goldAccent,
               marginLeft: 4,
             }}
           >
@@ -409,12 +421,12 @@ export default function ReadChapterScreen() {
           style={[
             styles.topIconButton,
             {
-              backgroundColor: theme === 'dark' ? 'rgba(212,168,67,0.12)' : 'rgba(0,0,0,0.05)',
-              borderColor: theme === 'dark' ? 'rgba(212,168,67,0.3)' : 'rgba(0,0,0,0.1)',
+              backgroundColor: currentTheme.badgeBg,
+              borderColor: currentTheme.goldAccent + '4D',
             },
           ]}
         >
-          <Ionicons name="options-outline" size={18} color={theme === 'dark' ? '#d4a843' : '#334155'} />
+          <Ionicons name="options-outline" size={18} color={currentTheme.goldAccent} />
         </TouchableOpacity>
       </View>
 
@@ -425,7 +437,7 @@ export default function ReadChapterScreen() {
             styles.progressBarFill,
             {
               width: `${readProgress}%`,
-              backgroundColor: theme === 'dark' ? '#d4a843' : '#b45309',
+              backgroundColor: currentTheme.goldAccent,
             },
           ]}
         />
@@ -433,8 +445,8 @@ export default function ReadChapterScreen() {
 
       {/* Language Info Banner */}
       {language === 'id' && !hasTranslation && (
-        <View style={styles.langBanner}>
-          <Text style={styles.langBannerText}>
+        <View style={[styles.langBanner, { backgroundColor: currentTheme.badgeBg, borderBottomColor: currentTheme.goldAccent + '40' }]}>
+          <Text style={[styles.langBannerText, { color: currentTheme.goldAccent }]}>
             🇮🇩 {language === 'id' ? 'Terjemahan belum tersedia — menampilkan versi original Inggris' : 'Translation not available — showing English'}
           </Text>
         </View>
@@ -446,7 +458,7 @@ export default function ReadChapterScreen() {
           <Text style={styles.noContentIcon}>📝</Text>
           <Text style={styles.noContentText}>{t.chapter_not_found}</Text>
           <TouchableOpacity onPress={() => router.back()} style={styles.noContentBtn}>
-            <Text style={styles.noContentBtnText}>← {t.back}</Text>
+            <Text style={[styles.noContentBtnText, { color: currentTheme.goldAccent }]}>← {t.back}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -698,7 +710,7 @@ export default function ReadChapterScreen() {
                     saveSettings(fontSize, 'dark', lineHeight);
                   }}
                 >
-                  <Ionicons name="moon" size={18} color="#d4a843" />
+                  <Ionicons name="moon" size={18} color={theme === 'dark' ? currentTheme.goldAccent : '#d4d4d8'} />
                   <Text style={[styles.themeCardText, { color: '#E2E8F0' }]}>Dark</Text>
                   {theme === 'dark' && <View style={[styles.themeCheckDot, { backgroundColor: currentTheme.goldAccent }]} />}
                 </TouchableOpacity>
@@ -708,7 +720,7 @@ export default function ReadChapterScreen() {
                   style={[
                     styles.themeCard,
                     {
-                      backgroundColor: '#FAFAFA',
+                      backgroundColor: '#FFFFFF',
                       borderColor: theme === 'light' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
                     },
                   ]}
@@ -717,8 +729,8 @@ export default function ReadChapterScreen() {
                     saveSettings(fontSize, 'light', lineHeight);
                   }}
                 >
-                  <Ionicons name="sunny" size={18} color="#D97706" />
-                  <Text style={[styles.themeCardText, { color: '#0F172A' }]}>Light</Text>
+                  <Ionicons name="sunny" size={18} color={theme === 'light' ? currentTheme.goldAccent : '#f59e0b'} />
+                  <Text style={[styles.themeCardText, { color: '#1A1A2E' }]}>Light</Text>
                   {theme === 'light' && <View style={[styles.themeCheckDot, { backgroundColor: currentTheme.goldAccent }]} />}
                 </TouchableOpacity>
 
@@ -727,7 +739,7 @@ export default function ReadChapterScreen() {
                   style={[
                     styles.themeCard,
                     {
-                      backgroundColor: '#F5EFE6',
+                      backgroundColor: '#F5F0E8',
                       borderColor: theme === 'sepia' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
                     },
                   ]}
@@ -736,8 +748,8 @@ export default function ReadChapterScreen() {
                     saveSettings(fontSize, 'sepia', lineHeight);
                   }}
                 >
-                  <Ionicons name="book-outline" size={18} color="#854D0E" />
-                  <Text style={[styles.themeCardText, { color: '#451A03' }]}>Sepia</Text>
+                  <Ionicons name="book" size={18} color={theme === 'sepia' ? currentTheme.goldAccent : '#b45309'} />
+                  <Text style={[styles.themeCardText, { color: '#3D3225' }]}>Sepia</Text>
                   {theme === 'sepia' && <View style={[styles.themeCheckDot, { backgroundColor: currentTheme.goldAccent }]} />}
                 </TouchableOpacity>
               </View>
@@ -746,16 +758,11 @@ export default function ReadChapterScreen() {
             {/* 4. Line Spacing */}
             <View style={styles.settingSection}>
               <View style={styles.settingLabelRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="reorder-three-outline" size={17} color={currentTheme.goldAccent} />
-                  <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.line_spacing || 'Jarak Baris'}</Text>
-                </View>
-                <View style={[styles.badgePill, { backgroundColor: currentTheme.badgeBg, borderColor: currentTheme.goldAccent + '40' }]}>
-                  <Text style={[styles.badgePillText, { color: currentTheme.goldAccent }]}>{lineHeight.toFixed(1)}x</Text>
-                </View>
+                <Ionicons name="reorder-three-outline" size={15} color={currentTheme.goldAccent} />
+                <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.line_spacing || 'Spasi Baris'}</Text>
               </View>
               <View style={styles.lineSpacingRow}>
-                {[1.4, 1.6, 1.8, 2.0, 2.2].map((val) => {
+                {[1.5, 1.8, 2.2].map((val) => {
                   const active = Math.abs(lineHeight - val) < 0.05;
                   return (
                     <TouchableOpacity
@@ -793,16 +800,16 @@ export default function ReadChapterScreen() {
             {/* Done / Close Button */}
             <TouchableOpacity
               activeOpacity={0.85}
-              style={styles.doneBtn}
+              style={[styles.doneBtn, { shadowColor: currentTheme.goldAccent }]}
               onPress={() => setShowSettings(false)}
             >
               <LinearGradient
-                colors={['#E5B84B', '#B88728']}
+                colors={[colors.gradientLight, colors.gradientDark]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.doneBtnGradient}
               >
-                <Text style={styles.doneBtnText}>{t.close || 'Tutup & Simpan'}</Text>
+                <Text style={[styles.doneBtnText, { color: colors.textOnPrimary }]}>{t.close || 'Tutup & Simpan'}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
