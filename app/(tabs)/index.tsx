@@ -26,6 +26,7 @@ import { NovelListRow } from '../../components/NovelListRow';
 import { ViewModeToggle, GridViewMode } from '../../components/ViewModeToggle';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
 import { useTheme } from '../../lib/ThemeProvider';
+import { useLanguage } from '../../lib/i18n';
 import { usePopularNovels, useLatestNovels, useIndonesianNovels, NovelItem } from '../../lib/useNovelsQuery';
 import { useHomeBanners } from '../../lib/useBannersQuery';
 import { HomeBannerCarousel } from '../../components/HomeBannerCarousel';
@@ -46,6 +47,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const { colors } = useTheme();
+  const { lang, t } = useLanguage();
   const queryClient = useQueryClient();
 
   const [logoFontLoaded] = useFonts({ BarberChop: require('../../assets/fonts/BarberChop.otf') });
@@ -380,11 +382,11 @@ export default function HomeScreen() {
               }}
             >
               <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>
-                Trending &amp; Populer
+                {lang === 'en' ? 'Trending & Popular' : 'Trending & Populer'}
               </Text>
               <Pressable onPress={() => router.push('/lihat-semua/trending' as any)} hitSlop={8}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
-                  Lihat semua
+                  {t.see_all}
                 </Text>
               </Pressable>
             </View>
@@ -419,11 +421,11 @@ export default function HomeScreen() {
                 }}
               >
                 <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>
-                  Lanjut Baca
+                  {t.continue_reading}
                 </Text>
                 <Pressable onPress={() => router.push('/(tabs)/library' as any)}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
-                    Lihat semua
+                    {t.see_all}
                   </Text>
                 </Pressable>
               </View>
@@ -472,11 +474,11 @@ export default function HomeScreen() {
               }}
             >
               <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>
-                Populer Minggu Ini
+                {lang === 'en' ? 'Popular This Week' : 'Populer Minggu Ini'}
               </Text>
               <Pressable onPress={() => router.push('/lihat-semua/populer' as any)} hitSlop={8}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
-                  Lihat semua
+                  {t.see_all}
                 </Text>
               </Pressable>
             </View>
@@ -512,7 +514,7 @@ export default function HomeScreen() {
               }}
             >
               <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>
-                Update Terbaru
+                {t.latest_update}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <ViewModeToggle
@@ -522,7 +524,7 @@ export default function HomeScreen() {
                 />
                 <Pressable onPress={() => router.push('/lihat-semua/terbaru' as any)} hitSlop={8}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
-                    Lihat semua
+                    {t.see_all}
                   </Text>
                 </Pressable>
               </View>

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ShimmerIcon } from '../../components/ShimmerIcon';
 import { ShimmerText } from '../../components/ShimmerText';
 import { useTheme } from '../../lib/ThemeProvider';
+import { useLanguage } from '../../lib/i18n';
 
 const TAB_LABEL_STYLE = { fontSize: 11, fontWeight: '600' as const };
 
@@ -40,6 +41,7 @@ function TabLabel({ label, focused, color }: { label: string; focused: boolean; 
 
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
   return (
     <Tabs
@@ -59,60 +61,60 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Beranda',
+          title: t.tab_home,
           tabBarIcon: ({ focused, color, size }) => (
             <TabIcon name="home" focused={focused} color={color} size={size} />
           ),
           tabBarLabel: ({ focused, color }) => (
-            <TabLabel label="Beranda" focused={focused} color={color} />
+            <TabLabel label={t.tab_home} focused={focused} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Jelajah',
+          title: t.tab_explore,
           tabBarIcon: ({ focused, color, size }) => (
             <TabIcon name="compass" focused={focused} color={color} size={size} />
           ),
           tabBarLabel: ({ focused, color }) => (
-            <TabLabel label="Jelajah" focused={focused} color={color} />
+            <TabLabel label={t.tab_explore} focused={focused} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="library"
         options={{
-          title: 'Library',
+          title: t.tab_library,
           tabBarIcon: ({ focused, color, size }) => (
             <TabIcon name="bookmark" focused={focused} color={color} size={size} />
           ),
           tabBarLabel: ({ focused, color }) => (
-            <TabLabel label="Library" focused={focused} color={color} />
+            <TabLabel label={t.tab_library} focused={focused} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="forum"
         options={{
-          title: 'Forum',
+          title: t.tab_forum,
           tabBarIcon: ({ focused, color, size }) => (
             <TabIcon name="chatbubbles" focused={focused} color={color} size={size} />
           ),
           tabBarLabel: ({ focused, color }) => (
-            <TabLabel label="Forum" focused={focused} color={color} />
+            <TabLabel label={t.tab_forum} focused={focused} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: t.tab_profile,
           tabBarIcon: ({ focused, color, size }) => (
             <TabIcon name="person" focused={focused} color={color} size={size} />
           ),
           tabBarLabel: ({ focused, color }) => (
-            <TabLabel label="Profil" focused={focused} color={color} />
+            <TabLabel label={t.tab_profile} focused={focused} color={color} />
           ),
         }}
       />

@@ -1,16 +1,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type Language = 'en' | 'id';
+export type Language = 'en' | 'id';
 
 const translations = {
   en: {
-    // Tabs
+    // Tabs & Navigation
     home: 'Home',
     all: 'All',
     library: 'Library',
     discovery: 'Discovery',
     profile: 'Profile',
+    tab_home: 'Home',
+    tab_explore: 'Explore',
+    tab_library: 'Library',
+    tab_forum: 'Forum',
+    tab_profile: 'Profile',
 
     // Home
     continue_reading: 'CONTINUE READING',
@@ -29,7 +34,54 @@ const translations = {
     search_placeholder: 'Search novel title...',
     no_novels_found: 'No novels found',
 
-    // Profile
+    // Profile Screen
+    profile_title: 'Profile',
+    user_reader: 'Novesia Reader',
+    login_full_access: 'Sign in for full features (free)',
+    sign_in_register: 'Sign In / Register',
+    level_rank: 'Level and Rank',
+    days_streak: 'streak days',
+    xp_to_next: 'XP left to Rank',
+    total_xp: 'Total XP',
+    bookmark: 'Bookmark',
+    continue_read: 'Continue Read',
+    streak: 'Streak',
+    days: 'Days',
+    account_details: 'Account & Profile Details',
+    theme_accent: 'Theme & Accent Options',
+    language_setting: 'Language / Bahasa',
+    language_active_name: 'English',
+    notifications_update: 'Notifications & Updates',
+    clear_history_cache: 'Clear History & Cache',
+    about_app: 'About Novesia',
+    logout_account: 'Sign Out of Account',
+
+    // Profile Dialogs
+    clear_dialog_title: 'Clear Cache & History',
+    clear_dialog_msg: 'Are you sure you want to delete all reading history and local cache?',
+    clear_dialog_confirm: 'Delete All',
+    cancel: 'Cancel',
+    cleared_success_title: 'Cache Cleared',
+    cleared_success_msg: 'All reading history and cache successfully cleared.',
+    logout_dialog_title: 'Sign Out',
+    logout_dialog_msg: 'Are you sure you want to sign out of your account?',
+    logout_dialog_confirm: 'Sign Out',
+    logout_success_title: 'Signed Out Successfully',
+    logout_success_msg: 'You have signed out of your account.',
+    notif_active_title: 'Notifications Active',
+    notif_active_msg: 'Notifications for latest chapter updates are automatically enabled.',
+    about_dialog_desc: 'Official translated novel platform with premium Dark Luxury visual experience.',
+
+    // Language Sheet
+    choose_language_title: 'Select Language',
+    choose_language_sub: 'Choose default language for app UI and novel chapters',
+    lang_id_name: 'Bahasa Indonesia',
+    lang_id_sub: 'Indonesian UI & chapters',
+    lang_en_name: 'English',
+    lang_en_sub: 'Original English UI & chapters',
+    language_switch_notice: 'Note: You can still switch languages per chapter while reading.',
+
+    // Rewards & Gamification
     guest_user: 'Guest User',
     login: 'Login',
     sign_out: 'Sign Out',
@@ -42,8 +94,6 @@ const translations = {
     settings: 'Settings',
     no_history: 'No reading history yet',
     forum: 'Forum',
-
-    // Rewards
     rewards: 'Rewards',
     daily_checkin: 'Daily Check-in',
     checkin_week: 'This week',
@@ -121,12 +171,17 @@ const translations = {
     clear_cache_close: 'Close',
   },
   id: {
-    // Tabs
+    // Tabs & Navigation
     home: 'Beranda',
     all: 'Semua',
     library: 'Pustaka',
     discovery: 'Jelajah',
     profile: 'Profil',
+    tab_home: 'Beranda',
+    tab_explore: 'Jelajah',
+    tab_library: 'Pustaka',
+    tab_forum: 'Forum',
+    tab_profile: 'Profil',
 
     // Home
     continue_reading: 'LANJUT BACA',
@@ -145,7 +200,54 @@ const translations = {
     search_placeholder: 'Cari judul novel...',
     no_novels_found: 'Novel tidak ditemukan',
 
-    // Profile
+    // Profile Screen
+    profile_title: 'Profil',
+    user_reader: 'Pembaca Novesia',
+    login_full_access: 'Login untuk akses seluruh fitur (gratis)',
+    sign_in_register: 'Masuk / Daftar Akun',
+    level_rank: 'Level dan Rank',
+    days_streak: 'hari beruntun',
+    xp_to_next: 'XP lagi ke Rank',
+    total_xp: 'Total XP',
+    bookmark: 'Bookmark',
+    continue_read: 'Lanjut Baca',
+    streak: 'Streak',
+    days: 'Hari',
+    account_details: 'Detail Akun & Profil',
+    theme_accent: 'Pilihan Tema & Aksen',
+    language_setting: 'Bahasa / Language',
+    language_active_name: 'Bahasa Indonesia',
+    notifications_update: 'Notifikasi & Update',
+    clear_history_cache: 'Bersihkan Riwayat & Cache',
+    about_app: 'Tentang Novesia',
+    logout_account: 'Keluar dari Akun',
+
+    // Profile Dialogs
+    clear_dialog_title: 'Bersihkan Cache & Riwayat',
+    clear_dialog_msg: 'Apakah Anda yakin ingin menghapus seluruh riwayat baca dan cache lokal aplikasi?',
+    clear_dialog_confirm: 'Hapus Semua',
+    cancel: 'Batal',
+    cleared_success_title: 'Cache Dibersihkan',
+    cleared_success_msg: 'Seluruh riwayat baca dan cache berhasil dihapus.',
+    logout_dialog_title: 'Keluar dari Akun',
+    logout_dialog_msg: 'Apakah Anda yakin ingin keluar dari akun Anda saat ini?',
+    logout_dialog_confirm: 'Keluar',
+    logout_success_title: 'Berhasil Keluar',
+    logout_success_msg: 'Anda telah keluar dari akun Anda.',
+    notif_active_title: 'Notifikasi Aktif',
+    notif_active_msg: 'Notifikasi untuk update chapter terbaru telah diaktifkan secara otomatis.',
+    about_dialog_desc: 'Platform baca novel terjemahan resmi dengan pengalaman visual premium Dark Luxury.',
+
+    // Language Sheet
+    choose_language_title: 'Pilih Bahasa',
+    choose_language_sub: 'Pilih bahasa default untuk UI aplikasi dan bab novel',
+    lang_id_name: 'Bahasa Indonesia',
+    lang_id_sub: 'UI & bab novel berbahasa Indonesia',
+    lang_en_name: 'English',
+    lang_en_sub: 'UI & bab novel original berbahasa Inggris',
+    language_switch_notice: 'Catatan: Anda tetap bisa mengganti bahasa per-bab sewaktu membaca novel.',
+
+    // Rewards & Gamification
     guest_user: 'Pengguna Tamu',
     login: 'Masuk',
     sign_out: 'Keluar Akun',
@@ -158,8 +260,6 @@ const translations = {
     settings: 'Pengaturan',
     no_history: 'Belum ada riwayat baca',
     forum: 'Forum',
-
-    // Rewards
     rewards: 'Hadiah',
     daily_checkin: 'Absen Harian',
     checkin_week: 'Minggu ini',
@@ -235,7 +335,7 @@ const translations = {
     clear_cache_error_desc: 'Terjadi kesalahan saat menghapus cache. Silakan coba lagi.',
     clear_cache_ok: 'OK',
     clear_cache_close: 'Tutup',
-  }
+  },
 };
 
 interface LanguageContextType {
@@ -247,11 +347,15 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Language>('en');
+  const [lang, setLang] = useState<Language>('id');
 
   useEffect(() => {
     AsyncStorage.getItem('app_lang').then((saved) => {
-      if (saved) setLang(saved as Language);
+      if (saved === 'en' || saved === 'id') {
+        setLang(saved);
+      } else {
+        setLang('id');
+      }
     });
   }, []);
 

@@ -24,6 +24,7 @@ import { SkeletonNovelGrid } from '../../components/SkeletonLoader';
 import { ViewModeToggle, GridViewMode } from '../../components/ViewModeToggle';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
 import { useTheme } from '../../lib/ThemeProvider';
+import { useLanguage } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 
 const STATUS_OPTIONS = [
@@ -131,6 +132,26 @@ export default function ExploreScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const { colors } = useTheme();
+  const { lang, t } = useLanguage();
+
+  const statusOptions = useMemo(
+    () => [
+      { key: 'ALL' as const, label: lang === 'en' ? 'All Status' : 'Semua Status' },
+      { key: 'ONGOING' as const, label: lang === 'en' ? 'Ongoing' : 'Ongoing' },
+      { key: 'COMPLETED' as const, label: lang === 'en' ? 'Completed' : 'Tamat' },
+    ],
+    [lang]
+  );
+
+  const sortOptions = useMemo(
+    () => [
+      { key: 'POPULAR' as const, label: lang === 'en' ? 'Most Popular' : 'Terpopuler' },
+      { key: 'LATEST' as const, label: lang === 'en' ? 'Latest' : 'Terbaru' },
+      { key: 'RATING' as const, label: lang === 'en' ? 'Highest Rating' : 'Rating Tertinggi' },
+      { key: 'CHAPTERS' as const, label: lang === 'en' ? 'Most Chapters' : 'Chapter Terbanyak' },
+    ],
+    [lang]
+  );
 
   const [novels, setNovels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -274,7 +295,7 @@ export default function ExploreScreen() {
               baseColor={colors.primary}
               shineColor="rgba(255,250,230,0.95)"
             >
-              Jelajah
+              {t.tab_explore}
             </ShimmerText>
             <ViewModeToggle
               mode={viewMode}
@@ -283,7 +304,7 @@ export default function ExploreScreen() {
             />
           </View>
           <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-            Temukan ribuan novel terjemahan berkualitas tinggi
+            {lang === 'en' ? 'Discover thousands of high quality translated novels' : 'Temukan ribuan novel terjemahan berkualitas tinggi'}
           </Text>
 
           {/* Search Bar Button (Opens /search with SearchEmptyRing animation - Komiku Pattern) */}
@@ -306,7 +327,7 @@ export default function ExploreScreen() {
           >
             <Ionicons name="search" size={18} color={colors.textMuted} />
             <Text style={{ flex: 1, color: colors.textMuted, fontSize: 13 }}>
-              Cari judul novel, author, atau genre…
+              {lang === 'en' ? 'Search novel title, author, or genre…' : 'Cari judul novel, author, atau genre…'}
             </Text>
           </Pressable>
         </View>
@@ -316,14 +337,14 @@ export default function ExploreScreen() {
         <View style={{ gap: 8, paddingBottom: 12 }}>
           {/* Status Filter */}
           <InlineFilterRow
-            options={STATUS_OPTIONS}
+            options={statusOptions}
             activeKey={activeStatus}
             onChange={setActiveStatus}
           />
 
           {/* Sort Filter */}
           <InlineFilterRow
-            options={SORT_OPTIONS}
+            options={sortOptions}
             activeKey={activeSort}
             onChange={setActiveSort}
           />

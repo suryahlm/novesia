@@ -22,10 +22,12 @@ import { VipCard } from '../../components/VipCard';
 import { StatCard } from '../../components/StatCard';
 import { RankBadge } from '../../components/RankBadge';
 import { ThemeSheet } from '../../components/ThemeSheet';
+import { LanguageSheet } from '../../components/LanguageSheet';
 import { CustomDialog, DialogTone } from '../../components/CustomDialog';
 import { AuthModal } from '../../components/AuthModal';
 import { useAuthStore } from '../../lib/useAuthStore';
 import { useTheme } from '../../lib/ThemeProvider';
+import { useLanguage } from '../../lib/i18n';
 import { signOutUser } from '../../lib/authService';
 import { getHistory, HistoryItem, clearHistory } from '../../lib/history';
 import { getUserGamificationStats, UserGamificationStats } from '../../lib/gamification';
@@ -35,6 +37,7 @@ const LIBRARY_KEY = 'novesia_library';
 export default function ProfileScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { lang, t } = useLanguage();
   const user = useAuthStore((s) => s.user);
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -44,6 +47,7 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isVip, setIsVip] = useState(false);
   const [themeSheetVisible, setThemeSheetVisible] = useState(false);
+  const [langSheetVisible, setLangSheetVisible] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
   // Custom Dialog State
@@ -107,19 +111,19 @@ export default function ProfileScreen() {
 
   const handleClearCache = () => {
     showPopup({
-      title: 'Bersihkan Cache & Riwayat',
-      message: 'Apakah Anda yakin ingin menghapus seluruh riwayat baca dan cache lokal aplikasi?',
+      title: t.clear_dialog_title,
+      message: t.clear_dialog_msg,
       icon: 'trash-outline',
       tone: 'danger',
-      confirmText: 'Hapus Semua',
-      cancelText: 'Batal',
+      confirmText: t.clear_dialog_confirm,
+      cancelText: t.cancel,
       showCancel: true,
       onConfirm: async () => {
         await clearHistory();
         await loadData();
         showPopup({
-          title: 'Cache Dibersihkan',
-          message: 'Seluruh riwayat baca dan cache berhasil dihapus.',
+          title: t.cleared_success_title,
+          message: t.cleared_success_msg,
           tone: 'success',
           showCancel: false,
         });
@@ -129,18 +133,18 @@ export default function ProfileScreen() {
 
   const handleLogout = () => {
     showPopup({
-      title: 'Keluar dari Akun',
-      message: 'Apakah Anda yakin ingin keluar dari akun Anda saat ini?',
+      title: t.logout_dialog_title,
+      message: t.logout_dialog_msg,
       icon: 'log-out-outline',
       tone: 'danger',
-      confirmText: 'Keluar',
-      cancelText: 'Batal',
+      confirmText: t.logout_dialog_confirm,
+      cancelText: t.cancel,
       showCancel: true,
       onConfirm: async () => {
         await signOutUser();
         showPopup({
-          title: 'Berhasil Keluar',
-          message: 'Anda telah keluar dari akun Anda.',
+          title: t.logout_success_title,
+          message: t.logout_success_msg,
           tone: 'success',
           showCancel: false,
         });
@@ -156,7 +160,6 @@ export default function ProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <GradientBackground />
-      {/* Accent ambient shimmer atas - cahaya aksen tipis dari pojok kiri atas */}
       <LinearGradient
         colors={[colors.primary + '2E', colors.primary + '0F', 'rgba(13,16,18,0)']}
         locations={[0, 0.35, 0.7]}
@@ -165,7 +168,6 @@ export default function ProfileScreen() {
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
-      {/* Accent ambient shimmer bawah - lebih tipis, dari pojok kanan bawah */}
       <LinearGradient
         colors={['rgba(13,16,18,0)', colors.primary + '0D', colors.primary + '1F']}
         locations={[0.5, 0.78, 1]}
@@ -187,18 +189,16 @@ export default function ProfileScreen() {
             />
           }
         >
-          {/* Header Title with ShimmerText */}
           <View style={{ paddingTop: 6, paddingBottom: 16 }}>
             <ShimmerText
               style={{ fontSize: 24, fontWeight: '900', letterSpacing: 0.5 }}
               baseColor={colors.primary}
               shineColor="rgba(255,250,230,0.95)"
             >
-              Profil
+              {t.profile_title}
             </ShimmerText>
           </View>
 
-          {/* User Profile Header (Komiku Open Layout - Tanpa Kotak Tebal) */}
           <Pressable
             onPress={() => (user ? router.push('/akun') : setAuthModalVisible(true))}
             style={{
@@ -241,7 +241,7 @@ export default function ProfileScreen() {
                     flexShrink: 1,
                   }}
                 >
-                  {user ? user.name : 'Pembaca Novesia'}
+                  {user ? user.name : t.user_reader}
                 </Text>
                 {user &&
                   (userIsVip ? (
@@ -286,7 +286,7 @@ export default function ProfileScreen() {
               </View>
 
               <Text numberOfLines={1} style={{ fontSize: 12, color: colors.textMuted }}>
-                {user ? user.email : 'Login untuk akses seluruh fitur (gratis)'}
+                {user ? user.email : t.login_full_access}
               </Text>
 
               {!user && (
@@ -310,7 +310,7 @@ export default function ProfileScreen() {
                         color: colors.textOnPrimary,
                       }}
                     >
-                      Masuk / Daftar Akun
+                      {t.sign_in_register}
                     </Text>
                   </GoldSurface>
                 </Pressable>
@@ -328,8 +328,8 @@ export default function ProfileScreen() {
                       borderColor: colors.border,
                     }}
                   >
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
-                      Lv.{gamification.level}
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.primary }}>
+                      Lv. {gamification.level}
                     </Text>
                   </View>
                   <View
@@ -342,8 +342,8 @@ export default function ProfileScreen() {
                       borderColor: colors.border,
                     }}
                   >
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
-                      Rank {gamification.rank}
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textMuted }}>
+                      {gamification.totalXp} XP
                     </Text>
                   </View>
                 </View>
@@ -360,19 +360,17 @@ export default function ProfileScreen() {
             )}
           </Pressable>
 
-          {/* Hairline Separator */}
           <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 18 }} />
 
-          {/* Level dan Rank Card (Komiku Pattern) */}
           <Pressable
-            onPress={() => (user ? router.push('/akun') : setAuthModalVisible(true))}
+            onPress={() => router.push('/rewards' as any)}
             style={{
-              borderRadius: 16,
               backgroundColor: colors.surface,
+              borderRadius: 16,
               borderWidth: 1,
               borderColor: colors.border,
-              padding: 16,
-              marginBottom: 20,
+              padding: 14,
+              marginBottom: 16,
               gap: 10,
             }}
             accessibilityRole="button"
@@ -382,7 +380,7 @@ export default function ProfileScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Ionicons name="trophy" size={18} color={colors.primary} />
                 <Text style={{ fontSize: 14.5, fontWeight: '700', color: colors.textPrimary }}>
-                  Level dan Rank
+                  {t.level_rank}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
@@ -401,7 +399,6 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
 
-                {/* Progress Bar */}
                 <View style={{ height: 6, borderRadius: 999, backgroundColor: colors.border, overflow: 'hidden' }}>
                   <View
                     style={{
@@ -417,27 +414,26 @@ export default function ProfileScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <RankBadge rank={gamification.rank} size="sm" />
                     <Text style={{ fontSize: 11, color: colors.textMuted }}>
-                      {gamification.totalXp} Total XP
+                      {gamification.totalXp} {t.total_xp}
                     </Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                     <Ionicons name="flame" size={13} color={colors.primary} />
                     <Text style={{ fontSize: 11, color: colors.textMuted }}>
-                      {gamification.currentStreak} hari beruntun
+                      {gamification.currentStreak} {t.days_streak}
                     </Text>
                   </View>
                 </View>
 
                 {gamification.nextRank && (
                   <Text style={{ fontSize: 11, color: colors.textMuted }}>
-                    {gamification.xpToNextRank} XP lagi ke Rank {gamification.nextRank}
+                    {gamification.xpToNextRank} {t.xp_to_next} {gamification.nextRank}
                   </Text>
                 )}
               </>
             ) : null}
           </Pressable>
 
-          {/* Reading Statistics Row (Komiku StatCard Pattern) */}
           <View
             style={{
               flexDirection: 'row',
@@ -445,16 +441,15 @@ export default function ProfileScreen() {
               marginBottom: 20,
             }}
           >
-            <StatCard icon="bookmark" label="Bookmark" value={bookmarkCount} />
-            <StatCard icon="book" label="Lanjut Baca" value={totalNovels} />
+            <StatCard icon="bookmark" label={t.bookmark} value={bookmarkCount} />
+            <StatCard icon="book" label={t.continue_read} value={totalNovels} />
             <StatCard
               icon="flame"
-              label="Streak"
-              value={gamification && gamification.currentStreak > 0 ? `${gamification.currentStreak} Hari` : '0 Hari'}
+              label={t.streak}
+              value={gamification && gamification.currentStreak > 0 ? `${gamification.currentStreak} ${t.days}` : `0 ${t.days}`}
             />
           </View>
 
-          {/* Menu Options (Unified Rounded Container) */}
           <View
             style={{
               backgroundColor: colors.surface,
@@ -468,21 +463,27 @@ export default function ProfileScreen() {
             {[
               {
                 icon: 'person-outline' as const,
-                label: 'Detail Akun & Profil',
+                label: t.account_details,
                 onPress: () => (user ? router.push('/akun') : setAuthModalVisible(true)),
               },
               {
                 icon: 'color-palette-outline' as const,
-                label: 'Pilihan Tema & Aksen',
+                label: t.theme_accent,
                 onPress: () => setThemeSheetVisible(true),
               },
               {
+                icon: 'language-outline' as const,
+                label: t.language_setting,
+                badge: lang === 'id' ? '🇮🇩 ID' : '🇬🇧 EN',
+                onPress: () => setLangSheetVisible(true),
+              },
+              {
                 icon: 'notifications-outline' as const,
-                label: 'Notifikasi & Update',
+                label: t.notifications_update,
                 onPress: () =>
                   showPopup({
-                    title: 'Notifikasi Aktif',
-                    message: 'Notifikasi untuk update chapter terbaru telah diaktifkan secara otomatis.',
+                    title: t.notif_active_title,
+                    message: t.notif_active_msg,
                     icon: 'notifications-outline',
                     tone: 'info',
                     showCancel: false,
@@ -490,17 +491,16 @@ export default function ProfileScreen() {
               },
               {
                 icon: 'cloud-outline' as const,
-                label: 'Bersihkan Riwayat & Cache',
+                label: t.clear_history_cache,
                 onPress: handleClearCache,
               },
               {
                 icon: 'information-circle-outline' as const,
-                label: 'Tentang Novesia',
+                label: t.about_app,
                 onPress: () =>
                   showPopup({
                     title: 'Novesia v1.0.0',
-                    message:
-                      'Platform baca novel terjemahan resmi dengan pengalaman visual premium Dark Luxury.',
+                    message: t.about_dialog_desc,
                     icon: 'book-outline',
                     tone: 'gold',
                     showCancel: false,
@@ -524,12 +524,28 @@ export default function ProfileScreen() {
                 <Text style={{ flex: 1, fontSize: 13.5, color: colors.textPrimary, fontWeight: '600' }}>
                   {menu.label}
                 </Text>
+                {'badge' in menu && menu.badge && (
+                  <View
+                    style={{
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 8,
+                      backgroundColor: colors.primaryMuted,
+                      borderWidth: 1,
+                      borderColor: colors.primary + '40',
+                      marginRight: 6,
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
+                      {menu.badge}
+                    </Text>
+                  </View>
+                )}
                 <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
               </Pressable>
             ))}
           </View>
 
-          {/* Logout Button */}
           {user && (
             <Pressable
               onPress={handleLogout}
@@ -543,14 +559,13 @@ export default function ProfileScreen() {
               }}
             >
               <Text style={{ fontSize: 13, color: '#D86666', fontWeight: '800' }}>
-                Keluar dari Akun
+                {t.logout_account}
               </Text>
             </Pressable>
           )}
         </ScrollView>
       </SafeAreaView>
 
-      {/* Auth Modal for Sign In / Sign Up */}
       <AuthModal
         visible={authModalVisible}
         onClose={() => setAuthModalVisible(false)}
@@ -564,13 +579,16 @@ export default function ProfileScreen() {
         }}
       />
 
-      {/* Theme Selection BottomSheet */}
       <ThemeSheet
         visible={themeSheetVisible}
         onClose={() => setThemeSheetVisible(false)}
       />
 
-      {/* Custom Luxury Dialog Popup */}
+      <LanguageSheet
+        visible={langSheetVisible}
+        onClose={() => setLangSheetVisible(false)}
+      />
+
       <CustomDialog
         visible={dialogVisible}
         onClose={() => setDialogVisible(false)}

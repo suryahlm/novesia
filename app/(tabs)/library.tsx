@@ -18,6 +18,7 @@ import { GradientBackground } from '../../components/GradientBackground';
 import { ShimmerText } from '../../components/ShimmerText';
 import { CoverImage } from '../../components/CoverImage';
 import { useTheme } from '../../lib/ThemeProvider';
+import { useLanguage } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { getHistory, HistoryItem } from '../../lib/history';
 
@@ -40,6 +41,7 @@ interface SavedNovel {
 export default function LibraryScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { lang, t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<LibraryTab>('bookmarks');
   const [bookmarks, setBookmarks] = useState<SavedNovel[]>([]);
@@ -139,7 +141,7 @@ export default function LibraryScreen() {
             baseColor={colors.primary}
             shineColor="rgba(255,250,230,0.95)"
           >
-            Library
+            {t.tab_library}
           </ShimmerText>
         </View>
 
@@ -171,7 +173,7 @@ export default function LibraryScreen() {
                 fontWeight: activeTab === 'bookmarks' ? '700' : '500',
               }}
             >
-              Bookmarks ({bookmarks.length})
+              {t.bookmark} ({bookmarks.length})
             </Text>
           </Pressable>
 
@@ -192,7 +194,7 @@ export default function LibraryScreen() {
                 fontWeight: activeTab === 'history' ? '700' : '500',
               }}
             >
-              History ({history.length})
+              {lang === 'en' ? 'History' : 'Riwayat'} ({history.length})
             </Text>
           </Pressable>
         </View>
@@ -226,7 +228,7 @@ export default function LibraryScreen() {
                   textAlign: 'center',
                 }}
               >
-                Library Anda masih kosong
+                {lang === 'en' ? 'Your library is empty' : 'Library Anda masih kosong'}
               </Text>
               <Text
                 style={{
@@ -237,7 +239,9 @@ export default function LibraryScreen() {
                   lineHeight: 18,
                 }}
               >
-                Simpan novel favorit lewat ikon bookmark di halaman detail untuk membacanya kembali.
+                {lang === 'en'
+                  ? 'Save favorite novels via the bookmark icon to read them later.'
+                  : 'Simpan novel favorit lewat ikon bookmark di halaman detail untuk membacanya kembali.'}
               </Text>
             </ScrollView>
           ) : (
@@ -356,7 +360,7 @@ export default function LibraryScreen() {
                 textAlign: 'center',
               }}
             >
-              Belum ada riwayat baca
+              {t.no_history}
             </Text>
             <Text
               style={{
@@ -367,7 +371,9 @@ export default function LibraryScreen() {
                 lineHeight: 18,
               }}
             >
-              Novel yang Anda baca akan tercatat di sini secara otomatis.
+              {lang === 'en'
+                ? 'Novels you read will appear here automatically.'
+                : 'Novel yang Anda baca akan tercatat di sini secara otomatis.'}
             </Text>
           </ScrollView>
         ) : (
@@ -427,10 +433,11 @@ export default function LibraryScreen() {
                     {item.title}
                   </Text>
                   <Text style={{ fontSize: 11.5, color: colors.primary, fontWeight: '700' }}>
-                    Terakhir baca: Ch {item.last_chapter}
+                    {lang === 'en' ? 'Last read: Ch ' : 'Terakhir baca: Ch '}
+                    {item.last_chapter}
                   </Text>
                   <Text style={{ fontSize: 10, color: colors.textMuted }}>
-                    {new Date(item.timestamp).toLocaleDateString('id-ID', {
+                    {new Date(item.timestamp).toLocaleDateString(lang === 'en' ? 'en-US' : 'id-ID', {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',
