@@ -70,13 +70,68 @@ export async function fetchNovelDetail(slug: string): Promise<NovelItem | null> 
 }
 
 /**
- * Hook Banner Hero - staleTime Infinity agar carousel tidak reshuffle saat ganti tab
+ * Fisher-Yates shuffle untuk mengocok acak N item dari pool teratas (Pola Komiku)
  */
-export function useFeaturedBanner() {
+function shuffleSample<T>(array: T[], size: number): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, size);
+}
+
+/**
+ * Fetch Hero Banner Novel (Pola Komiku: Smart Random 10 dari Top 60 Rating & Cover Valid)
+ * Mengambil pool novel berating tinggi yang memiliki cover valid, lalu mengocok 10 novel terpilih.
+ */
+export async function fetchFeaturedBanner(lang: string = 'all'): Promise<NovelItem[]> {
+  try {
+    let query = supabase
+      .from('nu_novels')
+      .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
+      .eq('is_blacklisted', false)
+      .in('status', ['active', 'completed', 'ongoing', 'published'])
+      .gt('total_chapters', 0)
+      .not('cover_url', 'is', null);
+
+    if (lang === 'id') {
+      query = query
+        .or('translation_status.eq.id_translated,synopsis_translated.not.is.null')
+        .order('rating', { ascending: false, nullsFirst: false })
+        .order('updated_at', { ascending: false })
+        .limit(60);
+    } else {
+      query = query
+        .order('rating', { ascending: false, nullsFirst: false })
+        .order('total_chapters', { ascending: false })
+        .limit(60);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching featured banner pool:', error);
+      return [];
+    }
+
+    if (!data || data.length === 0) return [];
+    // Random 10 dari pool top 60 (Pola Komiku)
+    return shuffleSample(data, Math.min(10, data.length));
+  } catch (err) {
+    console.error('Error in fetchFeaturedBanner:', err);
+    return [];
+  }
+}
+
+/**
+ * Hook Banner Hero - staleTime Infinity agar carousel tidak reshuffle saat ganti tab (Pola Komiku)
+ */
+export function useFeaturedBanner(lang: string = 'all') {
   return useQuery({
-    queryKey: ['novels', 'featured-banner'],
-    queryFn: fetchAllNovels,
+    queryKey: ['novels', 'featured-banner', lang],
+    queryFn: () => fetchFeaturedBanner(lang),
     staleTime: Infinity,
+    gcTime: 1000 * 60 * 30, // 30 menit cache
   });
 }
 

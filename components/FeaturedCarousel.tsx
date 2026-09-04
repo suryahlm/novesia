@@ -158,6 +158,15 @@ export function FeaturedCarousel({ novels, onPressNovel, headerOverlay }: Featur
   const cardHeight = CONTENT_HEIGHT;
   const itemStride = slotWidth;
 
+  const bannerSetKey = novels.map((n) => n.id).join(',');
+
+  // Set banner berubah (refetch/ganti filter bahasa) - balik ke slide pertama (Pola Komiku)
+  useEffect(() => {
+    indexRef.current = 0;
+    setActiveIndex(0);
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [bannerSetKey]);
+
   const shouldAutoSlide = !reducedMotion && novels.length > 1;
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 

@@ -27,7 +27,7 @@ import { ViewModeToggle, GridViewMode } from '../../components/ViewModeToggle';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
-import { usePopularNovels, useLatestNovels, useIndonesianNovels, NovelItem } from '../../lib/useNovelsQuery';
+import { usePopularNovels, useLatestNovels, useIndonesianNovels, useFeaturedBanner, NovelItem } from '../../lib/useNovelsQuery';
 import { useHomeBanners } from '../../lib/useBannersQuery';
 import { HomeBannerCarousel } from '../../components/HomeBannerCarousel';
 import { useNotifications } from '../../lib/useNotificationsQuery';
@@ -53,14 +53,15 @@ export default function HomeScreen() {
   const [logoFontLoaded] = useFonts({ BarberChop: require('../../assets/fonts/BarberChop.otf') });
   const logoFontStyle = logoFontLoaded ? { fontFamily: 'BarberChop', fontWeight: '400' as const } : { fontWeight: '700' as const };
 
+  const [activeLang, setActiveLang] = useState<LanguageFilterKey>('all');
+
   // Fast TanStack Query with 5-minute memory cache
   const { data: novels = [], isLoading: loadingPopular } = usePopularNovels();
   const { data: latestNovels = [], isLoading: loadingLatest } = useLatestNovels();
   const { data: indonesianNovels = [], isLoading: loadingIndonesian } = useIndonesianNovels();
+  const { data: featuredNovels = [], isLoading: loadingFeatured } = useFeaturedBanner(activeLang);
   const homeBanners = useHomeBanners();
   const notifications = useNotifications();
-
-  const [activeLang, setActiveLang] = useState<LanguageFilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [continueReading, setContinueReading] = useState<HistoryItem[]>([]);
   const [previewNovel, setPreviewNovel] = useState<NovelItem | null>(null);
@@ -121,7 +122,13 @@ export default function HomeScreen() {
     return latestNovels;
   }, [latestNovels, indonesianNovels, activeLang]);
 
-  const featuredList = useMemo(() => filteredNovels.slice(0, 10), [filteredNovels]);
+  // Top Featured Banner: Smart random 10 dari pool rating tertinggi (Pola Komiku)
+  const featuredList = useMemo(() => {
+    if (featuredNovels.length > 0) return featuredNovels;
+    return filteredNovels.slice(0, 10);
+  }, [featuredNovels, filteredNovels]);
+
+  // Trending & Populer: Tetap urut peringkat ranking #1 s/d #10
   const trendingList = useMemo(() => filteredNovels.slice(0, 10), [filteredNovels]);
   const weeklyList = useMemo(() => (filteredNovels.length > 10 ? filteredNovels.slice(10, 22) : filteredNovels), [filteredNovels]);
 
@@ -131,7 +138,7 @@ export default function HomeScreen() {
     (screenWidth - 16 * 2 - gridGap * (updateGridColumns - 1)) / updateGridColumns
   );
 
-  const isInitialLoading = loadingPopular && novels.length === 0;
+  const isInitialLoading = (loadingPopular || loadingFeatured) && novels.length === 0 && featuredNovels.length === 0;
 
   if (isInitialLoading) {
     return (
