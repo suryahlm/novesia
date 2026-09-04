@@ -16,6 +16,7 @@ const ThemeContext = createContext<Theme | null>(null);
 function buildTheme(accentId: AccentId, mode: ThemeMode): Theme {
   const accent = ACCENT_REGISTRY[accentId] || ACCENT_REGISTRY.peridot;
   const base = mode === 'light' ? lightColors : darkColors;
+  const isLightAccent = ['gold', 'silver', 'peridot', 'sakura'].includes(accentId);
   return {
     colors: {
       ...base,
@@ -24,6 +25,7 @@ function buildTheme(accentId: AccentId, mode: ThemeMode): Theme {
       primaryPressed: accent.primaryPressed,
       gradientLight: accent.gradientLight,
       gradientDark: accent.gradientDark,
+      textOnPrimary: isLightAccent ? '#0D1012' : '#FFFFFF',
     },
     isDark: mode === 'dark',
     accentId,

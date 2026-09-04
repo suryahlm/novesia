@@ -518,7 +518,7 @@ export default function ReadChapterScreen() {
                   style={[styles.navBtn, { backgroundColor: currentTheme.goldAccent, borderColor: currentTheme.goldAccent }]}
                   onPress={() => navigateChapter(nextChapter.id)}
                 >
-                  <Text style={[styles.navBtnText, { color: '#0D1012' }]}>
+                  <Text style={[styles.navBtnText, { color: colors.textOnPrimary }]}>
                     Ch {nextChapter.chapter_number} →
                   </Text>
                 </TouchableOpacity>
