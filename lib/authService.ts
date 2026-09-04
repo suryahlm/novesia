@@ -22,6 +22,26 @@ export async function signUpWithEmail(email: string, password: string, name: str
     }
 
     if (data.user) {
+      // Sync immediately to nu_users table for Admin Panel
+      try {
+        await supabase.from('nu_users').upsert(
+          {
+            id: data.user.id,
+            email: data.user.email || trimmedEmail,
+            name: trimmedName || trimmedEmail.split('@')[0],
+            avatar_url: data.user.user_metadata?.avatar_url || null,
+            role: 'USER',
+            banned: false,
+            frozen: false,
+            created_at: data.user.created_at,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+      } catch (dbErr) {
+        console.warn('[authService] Failed to upsert nu_users on signUp:', dbErr);
+      }
+
       const authUser: AuthUser = {
         id: data.user.id,
         email: data.user.email || trimmedEmail,
@@ -54,12 +74,62 @@ export async function signInWithEmail(email: string, password: string): Promise<
     }
 
     if (data.user) {
+      // Check status from nu_users & fetch VIP status
+      let role: 'USER' | 'VIP' = (data.user.user_metadata?.role as any) || 'USER';
+      let vipUntil: string | null = null;
+      let userName = data.user.user_metadata?.name || trimmedEmail.split('@')[0];
+      let userAvatar = data.user.user_metadata?.avatar_url || null;
+
+      try {
+        const { data: nuUser } = await supabase
+          .from('nu_users')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (nuUser) {
+          if (nuUser.banned) {
+            await supabase.auth.signOut();
+            return { user: null, error: 'Akun Anda telah dinonaktifkan (diblokir) oleh admin.' };
+          }
+          if (nuUser.frozen) {
+            await supabase.auth.signOut();
+            return { user: null, error: 'Akun Anda sedang dibekukan sementara oleh admin.' };
+          }
+          if (nuUser.role === 'VIP') {
+            role = 'VIP';
+            vipUntil = nuUser.vip_until || null;
+          }
+          if (nuUser.name) userName = nuUser.name;
+          if (nuUser.avatar_url) userAvatar = nuUser.avatar_url;
+        } else {
+          // Auto-sync into nu_users if missing
+          await supabase.from('nu_users').upsert(
+            {
+              id: data.user.id,
+              email: data.user.email || trimmedEmail,
+              name: userName,
+              avatar_url: userAvatar,
+              role: 'USER',
+              banned: false,
+              frozen: false,
+              created_at: data.user.created_at,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          );
+        }
+      } catch (checkErr) {
+        console.warn('[authService] Check nu_users error:', checkErr);
+      }
+
       const authUser: AuthUser = {
         id: data.user.id,
         email: data.user.email || trimmedEmail,
-        name: data.user.user_metadata?.name || trimmedEmail.split('@')[0],
-        avatarUrl: data.user.user_metadata?.avatar_url || null,
-        role: (data.user.user_metadata?.role as any) || 'USER',
+        name: userName,
+        avatarUrl: userAvatar,
+        role,
+        vipUntil,
         createdAt: data.user.created_at,
       };
 
@@ -96,6 +166,19 @@ export async function updateUserName(name: string): Promise<{ success: boolean; 
 
     if (error) {
       console.warn('[authService] Supabase updateUser warning:', error.message);
+    }
+
+    // Sync to nu_users table
+    const currentUser = useAuthStore.getState().user;
+    if (currentUser?.id) {
+      try {
+        await supabase
+          .from('nu_users')
+          .update({ name: trimmed, updated_at: new Date().toISOString() })
+          .eq('id', currentUser.id);
+      } catch (dbErr) {
+        console.warn('[authService] Update nu_users name warning:', dbErr);
+      }
     }
 
     // Always update local store optimistically
@@ -152,6 +235,18 @@ export async function uploadUserAvatar(asset: {
       console.warn('[authService] updateUser metadata error:', metaErr);
     }
 
+    // Sync to nu_users table
+    if (userId && !userId.startsWith('guest_')) {
+      try {
+        await supabase
+          .from('nu_users')
+          .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+          .eq('id', userId);
+      } catch (dbErr) {
+        console.warn('[authService] Update nu_users avatar warning:', dbErr);
+      }
+    }
+
     useAuthStore.getState().updateUser({ avatarUrl });
     return { avatarUrl, error: null };
   } catch (err: any) {
@@ -161,6 +256,14 @@ export async function uploadUserAvatar(asset: {
 
 export async function deleteUserAccount(): Promise<{ success: boolean; error: string | null }> {
   try {
+    const user = useAuthStore.getState().user;
+    if (user?.id) {
+      try {
+        await supabase.from('nu_users').delete().eq('id', user.id);
+      } catch (dbErr) {
+        console.warn('[authService] Delete nu_users warning:', dbErr);
+      }
+    }
     await signOutUser();
     return { success: true, error: null };
   } catch (err: any) {

@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/images/adaptive-icon-foreground.png"
       },
       "package": "com.suryahalim26.novesiaapp",
-      "versionCode": 8
+      "versionCode": 9
     },
     "web": {
       "output": "static",
