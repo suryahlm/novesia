@@ -19,6 +19,7 @@ import { trackChapterRead } from '../../lib/gamification';
 import { useLanguage } from '../../lib/i18n';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
 import { useTheme } from '../../lib/ThemeProvider';
+import { cleanChapterTitle } from '../../lib/utils';
 
 type ThemeMode = 'dark' | 'light' | 'sepia';
 type Language = 'en' | 'id';
@@ -483,7 +484,7 @@ export default function ReadChapterScreen() {
               ⏱️ ~{Math.max(1, Math.round(displayWordCount / 200))} min read
             </Text>
             <Text style={[styles.chapterHeading, { color: currentTheme.text }]}>
-              {chapter.chapter_title || `Chapter ${chapter.chapter_number}`}
+              {cleanChapterTitle(chapter.chapter_title, chapter.chapter_number)}
             </Text>
 
             <Text

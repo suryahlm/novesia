@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../lib/i18n';
-import { formatViews } from '../../lib/utils';
+import { formatViews, cleanChapterTitle } from '../../lib/utils';
 import { CustomDialog } from '../../components/CustomDialog';
 import { useTheme } from '../../lib/ThemeProvider';
 import { trackBookmarkAdded } from '../../lib/gamification';
@@ -431,7 +431,7 @@ export default function NovelDetailScreen() {
                           <View style={[styles.chapterDot, { backgroundColor: hasContent ? '#22c55e' : '#334155' }]} />
                           <Text style={[styles.chapterNum, { color: colors.primary }, !hasContent && { color: '#475569' }]}>#{ch.chapter_number}</Text>
                           <Text style={[styles.chapterTitle, !hasContent && { color: '#475569' }]} numberOfLines={1}>
-                            {ch.chapter_title || `Chapter ${ch.chapter_number}`}
+                            {cleanChapterTitle(ch.chapter_title, ch.chapter_number)}
                           </Text>
                         </View>
                         {hasContent ? (
