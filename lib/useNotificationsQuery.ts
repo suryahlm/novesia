@@ -8,6 +8,7 @@ export interface AppNotification {
   title: string;
   message: string;
   type: NotificationType;
+  target?: 'all' | 'web' | 'app';
   is_active: boolean;
   created_at: string;
 }
@@ -17,6 +18,7 @@ export async function fetchActiveNotifications(): Promise<AppNotification[]> {
     .from('nu_notifications')
     .select('*')
     .eq('is_active', true)
+    .in('target', ['all', 'app'])
     .order('created_at', { ascending: false });
 
   if (error) {
