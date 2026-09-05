@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { useAuthStore, AuthUser } from './useAuthStore';
 
@@ -13,6 +14,9 @@ export async function signUpWithEmail(email: string, password: string, name: str
         data: {
           name: trimmedName,
           role: 'USER',
+          platform: 'app',
+          registered_via: 'app',
+          os: Platform.OS,
         },
       },
     });
@@ -74,6 +78,16 @@ export async function signInWithEmail(email: string, password: string): Promise<
     }
 
     if (data.user) {
+      if (!data.user.user_metadata?.platform) {
+        try {
+          await supabase.auth.updateUser({
+            data: { platform: 'app', registered_via: 'app', os: Platform.OS },
+          });
+        } catch (metaErr) {
+          console.warn('[authService] Failed to tag user metadata platform:', metaErr);
+        }
+      }
+
       // Check status from nu_users & fetch VIP status
       let role: 'USER' | 'VIP' = (data.user.user_metadata?.role as any) || 'USER';
       let vipUntil: string | null = null;
