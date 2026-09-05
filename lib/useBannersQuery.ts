@@ -18,7 +18,8 @@ export async function fetchHomeBanners(): Promise<HomeBanner[]> {
     .from('nu_banners')
     .select('*')
     .eq('active', true)
-    .lte('slot', 3)
+    .gte('slot', 1)
+    .lte('slot', 6)
     .order('slot', { ascending: true });
 
   if (error) {
