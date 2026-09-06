@@ -14,12 +14,12 @@ export interface HomeBanner {
 }
 
 export async function fetchHomeBanners(): Promise<HomeBanner[]> {
+  const validAppSlots = [1, 2, 3, 4, 5, 6];
   const { data, error } = await supabase
     .from('nu_banners')
     .select('*')
     .eq('active', true)
-    .gte('slot', 1)
-    .lte('slot', 6)
+    .in('slot', validAppSlots)
     .order('slot', { ascending: true });
 
   if (error) {
@@ -29,6 +29,7 @@ export async function fetchHomeBanners(): Promise<HomeBanner[]> {
 
   const nowTs = Date.now();
   return (data || []).filter((banner) => {
+    if (!validAppSlots.includes(Number(banner.slot))) return false;
     if (!banner.image_url) return false;
     if (banner.start_at && new Date(banner.start_at).getTime() > nowTs) {
       return false;
