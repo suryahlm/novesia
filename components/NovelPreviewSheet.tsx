@@ -123,7 +123,7 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
   if (!novel) return null;
 
   const isCompleted = novel.status === 'completed' || novel.status === 'complete' || novel.status === 'tamat';
-  const statusColor = isCompleted ? '#22c55e' : '#F59E0B';
+  const statusColor = isCompleted ? '#10B981' : '#F59E0B';
   const statusLabel = isCompleted
     ? (lang === 'id' ? 'Tamat' : 'Completed')
     : (lang === 'id' ? 'Berjalan' : 'Ongoing');
