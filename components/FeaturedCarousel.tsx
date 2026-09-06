@@ -77,6 +77,7 @@ const CarouselSlide = React.memo(function CarouselSlide({
   cardHeight,
   onPress,
 }: CarouselSlideProps) {
+  const { colors, isDark } = useTheme();
   const { lang } = useLanguage();
   const coverUri = novel.cover_url || novel.cover_landscape_url;
   const bgArtworkUri = novel.cover_landscape_url || novel.cover_url;
@@ -105,8 +106,8 @@ const CarouselSlide = React.memo(function CarouselSlide({
             borderRadius: BANNER_RADIUS,
             overflow: 'hidden',
             borderWidth: 1.2,
-            borderColor: 'rgba(185,151,98,0.38)',
-            backgroundColor: '#0A0E17',
+            borderColor: colors.primary + '55',
+            backgroundColor: isDark ? '#0A0E17' : colors.surface,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.45,
@@ -225,7 +226,7 @@ const CarouselSlide = React.memo(function CarouselSlide({
                 borderColor: 'rgba(255,255,255,0.18)',
               }}
             >
-              <Ionicons name="star" size={9.5} color="#B99762" />
+              <Ionicons name="star" size={9.5} color={colors.primary} />
               <Text
                 style={{
                   color: '#FAF5EE',
@@ -260,17 +261,17 @@ const CarouselSlide = React.memo(function CarouselSlide({
               <View
                 style={{
                   paddingHorizontal: 7.5,
-                  paddingVertical: 2,
+                  paddingVertical: 2.5,
                   borderRadius: 999,
-                  backgroundColor: 'rgba(185,151,98,0.2)',
+                  backgroundColor: colors.primaryMuted || colors.primary + '22',
                   borderWidth: 1,
-                  borderColor: 'rgba(185,151,98,0.42)',
+                  borderColor: colors.primary + '55',
                 }}
               >
                 <Text
                   style={{
-                    color: '#E5C99B',
-                    fontSize: 9,
+                    color: colors.gradientLight || colors.primary,
+                    fontSize: 9.5,
                     fontWeight: '700',
                     textTransform: 'uppercase',
                     letterSpacing: 0.4,
@@ -342,7 +343,7 @@ const CarouselSlide = React.memo(function CarouselSlide({
             {/* Bottom: Action CTA Button */}
             <View style={{ alignSelf: 'flex-start' }}>
               <LinearGradient
-                colors={['#B99762', '#D8B47E', '#B99762']}
+                colors={[colors.gradientDark, colors.gradientLight, colors.gradientDark]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{
@@ -353,8 +354,8 @@ const CarouselSlide = React.memo(function CarouselSlide({
                   paddingVertical: 5.5,
                   borderRadius: 999,
                   borderWidth: 1,
-                  borderColor: 'rgba(245,229,201,0.4)',
-                  shadowColor: '#B99762',
+                  borderColor: colors.primary + '55',
+                  shadowColor: colors.primary,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.35,
                   shadowRadius: 4,
@@ -363,14 +364,14 @@ const CarouselSlide = React.memo(function CarouselSlide({
               >
                 <Text
                   style={{
-                    color: '#0D1520',
+                    color: colors.textOnPrimary,
                     fontSize: 11,
                     fontWeight: '700',
                   }}
                 >
                   {lang === 'id' ? 'Mulai Membaca' : 'Read Now'}
                 </Text>
-                <Ionicons name="arrow-forward" size={11.5} color="#0D1520" />
+                <Ionicons name="arrow-forward" size={11.5} color={colors.textOnPrimary} />
               </LinearGradient>
             </View>
           </View>
@@ -525,8 +526,8 @@ export function FeaturedCarousel({ novels, onPressNovel, headerOverlay }: Featur
                   width: isActive ? 22 : 5,
                   height: 5,
                   borderRadius: 999,
-                  backgroundColor: isActive ? '#B99762' : 'rgba(255,255,255,0.22)',
-                  shadowColor: isActive ? '#B99762' : 'transparent',
+                  backgroundColor: isActive ? colors.primary : 'rgba(255,255,255,0.22)',
+                  shadowColor: isActive ? colors.primary : 'transparent',
                   shadowOffset: { width: 0, height: 0 },
                   shadowOpacity: isActive ? 0.7 : 0,
                   shadowRadius: 4,
