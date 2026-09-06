@@ -137,7 +137,7 @@ export default function ExploreScreen() {
   const statusOptions = useMemo(
     () => [
       { key: 'ALL' as const, label: lang === 'en' ? 'All Status' : 'Semua Status' },
-      { key: 'ONGOING' as const, label: lang === 'en' ? 'Ongoing' : 'Ongoing' },
+      { key: 'ONGOING' as const, label: lang === 'en' ? 'Ongoing' : 'Berjalan' },
       { key: 'COMPLETED' as const, label: lang === 'en' ? 'Completed' : 'Tamat' },
     ],
     [lang]

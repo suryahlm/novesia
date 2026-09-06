@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GlossyBadge, GlossyBadgeTone } from './GlossyBadge';
 import { CoverImage } from './CoverImage';
 import { useTheme } from '../lib/ThemeProvider';
+import { useLanguage } from '../lib/i18n';
 
 const FRAME_PADDING = 6;
 const HOT_RANK_THRESHOLD = 3;
@@ -46,21 +47,27 @@ export interface PopularGridCardProps {
 
 function PopularGridCardBase({ novel, width, onPress, onLongPress, rank }: PopularGridCardProps) {
   const { colors } = useTheme();
+  const { lang } = useLanguage();
   const coverWidth = width - FRAME_PADDING * 2;
   const height = Math.round(coverWidth * 1.3);
   const handlePress = useCallback(() => onPress(novel.nu_slug), [onPress, novel.nu_slug]);
 
   const isHot = rank !== undefined && rank < HOT_RANK_THRESHOLD;
-  const statusTone: GlossyBadgeTone =
-    novel.status === 'completed' || novel.status === 'complete'
-      ? 'completed'
-      : novel.status === 'hiatus'
-      ? 'hiatus'
-      : 'ongoing';
+  const isCompleted =
+    novel.status === 'completed' || novel.status === 'complete' || novel.status === 'tamat';
+  const statusTone: GlossyBadgeTone = isCompleted
+    ? 'completed'
+    : novel.status === 'hiatus'
+    ? 'hiatus'
+    : 'ongoing';
+
+  const defaultStatusLabel = isCompleted
+    ? (lang === 'id' ? 'Tamat' : 'Completed')
+    : (lang === 'id' ? 'Berjalan' : 'Ongoing');
 
   const badge = isHot
     ? { label: 'Hot', tone: 'hot' as GlossyBadgeTone }
-    : { label: novel.status === 'completed' ? 'Completed' : 'Ongoing', tone: statusTone };
+    : { label: defaultStatusLabel, tone: statusTone };
 
   const scale = ratingScale(width);
   const isNarrow = width < NARROW_CARD_WIDTH_THRESHOLD;

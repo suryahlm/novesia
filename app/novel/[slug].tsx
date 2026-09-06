@@ -245,14 +245,15 @@ export default function NovelDetailScreen() {
                   : (['ongoing','active'].includes((novel.original_status||'').toLowerCase())) ? 'active'
                   : null;
                 if (!eff) return null;
+                const isCompleted = eff === 'completed';
                 return (
                   <View style={{
-                    backgroundColor: eff === 'active' ? 'rgba(34,197,94,0.7)' : 'rgba(96,165,250,0.7)',
-                    borderColor: eff === 'active' ? '#22c55e' : '#60a5fa',
+                    backgroundColor: isCompleted ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)',
+                    borderColor: isCompleted ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)',
                     borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
                   }}>
-                    <Text style={{ fontSize: 9, fontWeight: '900', color: '#fff', letterSpacing: 0.5 }}>
-                      {eff === 'active' ? 'Ongoing' : 'Complete'}
+                    <Text style={{ fontSize: 9, fontWeight: '900', color: isCompleted ? '#34D399' : '#FBBF24', letterSpacing: 0.5 }}>
+                      {isCompleted ? (lang === 'id' ? 'Tamat' : 'Complete') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
                     </Text>
                   </View>
                 );

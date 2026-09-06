@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../lib/ThemeProvider';
+import { useLanguage } from '../lib/i18n';
 import { CoverImage } from './CoverImage';
 import { GlossyBadge, GlossyBadgeTone } from './GlossyBadge';
 import { SkeletonBox } from './SkeletonLoader';
@@ -28,14 +29,16 @@ export interface NovelListRowProps {
 
 function NovelListRowBase({ novel, onPress, onLongPress }: NovelListRowProps) {
   const { colors } = useTheme();
+  const { lang } = useLanguage();
   const handlePress = useCallback(() => onPress(novel.nu_slug), [onPress, novel.nu_slug]);
 
-  const statusTone: GlossyBadgeTone =
-    novel.status === 'completed' || novel.status === 'complete'
-      ? 'completed'
-      : novel.status === 'hiatus'
-      ? 'hiatus'
-      : 'ongoing';
+  const isCompleted =
+    novel.status === 'completed' || novel.status === 'complete' || novel.status === 'tamat';
+  const statusTone: GlossyBadgeTone = isCompleted
+    ? 'completed'
+    : novel.status === 'hiatus'
+    ? 'hiatus'
+    : 'ongoing';
 
   return (
     <Pressable
@@ -77,7 +80,7 @@ function NovelListRowBase({ novel, onPress, onLongPress }: NovelListRowProps) {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <GlossyBadge
-            label={novel.status === 'completed' ? 'Completed' : 'Ongoing'}
+            label={isCompleted ? (lang === 'id' ? 'Tamat' : 'Completed') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
             tone={statusTone}
           />
           {novel.genres && novel.genres.length > 0 && (

@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiGet } from '../lib/apiClient';
 import { useTheme } from '../lib/ThemeProvider';
+import { useLanguage } from '../lib/i18n';
 import { trackBookmarkAdded } from '../lib/gamification';
 
 const LIBRARY_KEY = 'novesia_library';
@@ -51,6 +52,7 @@ interface Props {
 export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onAddToLibrary }: Props) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { lang } = useLanguage();
   const [synopsis, setSynopsis] = useState<string | null>(null);
   const [loadingSynopsis, setLoadingSynopsis] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -120,9 +122,12 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
 
   if (!novel) return null;
 
-  const statusColor = novel.status === 'active' ? '#22c55e' : '#60a5fa';
-  const statusLabel = novel.status === 'active' ? 'Ongoing' : 'Completed';
-  const statusIcon = novel.status === 'active' ? 'time-outline' : 'checkmark-circle-outline';
+  const isCompleted = novel.status === 'completed' || novel.status === 'complete' || novel.status === 'tamat';
+  const statusColor = isCompleted ? '#22c55e' : '#F59E0B';
+  const statusLabel = isCompleted
+    ? (lang === 'id' ? 'Tamat' : 'Completed')
+    : (lang === 'id' ? 'Berjalan' : 'Ongoing');
+  const statusIcon = isCompleted ? 'checkmark-circle-outline' : 'time-outline';
 
   return (
     <Modal

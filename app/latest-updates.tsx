@@ -38,7 +38,7 @@ interface Novel {
 
 export default function LatestUpdatesScreen() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -150,16 +150,26 @@ export default function LatestUpdatesScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={styles.cardChapters}>Update Ch {item.total_chapters}</Text>
                     {item.status && item.status !== 'draft' && (
-                      <View style={[
-                        styles.statusBadge,
-                        { backgroundColor: item.status === 'active' ? 'rgba(34,197,94,0.12)' : 'rgba(96,165,250,0.12)' }
-                      ]}>
-                        <Text style={[styles.statusText,
-                          { color: item.status === 'active' ? '#22c55e' : '#60a5fa' }
-                        ]}>
-                          {item.status === 'active' ? 'Ongoing' : 'Complete'}
-                        </Text>
-                      </View>
+                      (() => {
+                        const isCompleted = item.status === 'completed' || item.status === 'complete' || item.status === 'tamat';
+                        return (
+                          <View style={[
+                            styles.statusBadge,
+                            {
+                              backgroundColor: isCompleted ? 'rgba(16,185,129,0.14)' : 'rgba(245,158,11,0.14)',
+                              borderColor: isCompleted ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)',
+                              borderWidth: 1,
+                            }
+                          ]}>
+                            <Text style={[
+                              styles.statusText,
+                              { color: isCompleted ? '#34D399' : '#FBBF24' }
+                            ]}>
+                              {isCompleted ? (lang === 'id' ? 'Tamat' : 'Complete') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
+                            </Text>
+                          </View>
+                        );
+                      })()
                     )}
                   </View>
                   {item.total_views !== undefined && (

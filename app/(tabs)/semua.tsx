@@ -56,7 +56,7 @@ const ITEMS_PER_PAGE = 36;
 
 export default function SemuaScreen() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
@@ -204,18 +204,18 @@ export default function SemuaScreen() {
                   <View style={[
                     styles.statusBadge,
                     { 
-                      backgroundColor: eff === 'active' ? 'rgba(34,197,94,0.7)' : 
-                                      eff === 'coming_soon' ? 'rgba(251,146,60,0.7)' : 'rgba(96,165,250,0.7)',
-                      borderColor: eff === 'active' ? GREEN : 
-                                   eff === 'coming_soon' ? '#fb923c' : '#60a5fa',
+                      backgroundColor: eff === 'active' ? 'rgba(245,158,11,0.2)' : 
+                                      eff === 'coming_soon' ? 'rgba(251,146,60,0.2)' : 'rgba(16,185,129,0.2)',
+                      borderColor: eff === 'active' ? 'rgba(245,158,11,0.5)' : 
+                                   eff === 'coming_soon' ? '#fb923c' : 'rgba(16,185,129,0.5)',
                       top: is2Col ? 8 : 6,
                       left: is2Col ? 8 : 6,
                       paddingHorizontal: is2Col ? 8 : 7,
                       paddingVertical: is2Col ? 4 : 3,
                     }
                   ]}>
-                    <Text style={[styles.statusText, { color: '#fff', fontSize: is2Col ? 10 : 9 }]}>
-                      {eff === 'active' ? 'Ongoing' : eff === 'coming_soon' ? 'Soon' : 'Complete'}
+                    <Text style={[styles.statusText, { color: eff === 'active' ? '#FBBF24' : eff === 'coming_soon' ? '#fb923c' : '#34D399', fontSize: is2Col ? 10 : 9 }]}>
+                      {eff === 'active' ? (lang === 'id' ? 'Berjalan' : 'Ongoing') : eff === 'coming_soon' ? (lang === 'id' ? 'Segera' : 'Soon') : (lang === 'id' ? 'Tamat' : 'Complete')}
                     </Text>
                   </View>
                 );
