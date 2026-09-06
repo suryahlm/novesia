@@ -19,9 +19,9 @@ import { useLanguage } from '../lib/i18n';
 const BANNER_MARGIN = 14;
 const BANNER_RADIUS = 18;
 const AUTO_SLIDE_INTERVAL_MS = 4500;
-const COVER_WIDTH = 96;
-const COVER_HEIGHT = 144; // 2:3 aspect ratio
-const CARD_HEIGHT = 224;
+const COVER_WIDTH = 98;
+const COVER_HEIGHT = 148; // 2:3 aspect ratio
+const CARD_HEIGHT = 176;
 
 function clampIndex(index: number, length: number): number {
   return Math.min(Math.max(index, 0), length - 1);
@@ -151,19 +151,12 @@ const CarouselSlide = React.memo(function CarouselSlide({
         <View
           style={{
             flex: 1,
-            paddingTop: 54,
-            paddingHorizontal: 14,
-            paddingBottom: 14,
-            justifyContent: 'center',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 13,
+            gap: 13,
           }}
         >
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 13,
-            }}
-          >
           {/* LEFT: Novel Portrait Cover */}
           <View
             style={{
@@ -254,8 +247,16 @@ const CarouselSlide = React.memo(function CarouselSlide({
               paddingVertical: 1,
             }}
           >
-            {/* Top Row: Badges */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {/* Top Row: Badges (aligned horizontally with search icon overlay) */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                flexWrap: 'wrap',
+                paddingRight: 34,
+              }}
+            >
               <View
                 style={{
                   paddingHorizontal: 7.5,
@@ -374,7 +375,6 @@ const CarouselSlide = React.memo(function CarouselSlide({
             </View>
           </View>
         </View>
-      </View>
       </Pressable>
     </View>
   );
@@ -484,18 +484,14 @@ export function FeaturedCarousel({ novels, onPressNovel, headerOverlay }: Featur
           )}
         />
 
-        {/* Pinned Header Overlay inside top of card */}
+        {/* Pinned Search Icon Overlay aligned with badges row */}
         {headerOverlay && (
           <View
             pointerEvents="box-none"
             style={{
               position: 'absolute',
-              top: 0,
-              left: BANNER_MARGIN,
-              right: BANNER_MARGIN,
-              height: 54,
-              paddingHorizontal: 14,
-              paddingTop: 10,
+              top: 10,
+              right: BANNER_MARGIN + 12,
               zIndex: 20,
             }}
           >
