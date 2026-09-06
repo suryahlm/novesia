@@ -18,14 +18,15 @@ export interface GlossyBadgeProps {
 }
 
 const REFERENCE_WIDTH = 170;
-const MIN_SCALE = 0.6;
-const MAX_SCALE = 1;
+const MIN_SCALE = 0.82;
+const MAX_SCALE = 1.1;
 
 export function GlossyBadge({ label, tone, cardWidth }: GlossyBadgeProps) {
-  const scale = cardWidth
+  const isCorner = cardWidth !== undefined;
+  const scale = isCorner
     ? Math.min(MAX_SCALE, Math.max(MIN_SCALE, cardWidth / REFERENCE_WIDTH))
     : 1;
-  const fontSize = 9.5 * scale;
+  const fontSize = 11 * scale;
 
   return (
     <LinearGradient
@@ -34,13 +35,17 @@ export function GlossyBadge({ label, tone, cardWidth }: GlossyBadgeProps) {
       end={{ x: 1, y: 1 }}
       style={{
         alignSelf: 'flex-start',
-        borderBottomLeftRadius: 8 * scale,
+        borderBottomLeftRadius: isCorner ? 9 * scale : 6,
         borderTopRightRadius: 6,
-        paddingHorizontal: 8 * scale,
-        paddingTop: 1.5 * scale,
-        paddingBottom: 3.5 * scale,
+        borderTopLeftRadius: isCorner ? 0 : 6,
+        borderBottomRightRadius: isCorner ? 0 : 6,
+        paddingHorizontal: 10 * scale,
+        paddingTop: isCorner ? 2.5 * scale : 3.5 * scale,
+        paddingBottom: isCorner ? 4.5 * scale : 3.5 * scale,
         borderLeftWidth: 1,
         borderBottomWidth: 1,
+        borderTopWidth: isCorner ? 0 : 1,
+        borderRightWidth: isCorner ? 0 : 1,
         borderColor: tone === 'hot' ? 'rgba(255,255,255,0.32)' : 'rgba(255,255,255,0.38)',
         overflow: 'hidden',
       }}
@@ -64,7 +69,7 @@ export function GlossyBadge({ label, tone, cardWidth }: GlossyBadgeProps) {
           fontWeight: '800',
           letterSpacing: 0.4,
           fontSize,
-          lineHeight: fontSize * 1.2,
+          lineHeight: Math.round(fontSize * 1.25),
           textShadowColor: 'rgba(0, 0, 0, 0.45)',
           textShadowOffset: { width: 0, height: 1 },
           textShadowRadius: 2,
