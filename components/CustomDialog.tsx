@@ -77,8 +77,6 @@ export function CustomDialog({
       ? colors.success
       : tone === 'warning'
       ? colors.warning
-      : tone === 'info'
-      ? colors.info
       : colors.primary;
 
   const defaultIcon: keyof typeof Ionicons.glyphMap =
@@ -155,7 +153,14 @@ export function CustomDialog({
               width: 52,
               height: 52,
               borderRadius: 26,
-              backgroundColor: tone === 'danger' ? 'rgba(216,102,102,0.14)' : colors.primaryMuted,
+              backgroundColor:
+                tone === 'danger'
+                  ? colors.danger + '18'
+                  : tone === 'success'
+                  ? colors.success + '18'
+                  : tone === 'warning'
+                  ? colors.warning + '18'
+                  : colors.primaryMuted || colors.primary + '18',
               borderWidth: 1,
               borderColor: toneColor + '44',
               alignItems: 'center',
@@ -232,7 +237,7 @@ export function CustomDialog({
                     borderRadius: 12,
                   }}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFFFFF' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textOnPrimary }}>
                     {confirmText}
                   </Text>
                 </View>
