@@ -21,7 +21,7 @@ const BANNER_RADIUS = 18;
 const AUTO_SLIDE_INTERVAL_MS = 4500;
 const COVER_WIDTH = 96;
 const COVER_HEIGHT = 144; // 2:3 aspect ratio
-const CARD_HEIGHT = 176;
+const CARD_HEIGHT = 224;
 
 function clampIndex(index: number, length: number): number {
   return Math.min(Math.max(index, 0), length - 1);
@@ -151,12 +151,19 @@ const CarouselSlide = React.memo(function CarouselSlide({
         <View
           style={{
             flex: 1,
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: 14,
-            gap: 13,
+            paddingTop: 54,
+            paddingHorizontal: 14,
+            paddingBottom: 14,
+            justifyContent: 'center',
           }}
         >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 13,
+            }}
+          >
           {/* LEFT: Novel Portrait Cover */}
           <View
             style={{
@@ -367,6 +374,7 @@ const CarouselSlide = React.memo(function CarouselSlide({
             </View>
           </View>
         </View>
+      </View>
       </Pressable>
     </View>
   );
@@ -476,9 +484,21 @@ export function FeaturedCarousel({ novels, onPressNovel, headerOverlay }: Featur
           )}
         />
 
-        {/* Optional Header Overlay */}
+        {/* Pinned Header Overlay inside top of card */}
         {headerOverlay && (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+          <View
+            pointerEvents="box-none"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: BANNER_MARGIN,
+              right: BANNER_MARGIN,
+              height: 54,
+              paddingHorizontal: 14,
+              paddingTop: 10,
+              zIndex: 20,
+            }}
+          >
             {headerOverlay}
           </View>
         )}

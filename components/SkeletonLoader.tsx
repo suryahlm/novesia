@@ -91,8 +91,8 @@ export function SkeletonCarousel() {
   const cardWidth = screenWidth - 28; // BANNER_MARGIN = 14 * 2
 
   return (
-    <View style={{ width: screenWidth, paddingHorizontal: 14, marginBottom: 20 }}>
-      <SkeletonBox width={cardWidth} height={176} borderRadius={18} />
+    <View style={{ width: screenWidth, paddingHorizontal: 14, marginBottom: 16, marginTop: 4 }}>
+      <SkeletonBox width={cardWidth} height={224} borderRadius={18} />
     </View>
   );
 }

@@ -146,22 +146,7 @@ export default function HomeScreen() {
         <GradientBackground />
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* Top Bar Skeleton */}
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingHorizontal: 16,
-                paddingTop: 8,
-                paddingBottom: 12,
-              }}
-            >
-              <SkeletonBox width={110} height={28} borderRadius={6} />
-              <SkeletonBox width={40} height={40} borderRadius={999} />
-            </View>
-
-            {/* Banner Skeleton */}
+            {/* Banner Skeleton (includes top bar within card) */}
             <SkeletonCarousel />
 
             {/* Section 1: Trending & Populer Skeleton */}
@@ -232,86 +217,83 @@ export default function HomeScreen() {
             />
           }
         >
-          {/* ═══ TOP APP BAR (Logo & Search Button) ═══ */}
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingHorizontal: 16,
-              paddingTop: 8,
-              paddingBottom: 12,
-            }}
-          >
-            {/* Luxury Refined Logo (BarberChop Font from Komiku) */}
-            <View style={{ position: 'relative', alignSelf: 'flex-start' }}>
-              {/* Pure ambient shadow with transparent fill to prevent any black font poking out */}
-              <Text
-                numberOfLines={1}
-                style={[
-                  {
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    fontSize: 26,
-                    lineHeight: 34,
-                    color: 'transparent',
-                    textShadowColor: 'rgba(0,0,0,0.7)',
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 4,
-                  },
-                  logoFontStyle,
-                ]}
-              >
-                Novesia
-              </Text>
-              <ShimmerText
-                style={[
-                  {
-                    fontSize: 26,
-                    lineHeight: 34,
-                  },
-                  logoFontStyle,
-                ]}
-                baseColor={colors.primary}
-                shineColor="rgba(255,250,230,0.95)"
-              >
-                Novesia
-              </ShimmerText>
-            </View>
-
-            {/* Circular Floating Search Button */}
-            <Pressable
-              onPress={() => router.push('/search' as any)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Cari novel"
-              style={({ pressed }) => ({
-                width: 40,
-                height: 40,
-                borderRadius: 999,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'rgba(13,16,18,0.65)',
-                borderWidth: 1,
-                borderColor: colors.primary + '8C',
-                opacity: pressed ? 0.7 : 1,
-                shadowColor: colors.primary,
-                shadowOpacity: 0.5,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 0 },
-                elevation: 6,
-              })}
-            >
-              <Ionicons name="search" size={19} color={colors.primary} />
-            </Pressable>
-          </View>
-
-          {/* ═══ SECTION 0: HERO CAROUSEL ═══ */}
-          <View style={{ marginBottom: 16 }}>
+          {/* ═══ SECTION 0: HERO CAROUSEL WITH OVERLAY HEADER ═══ */}
+          <View style={{ marginBottom: 16, marginTop: 4 }}>
             <FeaturedCarousel
               novels={featuredList}
               onPressNovel={openNovel}
+              headerOverlay={
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  {/* Luxury Refined Logo (BarberChop Font from Komiku) */}
+                  <View style={{ position: 'relative', alignSelf: 'flex-start' }}>
+                    {/* Pure ambient shadow with transparent fill to prevent any black font poking out */}
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        {
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          fontSize: 26,
+                          lineHeight: 34,
+                          color: 'transparent',
+                          textShadowColor: 'rgba(0,0,0,0.7)',
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 4,
+                        },
+                        logoFontStyle,
+                      ]}
+                    >
+                      Novesia
+                    </Text>
+                    <ShimmerText
+                      style={[
+                        {
+                          fontSize: 26,
+                          lineHeight: 34,
+                        },
+                        logoFontStyle,
+                      ]}
+                      baseColor={colors.primary}
+                      shineColor="rgba(255,250,230,0.95)"
+                    >
+                      Novesia
+                    </ShimmerText>
+                  </View>
+
+                  {/* Circular Floating Search Button */}
+                  <Pressable
+                    onPress={() => router.push('/search' as any)}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cari novel"
+                    style={({ pressed }) => ({
+                      width: 38,
+                      height: 38,
+                      borderRadius: 999,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(13,16,18,0.75)',
+                      borderWidth: 1,
+                      borderColor: colors.primary + '8C',
+                      opacity: pressed ? 0.7 : 1,
+                      shadowColor: colors.primary,
+                      shadowOpacity: 0.5,
+                      shadowRadius: 8,
+                      shadowOffset: { width: 0, height: 0 },
+                      elevation: 6,
+                    })}
+                  >
+                    <Ionicons name="search" size={18} color={colors.primary} />
+                  </Pressable>
+                </View>
+              }
             />
           </View>
 
