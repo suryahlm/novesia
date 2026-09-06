@@ -13,7 +13,7 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../lib/supabase';
+import { apiGet } from '../lib/apiClient';
 import { useLanguage } from '../lib/i18n';
 import { formatViews } from '../lib/utils';
 
@@ -54,21 +54,18 @@ export default function LatestUpdatesScreen() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('nu_novels')
-        .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, author, status, total_views')
-        .eq('is_blacklisted', false)
-        .in('status', ['active', 'completed', 'ongoing', 'published'])
-        .order('updated_at', { ascending: false })
-        .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
+      const res = await apiGet<{ novels?: any[]; data?: any[] }>('/api/novels/latest', {
+        limit: PAGE_SIZE,
+        page: pageNum + 1,
+      });
+      const data = (res.novels || res.data || (Array.isArray(res) ? res : [])) as Novel[];
 
-      if (!error && data) {
-        const newItems = data as Novel[];
+      if (data) {
+        const newItems = data;
         if (reset) {
           setNovels(newItems);
         } else {
           setNovels(prev => {
-            // Filter duplicates just in case
             const existingIds = new Set(prev.map(n => n.id));
             const uniqueNew = newItems.filter(n => !existingIds.has(n.id));
             return [...prev, ...uniqueNew];

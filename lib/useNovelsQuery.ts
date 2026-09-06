@@ -1,5 +1,10 @@
+/**
+ * useNovelsQuery.ts — Novel data fetching hooks untuk novesia-app
+ * Menggantikan Supabase queries dengan novesia-api REST calls.
+ * Pola Komiku: React Query dengan staleTime cache.
+ */
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { supabase } from './supabase';
+import { apiGet } from './apiClient';
 
 export const INFINITE_PAGE_SIZE = 18;
 
@@ -20,58 +25,61 @@ export interface NovelItem {
   source?: string;
   language?: string | null;
   translation_status?: string | null;
+  updated_at?: string;
 }
 
-export async function fetchAllNovels(): Promise<NovelItem[]> {
-  const { data, error } = await supabase
-    .from('nu_novels')
-    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status')
-    .eq('is_blacklisted', false)
-    .in('status', ['active', 'completed', 'ongoing', 'published'])
-    .order('rating', { ascending: false, nullsFirst: false })
-    .limit(100);
+// Tipe response dari API yang membungkus array novel
+interface NovelsResponse {
+  novels?: NovelItem[];
+  data?: NovelItem[];
+}
 
-  if (error) {
-    console.error('Error fetching novels:', error);
+/** Normalise response — API bisa return { novels: [...] } atau { data: [...] } */
+function extractNovels(res: NovelsResponse | NovelItem[]): NovelItem[] {
+  if (Array.isArray(res)) return res;
+  return res.novels || res.data || [];
+}
+
+// ─── Fetch functions ─────────────────────────────────────────────────────────
+
+export async function fetchAllNovels(): Promise<NovelItem[]> {
+  try {
+    const res = await apiGet<NovelsResponse>('/api/novels', {
+      sort: 'rating',
+      limit: 100,
+      status: 'active,completed,ongoing,published',
+    });
+    return extractNovels(res);
+  } catch (e) {
+    console.error('fetchAllNovels error:', e);
     return [];
   }
-  return data || [];
 }
 
 export async function fetchLatestNovelsList(): Promise<NovelItem[]> {
-  const { data, error } = await supabase
-    .from('nu_novels')
-    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
-    .eq('is_blacklisted', false)
-    .in('status', ['active', 'completed', 'ongoing', 'published'])
-    .order('updated_at', { ascending: false })
-    .limit(100);
-
-  if (error) {
-    console.error('Error fetching latest novels:', error);
+  try {
+    const res = await apiGet<NovelsResponse>('/api/novels/latest', {
+      limit: 100,
+    });
+    return extractNovels(res);
+  } catch (e) {
+    console.error('fetchLatestNovelsList error:', e);
     return [];
   }
-  return data || [];
 }
 
 export async function fetchNovelDetail(slug: string): Promise<NovelItem | null> {
-  const { data, error } = await supabase
-    .from('nu_novels')
-    .select('*')
-    .eq('nu_slug', slug)
-    .eq('is_blacklisted', false)
-    .in('status', ['active', 'completed', 'ongoing', 'published'])
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching novel detail:', error);
+  try {
+    const data = await apiGet<NovelItem>(`/api/novels/${slug}`);
+    return data;
+  } catch (e) {
+    console.error('fetchNovelDetail error:', e);
     return null;
   }
-  return data;
 }
 
 /**
- * Fisher-Yates shuffle untuk mengocok acak N item dari pool teratas (Pola Komiku)
+ * Fisher-Yates shuffle untuk mengocok acak N item dari pool (Pola Komiku)
  */
 function shuffleSample<T>(array: T[], size: number): T[] {
   const arr = [...array];
@@ -84,40 +92,24 @@ function shuffleSample<T>(array: T[], size: number): T[] {
 
 /**
  * Fetch Hero Banner Novel (Pola Komiku: Smart Random 10 dari Top 60 Rating & Cover Valid)
- * Mengambil pool novel berating tinggi yang memiliki cover valid, lalu mengocok 10 novel terpilih.
  */
 export async function fetchFeaturedBanner(lang: string = 'all'): Promise<NovelItem[]> {
   try {
-    let query = supabase
-      .from('nu_novels')
-      .select('id, title, nu_slug, cover_url, cover_landscape_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
-      .eq('is_blacklisted', false)
-      .in('status', ['active', 'completed', 'ongoing', 'published'])
-      .gt('total_chapters', 0)
-      .not('cover_url', 'is', null);
-
+    const params: Record<string, string | number> = {
+      sort: 'rating',
+      limit: 60,
+      status: 'active,completed,ongoing,published',
+    };
     if (lang === 'id') {
-      query = query
-        .or('translation_status.eq.id_translated,synopsis_translated.not.is.null')
-        .order('rating', { ascending: false, nullsFirst: false })
-        .order('updated_at', { ascending: false })
-        .limit(60);
-    } else {
-      query = query
-        .order('rating', { ascending: false, nullsFirst: false })
-        .order('total_chapters', { ascending: false })
-        .limit(60);
+      params['translation_status'] = 'id_translated';
     }
 
-    const { data, error } = await query;
-    if (error) {
-      console.error('Error fetching featured banner pool:', error);
-      return [];
-    }
+    const res = await apiGet<NovelsResponse>('/api/novels/featured', params);
+    const data = extractNovels(res);
 
     if (!data || data.length === 0) return [];
 
-    // Prioritaskan novel yang sudah punya cover landscape (Pola Komiku)
+    // Prioritaskan novel dengan cover landscape (Pola Komiku)
     const withLandscape = data.filter((n) => Boolean(n.cover_landscape_url));
     const withoutLandscape = data.filter((n) => !n.cover_landscape_url);
 
@@ -127,26 +119,73 @@ export async function fetchFeaturedBanner(lang: string = 'all'): Promise<NovelIt
 
     return [...shuffledLandscape, ...shuffledOthers].slice(0, 10);
   } catch (err) {
-    console.error('Error in fetchFeaturedBanner:', err);
+    console.error('fetchFeaturedBanner error:', err);
     return [];
   }
 }
 
+export async function fetchIndonesianNovels(): Promise<NovelItem[]> {
+  try {
+    const res = await apiGet<NovelsResponse>('/api/novels', {
+      translation_status: 'id_translated',
+      sort: 'updated',
+      limit: 100,
+    });
+    return extractNovels(res);
+  } catch (e) {
+    console.error('fetchIndonesianNovels error:', e);
+    return [];
+  }
+}
+
+export async function fetchPopularNovelsPage(
+  page: number = 1,
+  pageSize: number = INFINITE_PAGE_SIZE
+): Promise<NovelItem[]> {
+  try {
+    const res = await apiGet<NovelsResponse>('/api/novels', {
+      sort: 'rating',
+      limit: pageSize,
+      page,
+    });
+    return extractNovels(res);
+  } catch (e) {
+    console.error('fetchPopularNovelsPage error:', e);
+    return [];
+  }
+}
+
+export async function fetchLatestNovelsPage(
+  page: number = 1,
+  pageSize: number = INFINITE_PAGE_SIZE
+): Promise<NovelItem[]> {
+  try {
+    const res = await apiGet<NovelsResponse>('/api/novels/latest', {
+      limit: pageSize,
+      page,
+    });
+    return extractNovels(res);
+  } catch (e) {
+    console.error('fetchLatestNovelsPage error:', e);
+    return [];
+  }
+}
+
+// ─── React Query Hooks ────────────────────────────────────────────────────────
+
 /**
- * Hook Banner Hero - staleTime Infinity agar carousel tidak reshuffle saat ganti tab (Pola Komiku)
+ * Hook Banner Hero — staleTime Infinity agar carousel tidak reshuffle saat ganti tab
  */
 export function useFeaturedBanner(lang: string = 'all') {
   return useQuery({
     queryKey: ['novels', 'featured-banner', lang],
     queryFn: () => fetchFeaturedBanner(lang),
     staleTime: Infinity,
-    gcTime: 1000 * 60 * 30, // 30 menit cache
+    gcTime: 1000 * 60 * 30,
   });
 }
 
-/**
- * Hook Novel Populer - staleTime 5 Menit (Instant memory cache)
- */
+/** Hook Novel Populer — staleTime 5 Menit */
 export function usePopularNovels() {
   return useQuery({
     queryKey: ['novels', 'popular'],
@@ -155,9 +194,7 @@ export function usePopularNovels() {
   });
 }
 
-/**
- * Hook Update Novel Terbaru - staleTime 5 Menit
- */
+/** Hook Update Novel Terbaru — staleTime 5 Menit */
 export function useLatestNovels() {
   return useQuery({
     queryKey: ['novels', 'latest'],
@@ -166,9 +203,7 @@ export function useLatestNovels() {
   });
 }
 
-/**
- * Hook Detail Novel - staleTime 5 Menit
- */
+/** Hook Detail Novel — staleTime 5 Menit */
 export function useNovelDetail(slug: string) {
   return useQuery({
     queryKey: ['novel', slug],
@@ -178,26 +213,7 @@ export function useNovelDetail(slug: string) {
   });
 }
 
-/**
- * Hook Novel Terjemahan Bahasa Indonesia
- * Menampilkan seluruh novel yang memiliki terjemahan bahasa Indonesia (bahkan sejak 1 chapter)
- */
-export async function fetchIndonesianNovels(): Promise<NovelItem[]> {
-  const { data, error } = await supabase
-    .from('nu_novels')
-    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
-    .eq('is_blacklisted', false)
-    .in('status', ['active', 'completed', 'ongoing', 'published'])
-    .or('translation_status.eq.id_translated,synopsis_translated.not.is.null')
-    .order('updated_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching indonesian novels:', error);
-    return [];
-  }
-  return data || [];
-}
-
+/** Hook Novel Terjemahan Bahasa Indonesia */
 export function useIndonesianNovels() {
   return useQuery({
     queryKey: ['novels', 'indonesian'],
@@ -206,63 +222,26 @@ export function useIndonesianNovels() {
   });
 }
 
-/**
- * Hook Infinite Scroll untuk Halaman Lihat Semua (Trending, Populer, Update Terbaru)
- */
-export async function fetchPopularNovelsPage(page: number = 1, pageSize: number = INFINITE_PAGE_SIZE): Promise<NovelItem[]> {
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  const { data, error } = await supabase
-    .from('nu_novels')
-    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status')
-    .eq('is_blacklisted', false)
-    .in('status', ['active', 'completed', 'ongoing', 'published'])
-    .order('rating', { ascending: false, nullsFirst: false })
-    .range(from, to);
-
-  if (error) {
-    console.error('Error fetching popular novels page:', error);
-    return [];
-  }
-  return data || [];
-}
-
+/** Hook Infinite Scroll — Populer */
 export function usePopularNovelsInfinite() {
   return useInfiniteQuery({
     queryKey: ['novels', 'popular', 'infinite'],
-    queryFn: ({ pageParam = 1 }) => fetchPopularNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
+    queryFn: ({ pageParam = 1 }) =>
+      fetchPopularNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
     initialPageParam: 1,
     getNextPageParam: (lastPage: NovelItem[], _pages, lastPageParam) =>
       lastPage.length < INFINITE_PAGE_SIZE ? undefined : (lastPageParam as number) + 1,
   });
 }
 
-export async function fetchLatestNovelsPage(page: number = 1, pageSize: number = INFINITE_PAGE_SIZE): Promise<NovelItem[]> {
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  const { data, error } = await supabase
-    .from('nu_novels')
-    .select('id, title, nu_slug, cover_url, total_chapters, rating, status, genres, author, synopsis, synopsis_translated, total_views, source, language, translation_status, updated_at')
-    .eq('is_blacklisted', false)
-    .in('status', ['active', 'completed', 'ongoing', 'published'])
-    .order('updated_at', { ascending: false })
-    .range(from, to);
-
-  if (error) {
-    console.error('Error fetching latest novels page:', error);
-    return [];
-  }
-  return data || [];
-}
-
+/** Hook Infinite Scroll — Terbaru */
 export function useLatestNovelsInfinite() {
   return useInfiniteQuery({
     queryKey: ['novels', 'latest', 'infinite'],
-    queryFn: ({ pageParam = 1 }) => fetchLatestNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
+    queryFn: ({ pageParam = 1 }) =>
+      fetchLatestNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
     initialPageParam: 1,
     getNextPageParam: (lastPage: NovelItem[], _pages, lastPageParam) =>
       lastPage.length < INFINITE_PAGE_SIZE ? undefined : (lastPageParam as number) + 1,
   });
 }
-
-

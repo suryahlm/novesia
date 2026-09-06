@@ -19,7 +19,7 @@ import { ShimmerText } from '../../components/ShimmerText';
 import { CoverImage } from '../../components/CoverImage';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
-import { supabase } from '../../lib/supabase';
+import { apiGet } from '../../lib/apiClient';
 import { getHistory, HistoryItem } from '../../lib/history';
 
 const LIBRARY_KEY = 'novesia_library';
@@ -71,14 +71,13 @@ export default function LibraryScreen() {
         return;
       }
 
-      const { data } = await supabase
-        .from('nu_novels')
-        .select('id, title, nu_slug, cover_url, total_chapters, author, status, rating, total_views')
-        .eq('is_blacklisted', false)
-        .not('status', 'in', '("draft","dropped","blacklisted")')
-        .in('id', savedIds);
+      const res = await apiGet<{ novels?: any[]; data?: any[] }>('/api/novels', {
+        ids: savedIds.join(','),
+        limit: savedIds.length,
+      });
+      const data = res.novels || res.data || (Array.isArray(res) ? res : []);
 
-      const map = new Map((data || []).map((n) => [n.id, n]));
+      const map = new Map((data || []).map((n: any) => [n.id, n]));
       const ordered = savedIds.map((id) => map.get(id)).filter(Boolean) as SavedNovel[];
       setBookmarks(ordered);
     } catch {

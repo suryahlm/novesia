@@ -14,7 +14,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../../lib/supabase';
+import { apiGet } from '../../lib/apiClient';
 import { useLanguage } from '../../lib/i18n';
 import { SkeletonGrid2Col } from '../../components/SkeletonLoader';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
@@ -84,13 +84,12 @@ export default function SemuaScreen() {
 
   const fetchAll = async () => {
     try {
-      const { data } = await supabase
-        .from('nu_novels')
-        .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, author, status')
-        .eq('is_blacklisted', false)
-        .in('status', ['active', 'completed', 'ongoing', 'published'])
-        .order('title', { ascending: true });
-      setNovels(data || []);
+      const res = await apiGet<{ novels?: any[]; data?: any[] }>('/api/novels', {
+        sort: 'title',
+        limit: 500,
+      });
+      const data = res.novels || res.data || (Array.isArray(res) ? res : []);
+      setNovels(data);
     } catch (e) {}
     setLoading(false);
   };

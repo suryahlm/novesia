@@ -28,7 +28,7 @@ import {
   ForumCategory,
   ForumThread,
 } from '../../lib/forumService';
-import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../lib/useAuthStore';
 
 function ThreadCard({ thread, onPress }: { thread: ForumThread; onPress: () => void }) {
   const { colors } = useTheme();
@@ -171,18 +171,16 @@ export default function CategoryThreadsScreen() {
     if (!category) return;
     setSubmitting(true);
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const userName = session?.user?.email?.split('@')[0] || 'Pembaca Novesia';
+    const authUser = useAuthStore.getState().user;
+    const userName = authUser?.name || authUser?.email?.split('@')[0] || 'Pembaca Novesia';
 
     const created = await createForumThread({
       category_id: category.id,
       title: newTitle,
       content: newContent,
       user_name: userName,
-      user_id: session?.user?.id || null,
-      user_role: 'USER',
+      user_id: authUser?.id || null,
+      user_role: (authUser?.role as 'USER' | 'VIP' | 'ADMIN') || 'USER',
     });
 
     setSubmitting(false);

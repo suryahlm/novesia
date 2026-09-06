@@ -25,7 +25,7 @@ import { ViewModeToggle, GridViewMode } from '../../components/ViewModeToggle';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
-import { supabase } from '../../lib/supabase';
+import { apiGet } from '../../lib/apiClient';
 
 const STATUS_OPTIONS = [
   { key: 'ALL', label: 'Semua Status' },
@@ -194,37 +194,28 @@ export default function ExploreScreen() {
     if (reset) setLoading(true);
 
     try {
-      let query = supabase
-        .from('nu_novels')
-        .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, synopsis, author, status, total_views')
-        .eq('is_blacklisted', false)
-        .in('status', ['active', 'completed', 'ongoing', 'published'])
-        .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
+      // Bangun params untuk REST API
+      const sortMap: Record<string, string> = {
+        POPULAR: 'views',
+        LATEST: 'updated',
+        RATING: 'rating',
+        CHAPTERS: 'chapters',
+      };
+      const params: Record<string, string | number> = {
+        sort: sortMap[activeSort] || 'rating',
+        limit: PAGE_SIZE,
+        page: pageNum + 1,
+      };
+      if (debouncedSearch.trim()) params['q'] = debouncedSearch.trim();
+      if (activeStatus === 'ONGOING') params['status'] = 'active,ongoing,published';
+      else if (activeStatus === 'COMPLETED') params['status'] = 'completed';
+      if (activeGenre !== 'Semua') params['genre'] = activeGenre;
 
-      if (activeSort === 'POPULAR') {
-        query = query.order('total_chapters', { ascending: false });
-      } else if (activeSort === 'LATEST') {
-        query = query.order('created_at', { ascending: false });
-      } else if (activeSort === 'RATING') {
-        query = query.order('rating', { ascending: false, nullsFirst: false });
-      } else if (activeSort === 'CHAPTERS') {
-        query = query.order('total_chapters', { ascending: false });
-      }
+      const endpoint = debouncedSearch.trim() ? '/api/novels/search' : '/api/novels';
+      const res = await apiGet<{ novels?: any[]; data?: any[] }>(endpoint, params);
+      const data = res.novels || res.data || (Array.isArray(res) ? res : []);
 
-      if (debouncedSearch.trim()) {
-        query = query.ilike('title', `%${debouncedSearch.trim()}%`);
-      }
-      if (activeStatus === 'ONGOING') {
-        query = query.in('status', ['active', 'ongoing', 'published']);
-      } else if (activeStatus === 'COMPLETED') {
-        query = query.in('status', ['completed', 'complete', 'tamat']);
-      }
-      if (activeGenre !== 'Semua') {
-        query = query.contains('genres', [activeGenre]);
-      }
-
-      const { data, error } = await query;
-      if (!error && data) {
+      if (data) {
         if (reset) {
           setNovels(data);
         } else {

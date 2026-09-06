@@ -1,5 +1,11 @@
+/**
+ * gamification.ts — XP, Level, Rank, Streak tracking untuk novesia-app
+ * Data lokal di AsyncStorage. Sync ke novesia-api /api/me/history jika user login.
+ * Tidak ada Supabase dependency.
+ */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from './supabase';
+import { useAuthStore } from './useAuthStore';
+import { apiPost } from './apiClient';
 
 const GAMIFICATION_KEY = 'novesia_gamification_v1';
 
@@ -32,7 +38,11 @@ export function getXpRequiredForLevel(level: number): number {
 }
 
 // Thresholds for each rank tier
-export const RANK_THRESHOLDS: { rank: 'F' | 'E' | 'D' | 'C' | 'B' | 'A' | 'S'; minLevel: number; minXp: number }[] = [
+export const RANK_THRESHOLDS: {
+  rank: 'F' | 'E' | 'D' | 'C' | 'B' | 'A' | 'S';
+  minLevel: number;
+  minXp: number;
+}[] = [
   { rank: 'F', minLevel: 1, minXp: 0 },
   { rank: 'E', minLevel: 5, minXp: 450 },
   { rank: 'D', minLevel: 10, minXp: 1400 },
@@ -72,9 +82,11 @@ export function computeLevelStats(totalXp: number) {
 
   const xpIntoLevel = totalXp - accumulated;
   const xpForCurrentLevel = getXpRequiredForLevel(level);
-  const progressPercentage = Math.min(100, Math.max(0, Math.round((xpIntoLevel / Math.max(1, xpForCurrentLevel)) * 100)));
+  const progressPercentage = Math.min(
+    100,
+    Math.max(0, Math.round((xpIntoLevel / Math.max(1, xpForCurrentLevel)) * 100))
+  );
 
-  // Calculate Rank
   let currentRank: 'F' | 'E' | 'D' | 'C' | 'B' | 'A' | 'S' = 'F';
   let nextRank: string | null = null;
   let xpToNextRank = 0;
@@ -103,7 +115,6 @@ export function computeLevelStats(totalXp: number) {
   };
 }
 
-// Load gamification raw data from storage
 export async function getRawGamificationData(): Promise<StoredGamificationData> {
   try {
     const raw = await AsyncStorage.getItem(GAMIFICATION_KEY);
@@ -118,7 +129,7 @@ export async function getRawGamificationData(): Promise<StoredGamificationData> 
       };
     }
   } catch (e) {
-    console.error('Error reading gamification data:', e);
+    console.error('getRawGamificationData error:', e);
   }
 
   return {
@@ -130,22 +141,19 @@ export async function getRawGamificationData(): Promise<StoredGamificationData> 
   };
 }
 
-// Save raw gamification data
 export async function saveRawGamificationData(data: StoredGamificationData): Promise<void> {
   try {
     await AsyncStorage.setItem(GAMIFICATION_KEY, JSON.stringify(data));
   } catch (e) {
-    console.error('Error saving gamification data:', e);
+    console.error('saveRawGamificationData error:', e);
   }
 }
 
-// Get clean computed stats for UI
 export async function getUserGamificationStats(): Promise<UserGamificationStats> {
   const raw = await getRawGamificationData();
   const computed = computeLevelStats(raw.totalXp);
   const chapterIds = Object.keys(raw.readChapters);
 
-  // Check if streak broke (if lastActiveDate was before yesterday)
   let activeStreak = raw.currentStreak;
   const today = getLocalDateString();
   const yesterday = getYesterdayDateString();
@@ -170,8 +178,11 @@ export async function getUserGamificationStats(): Promise<UserGamificationStats>
   };
 }
 
-// Track reading a chapter + award XP + update streak
-export async function trackChapterRead(novelId: string, chapterId: string, chapterNumber: number) {
+export async function trackChapterRead(
+  novelId: string,
+  chapterId: string,
+  chapterNumber: number
+) {
   const data = await getRawGamificationData();
   const today = getLocalDateString();
   const yesterday = getYesterdayDateString();
@@ -180,25 +191,22 @@ export async function trackChapterRead(novelId: string, chapterId: string, chapt
   const isFirstTimeChapter = !data.readChapters[chapterId];
 
   if (isFirstTimeChapter) {
-    xpGained += 15; // 15 XP per new chapter read
+    xpGained += 15;
     data.readChapters[chapterId] = Date.now();
   } else {
-    // Re-reading still gives minor engagement XP (3 XP) if read today
     xpGained += 3;
     data.readChapters[chapterId] = Date.now();
   }
 
-  // Update streak
   if (!data.lastActiveDate) {
     data.currentStreak = 1;
     data.lastActiveDate = today;
-    xpGained += 35; // Initial streak bonus
+    xpGained += 35;
   } else if (data.lastActiveDate === yesterday) {
     data.currentStreak += 1;
     data.lastActiveDate = today;
-    xpGained += 35; // Daily streak continuation bonus!
+    xpGained += 35;
   } else if (data.lastActiveDate !== today) {
-    // Missed 1+ days -> reset streak to 1
     data.currentStreak = 1;
     data.lastActiveDate = today;
     xpGained += 20;
@@ -207,21 +215,16 @@ export async function trackChapterRead(novelId: string, chapterId: string, chapt
   data.totalXp += xpGained;
   await saveRawGamificationData(data);
 
-  // Sync to Supabase if session exists
-  try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData?.session?.user) {
-      const stats = computeLevelStats(data.totalXp);
-      await supabase.from('nu_reading_history').upsert({
-        user_id: sessionData.session.user.id,
-        novel_id: novelId,
-        chapter_id: chapterId,
-        chapter_number: chapterNumber,
-        updated_at: new Date().toISOString(),
-      });
-    }
-  } catch (err) {
-    // Non-blocking sync error
+  // Non-blocking sync ke server jika user login
+  const { token, user } = useAuthStore.getState();
+  if (token && user) {
+    apiPost('/api/me/history', {
+      novel_id: novelId,
+      chapter_id: chapterId,
+      chapter_number: chapterNumber,
+    }).catch(() => {
+      // Non-blocking — gagal sync tidak apa-apa
+    });
   }
 
   return {
@@ -231,12 +234,11 @@ export async function trackChapterRead(novelId: string, chapterId: string, chapt
   };
 }
 
-// Track bookmarking a novel + award XP
 export async function trackBookmarkAdded(novelId: string) {
   const data = await getRawGamificationData();
   if (!data.bookmarkedNovels.includes(novelId)) {
     data.bookmarkedNovels.push(novelId);
-    data.totalXp += 10; // 10 XP for bookmarking
+    data.totalXp += 10;
     await saveRawGamificationData(data);
     return { xpGained: 10 };
   }

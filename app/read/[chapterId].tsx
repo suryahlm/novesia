@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { supabase } from '../../lib/supabase';
+import { apiGet } from '../../lib/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addHistory } from '../../lib/history';
 import { trackChapterRead } from '../../lib/gamification';
@@ -183,73 +183,63 @@ export default function ReadChapterScreen() {
 
   const fetchChapter = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('nu_chapter_content')
-      .select('id, chapter_number, chapter_title, content_original, content_translated, word_count_original, word_count_translated, novel_id')
-      .eq('id', chapterId)
-      .single();
+    try {
+      // Fetch chapter by ID dari novesia-api
+      const data = await apiGet<{
+        id: string;
+        chapter_number: number;
+        chapter_title: string | null;
+        content_original: string | null;
+        content_translated: string | null;
+        word_count_original: number;
+        word_count_translated: number;
+        novel_id: string;
+        novel_slug?: string;
+        novel?: { title: string; cover_url: string | null; nu_slug: string };
+        prevChapterNum?: number | null;
+        nextChapterNum?: number | null;
+        prev_chapter?: { id: string; chapter_number: number } | null;
+        next_chapter?: { id: string; chapter_number: number } | null;
+      }>(`/api/chapters/by-id/${chapterId}`);
 
-    if (data) {
-      setChapter(data);
+      if (data) {
+        setChapter(data);
 
-      const { data: novelData } = await supabase
-        .from('nu_novels')
-        .select('title, cover_url, is_blacklisted, status')
-        .eq('id', data.novel_id)
-        .maybeSingle();
-      
-      if (!novelData || novelData.is_blacklisted || novelData.status === 'dropped' || novelData.status === 'blacklisted') {
-        setChapter(null);
-        setLoading(false);
-        return;
+        const novelTitle = data.novel?.title || '';
+        const novelCover = data.novel?.cover_url || '';
+        if (novelTitle) setNovelTitle(novelTitle);
+
+        // Save to Global History
+        if (data.novel_id) {
+          addHistory({
+            novel_id: data.novel_id,
+            title: novelTitle,
+            cover: novelCover,
+            last_chapter: data.chapter_number,
+            last_chapter_id: data.id,
+          });
+
+          // Record gamification stats & XP
+          trackChapterRead(data.novel_id, data.id, data.chapter_number);
+
+          // Save last read chapter per-novel
+          try {
+            await AsyncStorage.setItem(
+              `lastread_${data.novel_id}`,
+              JSON.stringify({
+                chapter_id: data.id,
+                chapter_number: data.chapter_number,
+              })
+            );
+          } catch {}
+        }
+
+        // Prev/Next dari API response
+        setPrevChapter(data.prev_chapter || null);
+        setNextChapter(data.next_chapter || null);
       }
-
-      if (novelData) {
-        setNovelTitle(novelData.title);
-        
-        // Save to Global History (for Profile tab)
-        addHistory({
-          novel_id: data.novel_id,
-          title: novelData.title,
-          cover: novelData.cover_url || '',
-          last_chapter: data.chapter_number,
-          last_chapter_id: data.id
-        });
-
-        // Record gamification stats & XP
-        trackChapterRead(data.novel_id, data.id, data.chapter_number);
-      }
-
-      // Save last read chapter to AsyncStorage (Legacy/Per-novel)
-      try {
-        await AsyncStorage.setItem(`lastread_${data.novel_id}`, JSON.stringify({
-          chapter_id: data.id,
-          chapter_number: data.chapter_number,
-        }));
-      } catch {}
-
-      // Prev/Next: any chapter with content (original OR translated)
-      const { data: prevData } = await supabase
-        .from('nu_chapter_content')
-        .select('id, chapter_number')
-        .eq('novel_id', data.novel_id)
-        .not('content_original', 'is', null)
-        .lt('chapter_number', data.chapter_number)
-        .order('chapter_number', { ascending: false })
-        .limit(1)
-        .single();
-      setPrevChapter(prevData);
-
-      const { data: nextData } = await supabase
-        .from('nu_chapter_content')
-        .select('id, chapter_number')
-        .eq('novel_id', data.novel_id)
-        .not('content_original', 'is', null)
-        .gt('chapter_number', data.chapter_number)
-        .order('chapter_number', { ascending: true })
-        .limit(1)
-        .single();
-      setNextChapter(nextData);
+    } catch (e) {
+      console.error('fetchChapter error:', e);
     }
 
     setLoading(false);

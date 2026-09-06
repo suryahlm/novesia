@@ -20,7 +20,7 @@ import { SearchEmptyRing } from '../components/SearchEmptyRing';
 import { SkeletonNovelGrid } from '../components/SkeletonLoader';
 import NovelPreviewSheet from '../components/NovelPreviewSheet';
 import { useTheme } from '../lib/ThemeProvider';
-import { supabase } from '../lib/supabase';
+import { apiGet } from '../lib/apiClient';
 
 const RECENT_SEARCHES_KEY = 'novesia_recent_searches';
 const MAX_RECENT_SEARCHES = 8;
@@ -89,17 +89,13 @@ export default function SearchScreen() {
 
     setLoading(true);
     try {
-      const { data: results, error } = await supabase
-        .from('nu_novels')
-        .select('id, title, nu_slug, cover_url, total_chapters, rating, genres, synopsis, author, status, total_views, is_blacklisted')
-        .eq('is_blacklisted', false)
-        .in('status', ['active', 'completed', 'ongoing', 'published'])
-        .ilike('title', `%${trimmed}%`)
-        .order('total_chapters', { ascending: false })
-        .limit(30);
+      const res = await apiGet<{ novels?: any[]; data?: any[] }>('/api/novels/search', {
+        q: trimmed,
+        limit: 30,
+      });
+      const results = res.novels || res.data || (Array.isArray(res) ? res : []);
 
-      if (!error && results) {
-        // Double filter client-side just in case
+      if (results) {
         const cleanResults = results.filter(
           (n: any) => !n.is_blacklisted && n.status !== 'dropped' && n.status !== 'draft' && n.status !== 'blacklisted'
         );

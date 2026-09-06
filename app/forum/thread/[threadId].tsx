@@ -26,7 +26,7 @@ import {
   ForumThread,
   ForumPost,
 } from '../../../lib/forumService';
-import { supabase } from '../../../lib/supabase';
+import { useAuthStore } from '../../../lib/useAuthStore';
 
 export default function ThreadDetailScreen() {
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
@@ -68,17 +68,15 @@ export default function ThreadDetailScreen() {
     if (!thread) return;
 
     setSubmitting(true);
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const userName = session?.user?.email?.split('@')[0] || 'Pembaca Novesia';
+    const authUser = useAuthStore.getState().user;
+    const userName = authUser?.name || authUser?.email?.split('@')[0] || 'Pembaca Novesia';
 
     const post = await createForumPost({
       thread_id: thread.id,
       content: replyContent,
       user_name: userName,
-      user_id: session?.user?.id || null,
-      user_role: 'USER',
+      user_id: authUser?.id || null,
+      user_role: (authUser?.role as 'USER' | 'VIP' | 'ADMIN') || 'USER',
     });
 
     setSubmitting(false);

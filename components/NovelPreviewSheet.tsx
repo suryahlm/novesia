@@ -18,7 +18,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
+import { apiGet } from '../lib/apiClient';
 import { useTheme } from '../lib/ThemeProvider';
 import { trackBookmarkAdded } from '../lib/gamification';
 
@@ -101,11 +101,7 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
   const fetchSynopsis = async (novelId: string) => {
     setLoadingSynopsis(true);
     try {
-      const { data } = await supabase
-        .from('nu_novels')
-        .select('synopsis')
-        .eq('id', novelId)
-        .single();
+      const data = await apiGet<{ synopsis?: string | null }>(`/api/novels/${novelId}/synopsis`);
       setSynopsis(data?.synopsis || null);
     } catch {}
     setLoadingSynopsis(false);

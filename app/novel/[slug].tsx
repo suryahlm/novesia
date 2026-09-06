@@ -12,7 +12,7 @@ import {
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
+import { apiGet, apiPost } from '../../lib/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../lib/i18n';
 import { formatViews, cleanChapterTitle } from '../../lib/utils';
@@ -81,7 +81,7 @@ export default function NovelDetailScreen() {
         const hasViewedToday = await AsyncStorage.getItem(viewKey);
 
         if (!hasViewedToday) {
-          await supabase.rpc('increment_novel_view', { p_novel_id: novel.id });
+          apiPost(`/api/novels/${novel.id}/view`).catch(() => {});
           await AsyncStorage.setItem(viewKey, 'true');
         }
       } catch (e) {
@@ -147,24 +147,21 @@ export default function NovelDetailScreen() {
   );
 
   const fetchNovel = async () => {
-    const { data: novelData } = await supabase
-      .from('nu_novels')
-      .select('*')
-      .eq('nu_slug', slug)
-      .eq('is_blacklisted', false)
-      .not('status', 'in', '("draft","dropped","blacklisted")')
-      .maybeSingle();
+    try {
+      const novelData = await apiGet<Novel>(`/api/novels/${slug}`);
 
-    if (novelData) {
-      setNovel(novelData);
-      // Show ALL non-blacklisted chapters
-      const { data: chapterData } = await supabase
-        .from('nu_chapter_content')
-        .select('id, chapter_number, chapter_title, translation_status, word_count_original, word_count_translated')
-        .eq('novel_id', novelData.id)
-        .eq('is_blacklisted', false)
-        .order('chapter_number', { ascending: true });
-      setChapters(chapterData || []);
+      if (novelData && novelData.id) {
+        setNovel(novelData);
+        // Fetch chapters
+        const chapterRes = await apiGet<{ chapters?: any[]; data?: any[] }>(
+          `/api/chapters/${slug}`,
+          { limit: 2000 }
+        );
+        const chapterData = chapterRes.chapters || chapterRes.data || (Array.isArray(chapterRes) ? chapterRes : []);
+        setChapters(chapterData);
+      }
+    } catch (e) {
+      console.error('fetchNovel error:', e);
     }
     setLoading(false);
   };

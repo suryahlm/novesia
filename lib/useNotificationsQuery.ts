@@ -1,5 +1,9 @@
+/**
+ * useNotificationsQuery.ts — Notifications hook untuk novesia-app
+ * Menggantikan Supabase dengan novesia-api REST calls.
+ */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from './supabase';
+import { apiGet } from './apiClient';
 
 export type NotificationType = 'info' | 'warning' | 'maintenance';
 
@@ -14,19 +18,16 @@ export interface AppNotification {
 }
 
 export async function fetchActiveNotifications(): Promise<AppNotification[]> {
-  const { data, error } = await supabase
-    .from('nu_notifications')
-    .select('*')
-    .eq('is_active', true)
-    .in('target', ['all', 'app'])
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching notifications:', error);
+  try {
+    const data = await apiGet<AppNotification[]>('/api/notifications', {
+      target: 'app',
+      active: true,
+    });
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.error('fetchActiveNotifications error:', e);
     return [];
   }
-
-  return data || [];
 }
 
 /**

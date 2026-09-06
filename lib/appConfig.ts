@@ -1,10 +1,10 @@
 /**
- * App Config — fetches reward/ad settings from Supabase (nu_app_config table).
- * Falls back to defaults if fetch fails.
- * Caches config in AsyncStorage for 1 hour.
+ * appConfig.ts — App Config dari novesia-api (/api/config)
+ * Menggantikan Supabase nu_app_config table query.
+ * Tetap cache di AsyncStorage 1 jam.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from './supabase';
+import { apiGet } from './apiClient';
 
 export interface AppConfig {
   daily_checkin_rewards: number[];
@@ -21,12 +21,12 @@ const DEFAULT_CONFIG: AppConfig = {
 };
 
 const CACHE_KEY = 'novesia_app_config';
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL = 60 * 60 * 1000; // 1 jam
 
 let cachedConfig: AppConfig | null = null;
 
 export async function getAppConfig(): Promise<AppConfig> {
-  // Return memory cache if available
+  // Return memory cache jika ada
   if (cachedConfig) return cachedConfig;
 
   try {
@@ -40,15 +40,12 @@ export async function getAppConfig(): Promise<AppConfig> {
       }
     }
 
-    // Fetch from Supabase
-    const { data, error } = await supabase
-      .from('nu_app_config')
-      .select('key, value');
-
-    if (error || !data) throw error;
+    // Fetch dari novesia-api
+    const data = await apiGet<{ configs: { key: string; value: string }[] }>('/api/config');
+    const configs = data?.configs || [];
 
     const config = { ...DEFAULT_CONFIG };
-    for (const row of data) {
+    for (const row of configs) {
       try {
         (config as any)[row.key] = JSON.parse(row.value);
       } catch {
@@ -56,7 +53,6 @@ export async function getAppConfig(): Promise<AppConfig> {
       }
     }
 
-    // Cache it
     cachedConfig = config;
     await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({
       config,
@@ -65,12 +61,10 @@ export async function getAppConfig(): Promise<AppConfig> {
 
     return config;
   } catch {
-    // Fallback to defaults
     return DEFAULT_CONFIG;
   }
 }
 
-// Force refresh (used after pull-to-refresh etc.)
 export function clearConfigCache() {
   cachedConfig = null;
   AsyncStorage.removeItem(CACHE_KEY).catch(() => {});

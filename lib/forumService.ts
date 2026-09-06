@@ -1,4 +1,8 @@
-import { supabase } from './supabase';
+/**
+ * forumService.ts — Novesia App Forum Service
+ * Menggantikan Supabase direct queries dengan novesia-api REST calls.
+ */
+import { apiGet, apiPost } from './apiClient';
 
 export interface ForumUser {
   id?: string;
@@ -46,36 +50,12 @@ export interface ForumPost {
 }
 
 /**
- * Fetch all categories with live thread counts from Supabase
+ * Fetch semua kategori forum dengan jumlah thread
  */
 export async function fetchForumCategories(): Promise<ForumCategory[]> {
   try {
-    const { data: categories, error } = await supabase
-      .from('nu_forum_categories')
-      .select('*')
-      .order('sort_order', { ascending: true });
-
-    if (error || !categories) {
-      console.error('Fetch categories error:', error);
-      return [];
-    }
-
-    // Get thread counts per category
-    const { data: threads, error: countErr } = await supabase
-      .from('nu_forum_threads')
-      .select('category_id');
-
-    const counts: Record<string, number> = {};
-    if (!countErr && threads) {
-      threads.forEach((t) => {
-        counts[t.category_id] = (counts[t.category_id] || 0) + 1;
-      });
-    }
-
-    return categories.map((cat) => ({
-      ...cat,
-      threadCount: counts[cat.id] || 0,
-    }));
+    const data = await apiGet<ForumCategory[]>('/api/forum/categories');
+    return Array.isArray(data) ? data : [];
   } catch (e) {
     console.error('fetchForumCategories error:', e);
     return [];
@@ -83,33 +63,20 @@ export async function fetchForumCategories(): Promise<ForumCategory[]> {
 }
 
 /**
- * Fetch threads for a specific category
+ * Fetch threads untuk kategori tertentu berdasarkan slug
  */
 export async function fetchCategoryThreads(categorySlug: string): Promise<{
   category: ForumCategory | null;
   threads: ForumThread[];
 }> {
   try {
-    const { data: category, error: catErr } = await supabase
-      .from('nu_forum_categories')
-      .select('*')
-      .eq('slug', categorySlug)
-      .single();
-
-    if (catErr || !category) {
-      return { category: null, threads: [] };
-    }
-
-    const { data: threads, error: threadErr } = await supabase
-      .from('nu_forum_threads')
-      .select('*')
-      .eq('category_id', category.id)
-      .order('pinned', { ascending: false })
-      .order('last_activity_at', { ascending: false });
-
+    const data = await apiGet<{ category: ForumCategory; threads: ForumThread[] }>(
+      `/api/forum/threads`,
+      { categorySlug, limit: 100 }
+    );
     return {
-      category: { ...category, threadCount: threads?.length || 0 },
-      threads: threads || [],
+      category: data.category || null,
+      threads: data.threads || [],
     };
   } catch (e) {
     console.error('fetchCategoryThreads error:', e);
@@ -118,7 +85,7 @@ export async function fetchCategoryThreads(categorySlug: string): Promise<{
 }
 
 /**
- * Create a new thread
+ * Buat thread baru di forum
  */
 export async function createForumThread(params: {
   category_id: string;
@@ -130,29 +97,15 @@ export async function createForumThread(params: {
   user_id?: string | null;
 }): Promise<ForumThread | null> {
   try {
-    const { data, error } = await supabase
-      .from('nu_forum_threads')
-      .insert({
-        category_id: params.category_id,
-        title: params.title.trim(),
-        content: params.content.trim(),
-        user_name: params.user_name || 'Pembaca Novesia',
-        user_avatar: params.user_avatar || null,
-        user_role: params.user_role || 'USER',
-        user_id: params.user_id || null,
-        pinned: false,
-        locked: false,
-        view_count: 0,
-        post_count: 0,
-        last_activity_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Create thread error:', error);
-      return null;
-    }
+    const data = await apiPost<ForumThread>('/api/forum/threads', {
+      category_id: params.category_id,
+      title: params.title.trim(),
+      content: params.content.trim(),
+      user_name: params.user_name || 'Pembaca Novesia',
+      user_avatar: params.user_avatar || null,
+      user_role: params.user_role || 'USER',
+      user_id: params.user_id || null,
+    });
     return data;
   } catch (e) {
     console.error('createForumThread error:', e);
@@ -161,35 +114,20 @@ export async function createForumThread(params: {
 }
 
 /**
- * Fetch thread detail along with replies
+ * Fetch detail thread beserta balasan
  */
 export async function fetchThreadDetail(threadId: string): Promise<{
   thread: ForumThread | null;
   posts: ForumPost[];
 }> {
   try {
-    try {
-      await supabase.rpc('increment_thread_view', { p_thread_id: threadId });
-    } catch {}
-
-
-    const { data: thread, error: threadErr } = await supabase
-      .from('nu_forum_threads')
-      .select('*')
-      .eq('id', threadId)
-      .single();
-
-    if (threadErr || !thread) {
-      return { thread: null, posts: [] };
-    }
-
-    const { data: posts } = await supabase
-      .from('nu_forum_posts')
-      .select('*')
-      .eq('thread_id', threadId)
-      .order('created_at', { ascending: true });
-
-    return { thread, posts: posts || [] };
+    const data = await apiGet<{ thread: ForumThread; posts: ForumPost[] }>(
+      `/api/forum/threads/${threadId}`
+    );
+    return {
+      thread: data.thread || null,
+      posts: data.posts || [],
+    };
   } catch (e) {
     console.error('fetchThreadDetail error:', e);
     return { thread: null, posts: [] };
@@ -197,7 +135,7 @@ export async function fetchThreadDetail(threadId: string): Promise<{
 }
 
 /**
- * Create a reply post in a thread
+ * Buat balasan (post) dalam sebuah thread
  */
 export async function createForumPost(params: {
   thread_id: string;
@@ -208,33 +146,14 @@ export async function createForumPost(params: {
   user_id?: string | null;
 }): Promise<ForumPost | null> {
   try {
-    const { data: post, error } = await supabase
-      .from('nu_forum_posts')
-      .insert({
-        thread_id: params.thread_id,
-        content: params.content.trim(),
-        user_name: params.user_name || 'Pembaca Novesia',
-        user_avatar: params.user_avatar || null,
-        user_role: params.user_role || 'USER',
-        user_id: params.user_id || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Create post error:', error);
-      return null;
-    }
-
-    // Update thread last_activity_at and increment post_count
-    await supabase
-      .from('nu_forum_threads')
-      .update({
-        last_activity_at: new Date().toISOString(),
-      })
-      .eq('id', params.thread_id);
-
-    return post;
+    const data = await apiPost<ForumPost>(`/api/forum/threads/${params.thread_id}/posts`, {
+      content: params.content.trim(),
+      user_name: params.user_name || 'Pembaca Novesia',
+      user_avatar: params.user_avatar || null,
+      user_role: params.user_role || 'USER',
+      user_id: params.user_id || null,
+    });
+    return data;
   } catch (e) {
     console.error('createForumPost error:', e);
     return null;
