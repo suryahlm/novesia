@@ -88,11 +88,11 @@ export function SkeletonNovelCard({
  */
 export function SkeletonCarousel() {
   const { width: screenWidth } = useWindowDimensions();
-  const cardWidth = screenWidth - 12; // BANNER_MARGIN = 6 * 2
+  const cardWidth = screenWidth - 28; // BANNER_MARGIN = 14 * 2
 
   return (
-    <View style={{ width: screenWidth, paddingHorizontal: 6, marginBottom: 20 }}>
-      <SkeletonBox width={cardWidth} height={248} borderRadius={12} />
+    <View style={{ width: screenWidth, paddingHorizontal: 14, marginBottom: 20 }}>
+      <SkeletonBox width={cardWidth} height={176} borderRadius={18} />
     </View>
   );
 }
