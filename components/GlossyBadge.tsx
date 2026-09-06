@@ -6,7 +6,7 @@ export type GlossyBadgeTone = 'hot' | 'ongoing' | 'completed' | 'hiatus';
 
 const TONE_GRADIENT: Record<GlossyBadgeTone, [string, string]> = {
   hot: ['#F0723A', '#D6432A'],      // oranye->merah bata
-  ongoing: ['#3E7FE0', '#2456B8'],  // biru
+  ongoing: ['#F59E0B', '#D97706'],  // amber (sama dengan warna ongoing di banner)
   completed: ['#3FB878', '#1F8F58'],// hijau
   hiatus: ['#8B93A6', '#636B7E'],   // abu kebiruan netral
 };
