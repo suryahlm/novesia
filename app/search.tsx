@@ -20,6 +20,7 @@ import { SearchEmptyRing } from '../components/SearchEmptyRing';
 import { SkeletonNovelGrid } from '../components/SkeletonLoader';
 import NovelPreviewSheet from '../components/NovelPreviewSheet';
 import { useTheme } from '../lib/ThemeProvider';
+import { useLanguage } from '../lib/i18n';
 import { apiGet } from '../lib/apiClient';
 
 const RECENT_SEARCHES_KEY = 'novesia_recent_searches';
@@ -63,6 +64,7 @@ function useRecentSearches() {
 export default function SearchScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { lang, t } = useLanguage();
   const { width: screenWidth } = useWindowDimensions();
 
   const [query, setQuery] = useState('');
@@ -165,7 +167,7 @@ export default function SearchScreen() {
             baseColor={colors.primary}
             shineColor="rgba(255,250,230,0.95)"
           >
-            Cari Novel
+            {lang === 'en' ? 'Search Novels' : 'Cari Novel'}
           </ShimmerText>
         </View>
 
@@ -189,7 +191,7 @@ export default function SearchScreen() {
               onChangeText={setQuery}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              placeholder="Cari judul novel, author, atau genre…"
+              placeholder={lang === 'en' ? 'Search novel title, author, or genre...' : 'Cari judul novel, author, atau genre…'}
               placeholderTextColor={colors.textMuted}
               autoFocus
               style={{
@@ -223,11 +225,11 @@ export default function SearchScreen() {
                   }}
                 >
                   <Text style={{ fontSize: 13.5, fontWeight: '700', color: colors.textPrimary }}>
-                    Pencarian Terakhir
+                    {lang === 'en' ? 'Recent Searches' : 'Pencarian Terakhir'}
                   </Text>
                   <Pressable onPress={recent.clear} hitSlop={8}>
                     <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>
-                      Hapus semua
+                      {lang === 'en' ? 'Clear all' : 'Hapus semua'}
                     </Text>
                   </Pressable>
                 </View>
@@ -276,7 +278,7 @@ export default function SearchScreen() {
               <SearchEmptyRing />
               <View style={{ alignItems: 'center', gap: 6 }}>
                 <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary }}>
-                  Cari Judul Novel
+                  {lang === 'en' ? 'Search Novel Titles' : 'Cari Judul Novel'}
                 </Text>
                 <Text
                   style={{
@@ -287,7 +289,9 @@ export default function SearchScreen() {
                     lineHeight: 17,
                   }}
                 >
-                  Masukkan kata kunci judul atau author untuk menemukan novel favoritmu.
+                  {lang === 'en'
+                    ? 'Enter a title or author keyword to find your favorite novels.'
+                    : 'Masukkan kata kunci judul atau author untuk menemukan novel favoritmu.'}
                 </Text>
               </View>
             </View>
@@ -305,10 +309,12 @@ export default function SearchScreen() {
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 10 }}>
             <Ionicons name="alert-circle-outline" size={42} color={colors.textMuted} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>
-              "{query}" tidak ditemukan
+              "{query}" {lang === 'en' ? 'not found' : 'tidak ditemukan'}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textMuted }}>
-              Coba gunakan kata kunci lain atau periksa ejaan judul.
+              {lang === 'en'
+                ? 'Try using another keyword or check title spelling.'
+                : 'Coba gunakan kata kunci lain atau periksa ejaan judul.'}
             </Text>
           </View>
         ) : (

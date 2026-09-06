@@ -132,7 +132,7 @@ export default function ReadChapterScreen() {
   const { chapterId } = useLocalSearchParams<{ chapterId: string }>();
   const router = useRouter();
   const { colors } = useTheme();
-  const { lang: globalLang, t } = useLanguage();
+  const { lang: globalLang, t, changeLang } = useLanguage();
   const { onChapterRead } = useInterstitialAd();
 
   const [chapter, setChapter] = useState<ChapterData | null>(null);
@@ -353,7 +353,11 @@ export default function ReadChapterScreen() {
 
         {/* Language quick switcher */}
         <TouchableOpacity
-          onPress={() => setLanguage(language === 'en' ? 'id' : 'en')}
+          onPress={() => {
+            const nextLang = language === 'en' ? 'id' : 'en';
+            setLanguage(nextLang);
+            changeLang(nextLang);
+          }}
           activeOpacity={0.7}
           style={[
             styles.topPillBtn,
@@ -579,7 +583,10 @@ export default function ReadChapterScreen() {
                       borderColor: language === 'en' ? currentTheme.goldAccent : currentTheme.cardBorder,
                     },
                   ]}
-                  onPress={() => setLanguage('en')}
+                  onPress={() => {
+                    setLanguage('en');
+                    changeLang('en');
+                  }}
                 >
                   <Text style={styles.langCardFlag}>🇬🇧</Text>
                   <View style={{ flex: 1 }}>
@@ -609,7 +616,10 @@ export default function ReadChapterScreen() {
                       borderColor: language === 'id' ? currentTheme.goldAccent : currentTheme.cardBorder,
                     },
                   ]}
-                  onPress={() => setLanguage('id')}
+                  onPress={() => {
+                    setLanguage('id');
+                    changeLang('id');
+                  }}
                 >
                   <Text style={styles.langCardFlag}>🇮🇩</Text>
                   <View style={{ flex: 1 }}>

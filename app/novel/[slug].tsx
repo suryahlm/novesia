@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiGet, apiPost } from '../../lib/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatViews, cleanChapterTitle } from '../../lib/utils';
 import { CustomDialog } from '../../components/CustomDialog';
 import { useTheme } from '../../lib/ThemeProvider';
@@ -51,7 +52,8 @@ interface Chapter {
 export default function NovelDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
-  const { t, lang } = useLanguage();
+  const { t, lang, changeLang } = useLanguage();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [novel, setNovel] = useState<Novel | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -186,73 +188,137 @@ export default function NovelDetailScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-      {/* Cover + Overlay */}
-      <View style={styles.heroContainer}>
-        {novel.cover_url && (
-          <Image 
-            source={{ 
-              uri: novel.cover_url,
-              headers: { 'User-Agent': 'NovesiaApp/1.0' }
-            }} 
-            style={styles.heroBg} 
-            blurRadius={20} 
-          />
-        )}
-        <View style={styles.heroOverlay} />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Floating Top Navigation: Back button + Quick Language button */}
+      <View
+        style={{
+          position: 'absolute',
+          top: Math.max(insets.top, 14),
+          left: 16,
+          right: 16,
+          zIndex: 99,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          pointerEvents: 'box-none',
+        }}
+      >
+        <TouchableOpacity
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 19,
+            backgroundColor: 'rgba(15,23,42,0.7)',
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.18)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          accessibilityLabel={t.back}
+        >
+          <Ionicons name="chevron-back" size={20} color="#ffffff" />
+        </TouchableOpacity>
 
-        <View style={styles.heroContent}>
-          {novel.cover_url ? (
+        <TouchableOpacity
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 5,
+            paddingHorizontal: 11,
+            paddingVertical: 6,
+            borderRadius: 999,
+            backgroundColor: 'rgba(15,23,42,0.7)',
+            borderWidth: 1,
+            borderColor: colors.primary + '75',
+          }}
+          onPress={() => changeLang(lang === 'id' ? 'en' : 'id')}
+          activeOpacity={0.7}
+          accessibilityLabel="Switch language"
+        >
+          <Ionicons name="globe-outline" size={14} color={colors.primary} />
+          <Text style={{ color: '#ffffff', fontSize: 11.5, fontWeight: '800' }}>
+            {lang === 'id' ? '🇮🇩 ID' : '🇬🇧 EN'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Cover + Overlay */}
+        <View style={styles.heroContainer}>
+          {novel.cover_url && (
             <Image 
               source={{ 
-              uri: novel.cover_url, 
-              headers: { 'User-Agent': 'NovesiaApp/1.0' }
-            }} 
-            style={styles.coverImage} 
-            contentFit="cover"
-            transition={200}
-          />
-        ) : (
-          <View style={[styles.coverImage, styles.noCover]}>
-            <Text style={{ fontSize: 40 }}>📕</Text>
-          </View>
-        )}
-        <View style={styles.heroInfo}>
-          <Text style={styles.novelTitle}>{novel.title}</Text>
-          <Text style={styles.novelAuthor}>{novel.author || 'Unknown Author'}</Text>
-          <View style={styles.statRow}>
-            {novel.rating && (
-              <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
-                <Text style={[styles.statText, { color: colors.primary }]}>★ {typeof novel.rating === 'number' ? novel.rating.toFixed(1) : novel.rating}</Text>
-              </View>
-            )}
-            <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
-              <Text style={[styles.statText, { color: colors.primary }]}>{novel.total_chapters} ch</Text>
+                uri: novel.cover_url,
+                headers: { 'User-Agent': 'NovesiaApp/1.0' }
+              }} 
+              style={styles.heroBg} 
+              blurRadius={20} 
+            />
+          )}
+          <View style={styles.heroOverlay} />
+
+          <View style={[styles.heroContent, { paddingTop: Math.max(54, insets.top + 46) }]}>
+            {novel.cover_url ? (
+              <Image 
+                source={{ 
+                uri: novel.cover_url, 
+                headers: { 'User-Agent': 'NovesiaApp/1.0' }
+              }} 
+              style={styles.coverImage} 
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <View style={[styles.coverImage, styles.noCover]}>
+              <Text style={{ fontSize: 40 }}>📕</Text>
             </View>
-            {novel.year && (
+          )}
+          <View style={styles.heroInfo}>
+            <Text style={styles.novelTitle}>{novel.title}</Text>
+            <Text style={styles.novelAuthor}>{novel.author || 'Unknown Author'}</Text>
+            <View style={styles.statRow}>
+              {novel.rating && (
+                <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
+                  <Text style={[styles.statText, { color: colors.primary }]}>★ {typeof novel.rating === 'number' ? novel.rating.toFixed(1) : novel.rating}</Text>
+                </View>
+              )}
               <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
-                <Text style={[styles.statText, { color: colors.primary }]}>{novel.year}</Text>
+                <Text style={[styles.statText, { color: colors.primary }]}>{novel.total_chapters} ch</Text>
               </View>
-            )}
-            {novel.total_views !== undefined && (
-              <View style={[styles.statBadge, { backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-                <Text style={[styles.statText, { color: '#e2e8f0' }]}>👁 {formatViews(novel.total_views)}</Text>
-              </View>
-            )}
+              {novel.year && (
+                <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
+                  <Text style={[styles.statText, { color: colors.primary }]}>{novel.year}</Text>
+                </View>
+              )}
+              {novel.total_views !== undefined && (
+                <View style={[styles.statBadge, { backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                  <Text style={[styles.statText, { color: '#e2e8f0' }]}>👁 {formatViews(novel.total_views)}</Text>
+                </View>
+              )}
+              {/* Status Badge: Amber for Ongoing/Berjalan, Emerald for Tamat/Complete */}
               {(() => {
-                const eff = (novel.status && novel.status !== 'draft') ? novel.status
-                  : (['completed','complete','finished'].includes((novel.original_status||'').toLowerCase())) ? 'completed'
-                  : (['ongoing','active'].includes((novel.original_status||'').toLowerCase())) ? 'active'
-                  : null;
-                if (!eff) return null;
-                const isCompleted = eff === 'completed';
+                const isCompleted =
+                  novel.status === 'completed' ||
+                  novel.status === 'complete' ||
+                  novel.status === 'tamat' ||
+                  ['completed', 'complete', 'finished', 'tamat'].includes((novel.original_status || '').toLowerCase().trim());
                 return (
                   <View style={{
-                    backgroundColor: isCompleted ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)',
+                    backgroundColor: isCompleted ? 'rgba(16,185,129,0.18)' : 'rgba(245,158,11,0.18)',
                     borderColor: isCompleted ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)',
-                    borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
+                    borderWidth: 1,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4.5,
+                    borderRadius: 8,
                   }}>
-                    <Text style={{ fontSize: 9, fontWeight: '900', color: isCompleted ? '#34D399' : '#FBBF24', letterSpacing: 0.5 }}>
+                    <Text style={{
+                      fontSize: 10,
+                      fontWeight: '800',
+                      color: isCompleted ? '#34D399' : '#FBBF24',
+                      letterSpacing: 0.3,
+                    }}>
                       {isCompleted ? (lang === 'id' ? 'Tamat' : 'Complete') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
                     </Text>
                   </View>
@@ -268,16 +334,43 @@ export default function NovelDetailScreen() {
                   },
                 ]}
                 onPress={toggleSave}
+                activeOpacity={0.7}
               >
                 <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={14} color={isSaved ? colors.primary : '#94a3b8'} />
               </TouchableOpacity>
               {/* Share */}
-              <TouchableOpacity style={styles.saveBadge} onPress={() => {
-                Share.share({
-                  message: `📖 ${novel.title}\n\nBaca di Novesia!`,
-                });
-              }}>
+              <TouchableOpacity
+                style={styles.saveBadge}
+                onPress={() => {
+                  Share.share({
+                    message: `📖 ${novel.title}\n\n${lang === 'id' ? 'Baca di Novesia!' : 'Read on Novesia!'}`,
+                  });
+                }}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="share-social-outline" size={14} color="#94a3b8" />
+              </TouchableOpacity>
+              {/* Quick Language Switcher Button */}
+              <TouchableOpacity
+                style={[
+                  styles.saveBadge,
+                  {
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4.5,
+                    backgroundColor: colors.primaryMuted,
+                    borderColor: colors.primary + '55',
+                  },
+                ]}
+                onPress={() => changeLang(lang === 'id' ? 'en' : 'id')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="globe-outline" size={13} color={colors.primary} />
+                <Text style={{ fontSize: 10.5, fontWeight: '800', color: colors.primary }}>
+                  {lang === 'id' ? 'ID' : 'EN'}
+                </Text>
               </TouchableOpacity>
             </View>
             {/* Genre inline in hero */}
@@ -411,7 +504,7 @@ export default function NovelDetailScreen() {
                     }}
                   >
                     <Text style={[styles.groupBtnText, isOpen && { color: colors.primary }, hasLastRead && !isOpen && { color: '#22c55e' }]}>
-                      Chapter {start + 1} - {end} {hasLastRead && !isOpen ? `(Ch-${lastReadChapter})` : ''} {isOpen ? '▲' : '▼'}
+                      {lang === 'id' ? 'Bab' : 'Chapter'} {start + 1} - {end} {hasLastRead && !isOpen ? `(${lang === 'id' ? 'Bab' : 'Ch'}-${lastReadChapter})` : ''} {isOpen ? '▲' : '▼'}
                     </Text>
                   </TouchableOpacity>
                   {isOpen && group.map((ch) => {
@@ -433,9 +526,9 @@ export default function NovelDetailScreen() {
                           </Text>
                         </View>
                         {hasContent ? (
-                          <Text style={styles.chapterWords}>{wc} words</Text>
+                          <Text style={styles.chapterWords}>{wc} {lang === 'id' ? 'kata' : 'words'}</Text>
                         ) : (
-                          <Text style={styles.chapterStatusPending}>Pending</Text>
+                          <Text style={styles.chapterStatusPending}>{lang === 'id' ? 'Belum Tersedia' : 'Pending'}</Text>
                         )}
                       </TouchableOpacity>
                     );
@@ -458,6 +551,7 @@ export default function NovelDetailScreen() {
         showCancel={false}
       />
     </ScrollView>
+    </View>
   );
 }
 

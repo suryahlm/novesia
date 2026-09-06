@@ -304,7 +304,7 @@ export default function LibraryScreen() {
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
                       <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
-                        {item.total_chapters} Chapters
+                        {item.total_chapters} {lang === 'id' ? 'Bab' : 'Chapters'}
                       </Text>
                       {item.rating && (
                         <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '600' }}>

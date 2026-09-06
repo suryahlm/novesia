@@ -264,6 +264,7 @@ export default function HomeScreen() {
           >
             {LANGUAGE_FILTERS.map((option) => {
               const active = option.key === activeLang;
+              const filterLabel = option.key === 'all' ? (lang === 'en' ? 'All' : 'Semua') : option.label;
               return (
                 <Pressable
                   key={option.key}
@@ -293,7 +294,7 @@ export default function HomeScreen() {
                         baseColor="#000000"
                         shineColor="rgba(255,250,230,0.95)"
                       >
-                        {option.label}
+                        {filterLabel}
                       </ShimmerText>
                     </GoldSurface>
                   ) : (
@@ -310,7 +311,7 @@ export default function HomeScreen() {
                       }}
                     >
                       <Text style={{ fontSize: 13, color: '#94a3b8', fontWeight: '600' }}>
-                        {option.label}
+                        {filterLabel}
                       </Text>
                     </View>
                   )}
