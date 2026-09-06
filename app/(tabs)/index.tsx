@@ -254,12 +254,16 @@ export default function HomeScreen() {
           {/* ═══ LANGUAGE FILTER TABS ("Semua" - "English" - "Indonesia") ═══ */}
           <View
             style={{
+              alignSelf: 'center',
               flexDirection: 'row',
-              justifyContent: 'center',
-              gap: 10,
-              paddingHorizontal: 16,
-              marginTop: 4,
-              marginBottom: 22,
+              alignItems: 'center',
+              backgroundColor: 'rgba(18, 22, 30, 0.75)',
+              borderRadius: 999,
+              padding: 3.5,
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+              marginTop: 2,
+              marginBottom: 18,
             }}
           >
             {LANGUAGE_FILTERS.map((option) => {
@@ -271,50 +275,28 @@ export default function HomeScreen() {
                   onPress={() => setActiveLang(option.key)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
-                  style={{ minWidth: 96 }}
+                  style={({ pressed }) => ({
+                    paddingVertical: 5.5,
+                    paddingHorizontal: 16,
+                    borderRadius: 999,
+                    backgroundColor: active
+                      ? (colors.primaryMuted || colors.primary + '22')
+                      : 'transparent',
+                    borderWidth: 1,
+                    borderColor: active ? (colors.primary + '55') : 'transparent',
+                    opacity: pressed ? 0.75 : 1,
+                  })}
                 >
-                  {active ? (
-                    <GoldSurface
-                      shimmer
-                      style={{
-                        paddingVertical: 7,
-                        paddingHorizontal: 20,
-                        borderRadius: 999,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        shadowColor: colors.primary,
-                        shadowOpacity: 0.45,
-                        shadowRadius: 8,
-                        shadowOffset: { width: 0, height: 2 },
-                        elevation: 5,
-                      }}
-                    >
-                      <ShimmerText
-                        style={{ fontSize: 13, fontWeight: '800' }}
-                        baseColor="#000000"
-                        shineColor="rgba(255,250,230,0.95)"
-                      >
-                        {filterLabel}
-                      </ShimmerText>
-                    </GoldSurface>
-                  ) : (
-                    <View
-                      style={{
-                        paddingVertical: 7,
-                        paddingHorizontal: 20,
-                        borderRadius: 999,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.12)',
-                        backgroundColor: 'rgba(20,24,33,0.85)',
-                      }}
-                    >
-                      <Text style={{ fontSize: 13, color: '#94a3b8', fontWeight: '600' }}>
-                        {filterLabel}
-                      </Text>
-                    </View>
-                  )}
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: active ? '700' : '500',
+                      color: active ? colors.primary : '#94a3b8',
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    {filterLabel}
+                  </Text>
                 </Pressable>
               );
             })}
