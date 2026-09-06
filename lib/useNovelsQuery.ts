@@ -47,7 +47,6 @@ export async function fetchAllNovels(): Promise<NovelItem[]> {
     const res = await apiGet<NovelsResponse>('/api/novels', {
       sort: 'rating',
       limit: 100,
-      status: 'active,completed,ongoing,published',
     });
     return extractNovels(res);
   } catch (e) {
@@ -98,7 +97,6 @@ export async function fetchFeaturedBanner(lang: string = 'all'): Promise<NovelIt
     const params: Record<string, string | number> = {
       sort: 'rating',
       limit: 60,
-      status: 'active,completed,ongoing,published',
     };
     if (lang === 'id') {
       params['translation_status'] = 'id_translated';
