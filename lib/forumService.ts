@@ -58,7 +58,7 @@ export async function fetchForumCategories(): Promise<ForumCategory[]> {
     return Array.isArray(data) ? data : [];
   } catch (e) {
     console.error('fetchForumCategories error:', e);
-    return [];
+    throw e;
   }
 }
 
@@ -79,7 +79,7 @@ export async function fetchCategoryThreads(categorySlug: string): Promise<{
     };
   } catch (e) {
     console.error('fetchCategoryThreads error:', e);
-    return { category: null, threads: [] };
+    throw e;
   }
 }
 
@@ -115,14 +115,16 @@ export async function createForumThread(params: {
 /**
  * Fetch detail thread beserta balasan
  */
-export async function fetchThreadDetail(threadId: string): Promise<{
+export async function fetchThreadDetail(
+  threadId: string,
+  skipView: boolean = false
+): Promise<{
   thread: ForumThread | null;
   posts: ForumPost[];
 }> {
   try {
-    const data = await apiGet<{ thread: ForumThread; posts: ForumPost[] }>(
-      `/api/forum/threads/${threadId}`
-    );
+    const url = `/api/forum/threads/${threadId}${skipView ? '?skipView=1' : ''}`;
+    const data = await apiGet<{ thread: ForumThread; posts: ForumPost[] }>(url);
     return {
       thread: data.thread || null,
       posts: data.posts || [],
@@ -130,6 +132,25 @@ export async function fetchThreadDetail(threadId: string): Promise<{
   } catch (e) {
     console.error('fetchThreadDetail error:', e);
     return { thread: null, posts: [] };
+  }
+}
+
+/**
+ * Fetch balasan baru (realtime sync) setelah timestamp tertentu
+ */
+export async function fetchThreadNewPosts(
+  threadId: string,
+  afterTimestamp?: string
+): Promise<ForumPost[]> {
+  try {
+    const query = afterTimestamp ? `?after=${encodeURIComponent(afterTimestamp)}` : '';
+    const data = await apiGet<ForumPost[]>(`/api/forum/threads/${threadId}/posts${query}`, undefined, {
+      timeoutMs: 15000,
+    });
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    // Silent fail on background poll to avoid alert dialogs on slow ping
+    return [];
   }
 }
 

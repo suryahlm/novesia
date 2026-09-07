@@ -7,6 +7,7 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  RefreshControl,
   Platform,
   StatusBar,
 } from 'react-native';
@@ -17,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiGet } from '../../lib/apiClient';
 import { useLanguage } from '../../lib/i18n';
 import { SkeletonGrid2Col } from '../../components/SkeletonLoader';
+import { ErrorState } from '../../components/ErrorState';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
 
 const { width } = Dimensions.get('window');
@@ -59,13 +61,15 @@ export default function SemuaScreen() {
   const { t, lang } = useLanguage();
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [numColumns, setNumColumns] = useState(3);
   const [previewNovel, setPreviewNovel] = useState<Novel | null>(null);
 
   useEffect(() => {
-    fetchAll();
+    fetchAll(true);
     loadGridPreference();
   }, []);
 
@@ -82,16 +86,34 @@ export default function SemuaScreen() {
     try { await AsyncStorage.setItem(GRID_KEY, String(next)); } catch {}
   };
 
-  const fetchAll = async () => {
+  const fetchAll = async (showLoader = false) => {
+    if (showLoader) {
+      setLoading(true);
+      setIsError(false);
+    }
     try {
       const res = await apiGet<{ novels?: any[]; data?: any[] }>('/api/novels', {
         sort: 'title',
-        limit: 500,
+        limit: 100,
       });
       const data = res.novels || res.data || (Array.isArray(res) ? res : []);
       setNovels(data);
-    } catch (e) {}
-    setLoading(false);
+      setIsError(false);
+    } catch (e) {
+      if (novels.length === 0) {
+        setIsError(true);
+      }
+    } finally {
+      if (showLoader) {
+        setLoading(false);
+      }
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchAll(false);
+    setRefreshing(false);
   };
 
   const handleScroll = (event: any) => {
@@ -111,6 +133,25 @@ export default function SemuaScreen() {
           <Text style={styles.title}>{t.all}</Text>
         </View>
         <SkeletonGrid2Col count={8} />
+      </View>
+    );
+  }
+
+  if (isError && novels.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{t.all}</Text>
+        </View>
+        <ErrorState
+          title={lang === 'en' ? 'Failed to Load Novels' : 'Gagal Memuat Daftar Novel'}
+          message={
+            lang === 'en'
+              ? 'Slow connection or network error. Please check your internet.'
+              : 'Koneksi internet lambat atau bermasalah. Silakan periksa jaringan.'
+          }
+          onRetry={() => fetchAll(true)}
+        />
       </View>
     );
   }
@@ -135,6 +176,14 @@ export default function SemuaScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={GOLD}
+            colors={[GOLD]}
+          />
+        }
       >
         <View style={styles.header}>
           <Text style={styles.title}>{t.all}</Text>

@@ -124,7 +124,7 @@ export async function updateUserName(
       return { success: false, error: 'Nama harus antara 3 sampai 15 karakter.' };
     }
 
-    await apiPatch('/api/me', { name: trimmed });
+    await apiPatch('/api/me', { name: trimmed }, { timeoutMs: 15000 });
 
     // Update local store optimistically
     useAuthStore.getState().updateUser({ name: trimmed });
@@ -148,11 +148,15 @@ export async function uploadUserAvatar(asset: {
     let result: { avatarUrl: string };
 
     if (asset.base64) {
-      // Mengirim via JSON base64 — 100% stabil di Android tanpa isu multipart boundary
-      result = await apiPost<{ avatarUrl: string }>('/api/me/avatar', {
-        base64: asset.base64,
-        mimeType: asset.mimeType || 'image/jpeg',
-      });
+      // Mengirim via JSON base64 dengan timeout toleran 45s untuk jaringan seluler lambat
+      result = await apiPost<{ avatarUrl: string }>(
+        '/api/me/avatar',
+        {
+          base64: asset.base64,
+          mimeType: asset.mimeType || 'image/jpeg',
+        },
+        { timeoutMs: 45000 }
+      );
     } else {
       const ext = asset.mimeType?.split('/')[1] || 'jpg';
       const formData = new FormData();
@@ -162,7 +166,9 @@ export async function uploadUserAvatar(asset: {
         type: asset.mimeType || 'image/jpeg',
       } as any);
 
-      result = await apiPostForm<{ avatarUrl: string }>('/api/me/avatar', formData);
+      result = await apiPostForm<{ avatarUrl: string }>('/api/me/avatar', formData, {
+        timeoutMs: 45000,
+      });
     }
 
     const avatarUrl = result.avatarUrl || asset.uri;

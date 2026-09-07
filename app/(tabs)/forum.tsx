@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GradientBackground } from '../../components/GradientBackground';
+import { ErrorState } from '../../components/ErrorState';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
 import {
@@ -135,23 +136,38 @@ export default function ForumScreen() {
 
   const [categories, setCategories] = useState<ForumCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      loadCategories();
+      loadCategories(true);
     }, [])
   );
 
-  const loadCategories = async () => {
-    const data = await fetchForumCategories();
-    setCategories(data);
-    setLoading(false);
+  const loadCategories = async (showLoader = false) => {
+    if (showLoader) {
+      setLoading(true);
+      setIsError(false);
+    }
+    try {
+      const data = await fetchForumCategories();
+      setCategories(data);
+      setIsError(false);
+    } catch (e) {
+      if (categories.length === 0) {
+        setIsError(true);
+      }
+    } finally {
+      if (showLoader) {
+        setLoading(false);
+      }
+    }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadCategories();
+    await loadCategories(false);
     setRefreshing(false);
   };
 
@@ -234,6 +250,16 @@ export default function ForumScreen() {
               <CategorySkeleton key={i} />
             ))}
           </View>
+        ) : isError && categories.length === 0 ? (
+          <ErrorState
+            title={lang === 'en' ? 'Failed to Load Forum' : 'Gagal Memuat Forum'}
+            message={
+              lang === 'en'
+                ? 'Network issue or slow connection. Please check your internet and try again.'
+                : 'Koneksi internet lambat atau bermasalah. Silakan periksa jaringan dan coba lagi.'
+            }
+            onRetry={() => loadCategories(true)}
+          />
         ) : (
           <FlatList
             data={categories}

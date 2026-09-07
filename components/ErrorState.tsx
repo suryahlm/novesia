@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/ThemeProvider';
 
 export interface ErrorStateProps {
+  title?: string;
   message?: string;
   onRetry?: () => void;
   style?: ViewStyle | ViewStyle[];
@@ -16,6 +17,7 @@ export interface ErrorStateProps {
  * ke user dan tombol "Coba Lagi" (Retry) tanpa perlu menutup paksa app.
  */
 export function ErrorState({
+  title,
   message = 'Gagal memuat data. Periksa koneksi internet Anda.',
   onRetry,
   style,
@@ -28,6 +30,11 @@ export function ErrorState({
       <View style={[styles.iconCircle, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
         <Ionicons name="cloud-offline-outline" size={40} color={colors.primary} />
       </View>
+      {title && (
+        <Text style={[styles.title, { color: colors.textPrimary }]}>
+          {title}
+        </Text>
+      )}
       <Text style={[styles.message, { color: colors.textSecondary }]}>
         {message}
       </Text>
@@ -63,9 +70,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
   },
+  title: {
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 8,
+    maxWidth: 280,
+  },
   message: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13.5,
+    lineHeight: 19,
     textAlign: 'center',
     marginBottom: 20,
     maxWidth: 280,

@@ -21,6 +21,7 @@ import { GradientBackground } from '../../components/GradientBackground';
 import { ShimmerText } from '../../components/ShimmerText';
 import { GoldSurface } from '../../components/GoldSurface';
 import { CustomDialog } from '../../components/CustomDialog';
+import { ErrorState } from '../../components/ErrorState';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
 import {
@@ -173,6 +174,7 @@ export default function CategoryThreadsScreen() {
   const localizedCategory = getLocalizedCategory(category, lang);
   const [threads, setThreads] = useState<ForumThread[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // New Thread Modal
@@ -187,21 +189,35 @@ export default function CategoryThreadsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadData();
+      loadData(true);
     }, [categorySlug])
   );
 
-  const loadData = async () => {
+  const loadData = async (showLoader = false) => {
     if (!categorySlug) return;
-    const res = await fetchCategoryThreads(categorySlug);
-    setCategory(res.category);
-    setThreads(res.threads);
-    setLoading(false);
+    if (showLoader) {
+      setLoading(true);
+      setIsError(false);
+    }
+    try {
+      const res = await fetchCategoryThreads(categorySlug);
+      setCategory(res.category);
+      setThreads(res.threads);
+      setIsError(false);
+    } catch (e) {
+      if (!category) {
+        setIsError(true);
+      }
+    } finally {
+      if (showLoader) {
+        setLoading(false);
+      }
+    }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await loadData(false);
     setRefreshing(false);
   };
 
@@ -334,6 +350,16 @@ export default function CategoryThreadsScreen() {
           <View style={{ paddingVertical: 40, alignItems: 'center' }}>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
+        ) : isError && !category ? (
+          <ErrorState
+            title={lang === 'en' ? 'Failed to Load Discussions' : 'Gagal Memuat Diskusi'}
+            message={
+              lang === 'en'
+                ? 'Network issue or discussion room not found. Please check your connection and try again.'
+                : 'Koneksi internet lambat atau ruang diskusi tidak ditemukan. Silakan periksa jaringan dan coba lagi.'
+            }
+            onRetry={() => loadData(true)}
+          />
         ) : (
           <FlatList
             data={threads}

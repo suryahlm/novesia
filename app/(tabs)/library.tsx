@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { GradientBackground } from '../../components/GradientBackground';
 import { CoverImage } from '../../components/CoverImage';
+import { ErrorState } from '../../components/ErrorState';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
 import { apiGet } from '../../lib/apiClient';
@@ -64,6 +65,7 @@ export default function LibraryScreen() {
   const [bookmarks, setBookmarks] = useState<SavedNovel[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bookmarkError, setBookmarkError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
@@ -80,11 +82,13 @@ export default function LibraryScreen() {
 
   const loadBookmarks = async () => {
     try {
+      setBookmarkError(false);
       const lib = await AsyncStorage.getItem(LIBRARY_KEY);
       const savedIds: string[] = lib ? JSON.parse(lib) : [];
 
       if (savedIds.length === 0) {
         setBookmarks([]);
+        setBookmarkError(false);
         return;
       }
 
@@ -97,8 +101,9 @@ export default function LibraryScreen() {
       const map = new Map((data || []).map((n: any) => [n.id, n]));
       const ordered = savedIds.map((id) => map.get(id)).filter(Boolean) as SavedNovel[];
       setBookmarks(ordered);
+      setBookmarkError(false);
     } catch {
-      setBookmarks([]);
+      setBookmarkError(true);
     }
   };
 
@@ -274,7 +279,17 @@ export default function LibraryScreen() {
 
         {/* Tab Contents */}
         {activeTab === 'bookmarks' ? (
-          bookmarks.length === 0 && !loading ? (
+          bookmarkError && bookmarks.length === 0 && !loading ? (
+            <ErrorState
+              title={lang === 'en' ? 'Failed to Load Bookmarks' : 'Gagal Memuat Bookmark'}
+              message={
+                lang === 'en'
+                  ? 'Slow connection or network error. Please check your internet.'
+                  : 'Koneksi internet lambat atau bermasalah. Silakan periksa jaringan.'
+              }
+              onRetry={loadData}
+            />
+          ) : bookmarks.length === 0 && !loading ? (
             <ScrollView
               contentContainerStyle={styles.emptyContainer}
               refreshControl={

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
+  RefreshControl,
   Platform,
   StatusBar,
 } from 'react-native';
@@ -16,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiGet } from '../lib/apiClient';
 import { useLanguage } from '../lib/i18n';
 import { formatViews } from '../lib/utils';
+import { ErrorState } from '../components/ErrorState';
 
 const { width } = Dimensions.get('window');
 const STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 40) : 0;
@@ -41,6 +43,8 @@ export default function LatestUpdatesScreen() {
   const { t, lang } = useLanguage();
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 30;
@@ -52,6 +56,7 @@ export default function LatestUpdatesScreen() {
   const fetchNovels = async (pageNum: number, reset: boolean = false) => {
     if (loading && !reset) return;
     setLoading(true);
+    if (reset) setIsError(false);
 
     try {
       const res = await apiGet<{ novels?: any[]; data?: any[] }>('/api/novels/latest', {
@@ -72,12 +77,22 @@ export default function LatestUpdatesScreen() {
           });
         }
         setHasMore(newItems.length === PAGE_SIZE);
+        setIsError(false);
       }
     } catch (e) {
-      console.error(e);
+      if (reset && novels.length === 0) {
+        setIsError(true);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setPage(0);
+    await fetchNovels(0, true);
+    setRefreshing(false);
   };
 
   const loadMore = () => {
@@ -102,7 +117,20 @@ export default function LatestUpdatesScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {loading && page === 0 ? (
+      {isError && novels.length === 0 ? (
+        <ErrorState
+          title={lang === 'en' ? 'Failed to Load Updates' : 'Gagal Memuat Update Terbaru'}
+          message={
+            lang === 'en'
+              ? 'Network connection issue. Please check your internet.'
+              : 'Koneksi internet lambat atau terputus. Silakan periksa jaringan.'
+          }
+          onRetry={() => {
+            setPage(0);
+            fetchNovels(0, true);
+          }}
+        />
+      ) : loading && page === 0 ? (
         <ActivityIndicator size="large" color="#d4a843" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
@@ -116,6 +144,14 @@ export default function LatestUpdatesScreen() {
           windowSize={5}
           maxToRenderPerBatch={10}
           removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#d4a843"
+              colors={['#d4a843']}
+            />
+          }
           ListFooterComponent={
             hasMore ? (
               <ActivityIndicator size="small" color="#d4a843" style={{ marginVertical: 20 }} />

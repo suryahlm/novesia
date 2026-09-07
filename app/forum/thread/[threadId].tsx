@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,10 +20,12 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GradientBackground } from '../../../components/GradientBackground';
 import { GoldSurface } from '../../../components/GoldSurface';
 import { CustomDialog } from '../../../components/CustomDialog';
+import { ErrorState } from '../../../components/ErrorState';
 import { useTheme } from '../../../lib/ThemeProvider';
 import { useLanguage } from '../../../lib/i18n';
 import {
   fetchThreadDetail,
+  fetchThreadNewPosts,
   createForumPost,
   ForumThread,
   ForumPost,
@@ -53,12 +55,17 @@ export default function ThreadDetailScreen() {
   const [thread, setThread] = useState<ForumThread | null>(null);
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const shouldScrollToEndRef = useRef(false);
+
+  // Real-time synchronization refs
+  const latestTimestampRef = useRef<string | null>(null);
+  const isSyncingRef = useRef<boolean>(false);
 
   // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -84,21 +91,87 @@ export default function ThreadDetailScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    loadData();
+  const loadData = useCallback(
+    async (isInitial = false) => {
+      if (!threadId) return;
+      if (isInitial) {
+        setLoading(true);
+        setIsError(false);
+      }
+
+      try {
+        const res = await fetchThreadDetail(threadId, !isInitial);
+        if (res.thread) {
+          setThread(res.thread);
+          setPosts(res.posts);
+          setIsError(false);
+          const newest = res.posts[res.posts.length - 1];
+          latestTimestampRef.current = newest?.created_at || res.thread.created_at;
+        } else if (isInitial) {
+          setIsError(true);
+        }
+      } catch (err) {
+        if (isInitial) {
+          setIsError(true);
+        }
+      } finally {
+        if (isInitial) {
+          setLoading(false);
+        }
+      }
+    },
+    [threadId]
+  );
+
+  // Real-time delta sync function (checks for messages posted by other users)
+  const syncNewPosts = useCallback(async () => {
+    if (!threadId || isSyncingRef.current || !latestTimestampRef.current) return;
+    isSyncingRef.current = true;
+    try {
+      const newPosts = await fetchThreadNewPosts(threadId, latestTimestampRef.current);
+      if (newPosts && newPosts.length > 0) {
+        setPosts((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const additions = newPosts.filter((p) => !existingIds.has(p.id));
+          if (additions.length === 0) return prev;
+
+          const merged = [...prev, ...additions];
+          const lastOne = merged[merged.length - 1];
+          if (lastOne?.created_at) {
+            latestTimestampRef.current = lastOne.created_at;
+          }
+          // Smoothly scroll to the bottom when new message arrives
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 80);
+          return merged;
+        });
+      }
+    } catch (e) {
+      // Silent on sync
+    } finally {
+      isSyncingRef.current = false;
+    }
   }, [threadId]);
 
-  const loadData = async () => {
-    if (!threadId) return;
-    const res = await fetchThreadDetail(threadId);
-    setThread(res.thread);
-    setPosts(res.posts);
-    setLoading(false);
-  };
+  // Real-time active focus listener: Polls every 2.5s only while screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadData(true);
+
+      const interval = setInterval(() => {
+        syncNewPosts();
+      }, 2500);
+
+      return () => {
+        clearInterval(interval);
+      };
+    }, [loadData, syncNewPosts])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await loadData(false);
     setRefreshing(false);
   };
 
@@ -114,9 +187,12 @@ export default function ThreadDetailScreen() {
       t.user_reader ||
       (lang === 'en' ? 'Novesia Reader' : 'Pembaca Novesia');
 
+    const contentToSend = replyContent.trim();
+    setReplyContent('');
+
     const post = await createForumPost({
       thread_id: thread.id,
-      content: replyContent,
+      content: contentToSend,
       user_name: userName,
       user_id: authUser?.id || null,
       user_role: (authUser?.role as 'USER' | 'VIP' | 'ADMIN') || 'USER',
@@ -126,12 +202,18 @@ export default function ThreadDetailScreen() {
 
     if (post) {
       shouldScrollToEndRef.current = true;
-      setReplyContent('');
-      setPosts((prev) => [...prev, post]);
+      latestTimestampRef.current = post.created_at;
+      setPosts((prev) => {
+        const existingIds = new Set(prev.map((p) => p.id));
+        if (existingIds.has(post.id)) return prev;
+        return [...prev, post];
+      });
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
-      }, 50);
+      }, 60);
     } else {
+      // Restore input text on error
+      setReplyContent(contentToSend);
       setDialogMsg({
         title: lang === 'en' ? 'Failed to Send Reply' : 'Gagal Mengirim Balasan',
         message:
@@ -195,6 +277,16 @@ export default function ThreadDetailScreen() {
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
+        ) : isError && !thread ? (
+          <ErrorState
+            title={lang === 'en' ? 'Failed to Load Discussion' : 'Gagal Memuat Diskusi'}
+            message={
+              lang === 'en'
+                ? 'Network issue or discussion not found. Please check your connection and try again.'
+                : 'Koneksi lambat atau diskusi tidak ditemukan. Silakan periksa jaringan dan coba lagi.'
+            }
+            onRetry={() => loadData(true)}
+          />
         ) : (
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
