@@ -30,14 +30,16 @@ function initials(title: string): string {
  */
 function LocalCoverPlaceholder({ title, width, height, borderRadius = 6 }: Omit<CoverImageProps, 'uri'>) {
   const { colors } = useTheme();
+  const safeWidth = Math.max(width || 0, 40);
+  const safeHeight = Math.max(height || 0, 40);
   return (
     <LinearGradient
       colors={['#1D2225', '#121619']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{
-        width,
-        height,
+        width: safeWidth,
+        height: safeHeight,
         borderRadius,
         alignItems: 'center',
         justifyContent: 'center',
@@ -46,14 +48,14 @@ function LocalCoverPlaceholder({ title, width, height, borderRadius = 6 }: Omit<
     >
       <Ionicons
         name="book"
-        size={width * 0.75}
+        size={Math.min(safeWidth, safeHeight) * 0.45}
         color={colors.primaryMuted}
         style={StyleSheet.absoluteFill}
       />
       <Text
         style={{
           color: colors.primary,
-          fontSize: Math.max(12, width * 0.2),
+          fontSize: Math.max(12, safeWidth * 0.2),
           fontWeight: '700',
           letterSpacing: 1,
         }}
@@ -67,6 +69,8 @@ function LocalCoverPlaceholder({ title, width, height, borderRadius = 6 }: Omit<
 export function CoverImage({ uri, title, width, height, borderRadius = 6 }: CoverImageProps) {
   const { colors } = useTheme();
   const [failed, setFailed] = useState(false);
+  const safeWidth = Math.max(width || 0, 40);
+  const safeHeight = Math.max(height || 0, 40);
 
   useEffect(() => {
     setFailed(false);
@@ -76,8 +80,8 @@ export function CoverImage({ uri, title, width, height, borderRadius = 6 }: Cove
     return (
       <LocalCoverPlaceholder
         title={title}
-        width={width}
-        height={height}
+        width={safeWidth}
+        height={safeHeight}
         borderRadius={borderRadius}
       />
     );
@@ -87,8 +91,8 @@ export function CoverImage({ uri, title, width, height, borderRadius = 6 }: Cove
     <Image
       source={{ uri }}
       style={{
-        width,
-        height,
+        width: safeWidth,
+        height: safeHeight,
         borderRadius,
         backgroundColor: colors.surfaceElevated,
       }}
@@ -99,5 +103,4 @@ export function CoverImage({ uri, title, width, height, borderRadius = 6 }: Cove
       accessibilityLabel={`Sampul novel ${title}`}
     />
   );
-
 }

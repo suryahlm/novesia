@@ -221,25 +221,32 @@ export function useIndonesianNovels() {
 }
 
 /** Hook Infinite Scroll — Populer */
-export function usePopularNovelsInfinite() {
+export function usePopularNovelsInfinite(options?: { enabled?: boolean }) {
   return useInfiniteQuery({
     queryKey: ['novels', 'popular', 'infinite'],
     queryFn: ({ pageParam = 1 }) =>
       fetchPopularNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
     initialPageParam: 1,
-    getNextPageParam: (lastPage: NovelItem[], _pages, lastPageParam) =>
-      lastPage.length < INFINITE_PAGE_SIZE ? undefined : (lastPageParam as number) + 1,
+    getNextPageParam: (lastPage: NovelItem[] | undefined, _pages, lastPageParam) =>
+      !Array.isArray(lastPage) || lastPage.length < INFINITE_PAGE_SIZE
+        ? undefined
+        : (lastPageParam as number) + 1,
+    enabled: options?.enabled ?? true,
   });
 }
 
 /** Hook Infinite Scroll — Terbaru */
-export function useLatestNovelsInfinite() {
+export function useLatestNovelsInfinite(options?: { enabled?: boolean }) {
   return useInfiniteQuery({
     queryKey: ['novels', 'latest', 'infinite'],
     queryFn: ({ pageParam = 1 }) =>
       fetchLatestNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
     initialPageParam: 1,
-    getNextPageParam: (lastPage: NovelItem[], _pages, lastPageParam) =>
-      lastPage.length < INFINITE_PAGE_SIZE ? undefined : (lastPageParam as number) + 1,
+    getNextPageParam: (lastPage: NovelItem[] | undefined, _pages, lastPageParam) =>
+      !Array.isArray(lastPage) || lastPage.length < INFINITE_PAGE_SIZE
+        ? undefined
+        : (lastPageParam as number) + 1,
+    enabled: options?.enabled ?? true,
   });
 }
+

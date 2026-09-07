@@ -39,12 +39,15 @@ export function SkeletonBox({ width = '100%', height = 16, borderRadius = 6, sty
     transform: [{ translateX: `${translateX.value * 150}%` }],
   }));
 
+  const safeWidth = typeof width === 'number' ? Math.max(0, width) : width;
+  const safeHeight = typeof height === 'number' ? Math.max(0, height) : height;
+
   return (
     <View
       style={[
         {
-          width: width as any,
-          height: height as any,
+          width: safeWidth as any,
+          height: safeHeight as any,
           borderRadius,
           backgroundColor: colors.skeletonBase,
           overflow: 'hidden',

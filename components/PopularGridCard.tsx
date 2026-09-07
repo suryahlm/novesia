@@ -48,9 +48,12 @@ export interface PopularGridCardProps {
 function PopularGridCardBase({ novel, width, onPress, onLongPress, rank }: PopularGridCardProps) {
   const { colors } = useTheme();
   const { lang } = useLanguage();
-  const coverWidth = width - FRAME_PADDING * 2;
+  const safeWidth = Math.max(width || 0, 80);
+  const coverWidth = Math.max(40, safeWidth - FRAME_PADDING * 2);
   const height = Math.round(coverWidth * 1.3);
-  const handlePress = useCallback(() => onPress(novel.nu_slug), [onPress, novel.nu_slug]);
+  const handlePress = useCallback(() => {
+    if (novel?.nu_slug) onPress(novel.nu_slug);
+  }, [onPress, novel?.nu_slug]);
 
   const isHot = rank !== undefined && rank < HOT_RANK_THRESHOLD;
   const isCompleted =
