@@ -411,6 +411,7 @@ export default function ReadChapterScreen() {
           {
             backgroundColor: currentTheme.bg,
             borderBottomColor: currentTheme.headerBorder,
+            paddingTop: Math.max(42, insets.top + 6),
           },
         ]}
       >
@@ -548,8 +549,8 @@ export default function ReadChapterScreen() {
         </View>
       )}
 
-      {/* Language Info Banner */}
-      {language === 'id' && !hasTranslation && (
+      {/* Language Info Banner — hanya tampil jika bab TIDAK terkunci */}
+      {!isLocked && language === 'id' && !hasTranslation && (
         <View style={[styles.langBanner, { backgroundColor: currentTheme.badgeBg, borderBottomColor: currentTheme.goldAccent + '40' }]}>
           <Text style={[styles.langBannerText, { color: currentTheme.goldAccent, flex: 1 }]}>
             🇮🇩 {language === 'id' ? 'Terjemahan belum tersedia — menampilkan versi original Inggris' : 'Translation not available — showing English'}
@@ -576,142 +577,198 @@ export default function ReadChapterScreen() {
       {isLocked ? (
         <View style={styles.lockedContainer}>
           <ScrollView
-            contentContainerStyle={styles.lockedScrollContent}
+            contentContainerStyle={[
+              styles.lockedScrollContent,
+              { paddingBottom: Math.max(48, insets.bottom + 36) },
+            ]}
             showsVerticalScrollIndicator={false}
           >
+            {/* Ultra-Premium Glassmorphism Gold Card */}
             <View
               style={[
                 styles.lockedCard,
                 {
-                  backgroundColor: currentTheme.cardBg,
-                  borderColor: currentTheme.cardBorder,
+                  backgroundColor: theme === 'dark' ? '#13171E' : (theme === 'sepia' ? '#EAE1D2' : '#FFFFFF'),
+                  borderColor: theme === 'dark' ? 'rgba(212,168,67,0.28)' : 'rgba(212,168,67,0.38)',
                 },
               ]}
             >
-              <View
-                style={[
-                  styles.lockedIconBadge,
-                  {
-                    backgroundColor: currentTheme.badgeBg,
-                    borderColor: currentTheme.surfaceBorder,
-                  },
-                ]}
-              >
-                <Ionicons name="lock-closed" size={36} color={currentTheme.goldAccent} />
+              {/* Luminous Lock Glow Badge */}
+              <View style={styles.lockedIconWrapper}>
+                <View
+                  style={[
+                    styles.lockedIconBadge,
+                    {
+                      backgroundColor: currentTheme.badgeBg,
+                      borderColor: currentTheme.goldAccent + '66',
+                    },
+                  ]}
+                >
+                  <Ionicons name="lock-closed" size={32} color={currentTheme.goldAccent} />
+                </View>
+                <View style={[styles.lockedSparkleBadge, { backgroundColor: currentTheme.goldAccent }]}>
+                  <Ionicons name="sparkles" size={11} color="#0D1117" />
+                </View>
               </View>
 
-              <Text style={[styles.lockedTitle, { color: currentTheme.text }]}>
-                {cleanChapterTitle(chapter.chapter_title, chapter.chapter_number)}
+              {/* Chapter Meta & Title */}
+              <Text style={[styles.lockedChapterNumber, { color: currentTheme.goldAccent }]}>
+                {globalLang === 'en' ? 'CHAPTER' : 'BAB'} {chapter.chapter_number}
+              </Text>
+              <Text style={[styles.lockedTitle, { color: currentTheme.text }]} numberOfLines={2}>
+                {cleanChapterTitle(chapter.chapter_title, chapter.chapter_number) || `Bab ${chapter.chapter_number}`}
               </Text>
 
+              {/* Status Pill */}
               <View
                 style={[
                   styles.lockedPill,
                   {
                     backgroundColor: currentTheme.badgeBg,
-                    borderColor: currentTheme.surfaceBorder,
+                    borderColor: currentTheme.goldAccent + '40',
                   },
                 ]}
               >
-                <Ionicons name="sparkles" size={13} color={currentTheme.goldAccent} />
+                <Ionicons name="star" size={11} color={currentTheme.goldAccent} />
                 <Text style={[styles.lockedPillText, { color: currentTheme.goldAccent }]}>
-                  AKSES KHUSUS MEMBER
+                  {globalLang === 'en' ? 'MEMBER EXCLUSIVE ACCESS' : 'AKSES KHUSUS MEMBER'}
                 </Text>
               </View>
 
+              {/* Description */}
               <Text style={[styles.lockedDescription, { color: currentTheme.textMuted }]}>
                 {(chapter as any).lock_message ||
-                  'Sebagai tamu yang belum login, Anda dapat membaca 2 bab pertama dan 2 bab terbaru secara gratis. Masuk atau buat akun gratis sekarang untuk membuka semua bab tanpa batas!'}
+                  (globalLang === 'en'
+                    ? 'As a guest, you can read the first 2 and latest 2 chapters of each novel for free. Sign in to unlock all chapters 100% free!'
+                    : 'Sebagai tamu, Anda dapat membaca 2 bab awal dan 2 bab terbaru gratis. Masuk untuk membuka seluruh bab novel ini 100% gratis tanpa batas!')}
               </Text>
 
+              {/* VIP Perks Card */}
               <View
                 style={[
                   styles.lockedBenefitBox,
                   {
-                    backgroundColor: currentTheme.stepperBg,
-                    borderColor: currentTheme.stepperBorder,
+                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.025)',
+                    borderColor: theme === 'dark' ? 'rgba(212,168,67,0.18)' : 'rgba(212,168,67,0.28)',
                   },
                 ]}
               >
                 <View style={styles.lockedBenefitRow}>
-                  <Ionicons name="checkmark-circle" size={17} color={currentTheme.goldAccent} />
+                  <View style={[styles.lockedCheckCircle, { backgroundColor: currentTheme.badgeBg }]}>
+                    <Ionicons name="checkmark" size={12} color={currentTheme.goldAccent} />
+                  </View>
                   <Text style={[styles.lockedBenefitText, { color: currentTheme.text }]}>
-                    Baca semua bab novel favorit gratis 100%
+                    {globalLang === 'en' ? 'Read all chapters of your favorite novels 100% free' : 'Baca semua bab novel favorit gratis 100%'}
                   </Text>
                 </View>
                 <View style={styles.lockedBenefitRow}>
-                  <Ionicons name="checkmark-circle" size={17} color={currentTheme.goldAccent} />
+                  <View style={[styles.lockedCheckCircle, { backgroundColor: currentTheme.badgeBg }]}>
+                    <Ionicons name="checkmark" size={12} color={currentTheme.goldAccent} />
+                  </View>
                   <Text style={[styles.lockedBenefitText, { color: currentTheme.text }]}>
-                    Tersinkronisasi otomatis riwayat & bookmark
+                    {globalLang === 'en' ? 'Automatic reading history & bookmark synchronization' : 'Tersinkronisasi otomatis riwayat baca & bookmark'}
                   </Text>
                 </View>
                 <View style={styles.lockedBenefitRow}>
-                  <Ionicons name="checkmark-circle" size={17} color={currentTheme.goldAccent} />
+                  <View style={[styles.lockedCheckCircle, { backgroundColor: currentTheme.badgeBg }]}>
+                    <Ionicons name="checkmark" size={12} color={currentTheme.goldAccent} />
+                  </View>
                   <Text style={[styles.lockedBenefitText, { color: currentTheme.text }]}>
-                    Bisa ikut berkomentar dan berdiskusi di forum
+                    {globalLang === 'en' ? 'Join community discussions and reply in forum' : 'Bisa ikut berkomentar dan berdiskusi di forum'}
                   </Text>
                 </View>
               </View>
 
+              {/* Primary Action Button with Rich Gold Gradient */}
               <TouchableOpacity
                 onPress={() => setAuthModalVisible(true)}
-                activeOpacity={0.85}
-                style={[styles.lockedPrimaryBtn, { backgroundColor: currentTheme.goldAccent }]}
+                activeOpacity={0.88}
+                style={styles.lockedPrimaryBtnWrapper}
               >
-                <Ionicons name="log-in-outline" size={18} color="#000" />
-                <Text style={styles.lockedPrimaryBtnText}>Masuk / Daftar Akun</Text>
+                <LinearGradient
+                  colors={['#E5C378', '#D4A843', '#B88B2E']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.lockedPrimaryBtnGradient}
+                >
+                  <Ionicons name="log-in" size={18} color="#0D1117" />
+                  <Text style={styles.lockedPrimaryBtnText}>
+                    {globalLang === 'en' ? 'Sign In / Register' : 'Masuk / Daftar Akun'}
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
 
+              {/* Secondary Button */}
               <TouchableOpacity
                 onPress={() => router.back()}
                 activeOpacity={0.75}
-                style={[styles.lockedSecondaryBtn, { borderColor: currentTheme.cardBorder }]}
+                style={[
+                  styles.lockedSecondaryBtn,
+                  {
+                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+                    borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                  },
+                ]}
               >
-                <Ionicons name="list-outline" size={16} color={currentTheme.textMuted} />
-                <Text style={[styles.lockedSecondaryBtnText, { color: currentTheme.textMuted }]}>
-                  Kembali ke Daftar Bab
+                <Ionicons name="list-outline" size={16} color={currentTheme.text} />
+                <Text style={[styles.lockedSecondaryBtnText, { color: currentTheme.text }]}>
+                  {globalLang === 'en' ? 'Back to Chapter List' : 'Kembali ke Daftar Bab'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Sibling navigation if available */}
+            {/* Sibling navigation with Safe Area Bottom buffer (Never touches Android navbar) */}
             {(prevChapter || nextChapter) && (
-              <View style={[styles.navRow, { marginTop: 12 }]}>
+              <View
+                style={[
+                  styles.lockedNavRow,
+                  {
+                    marginBottom: Math.max(36, insets.bottom + 28),
+                  },
+                ]}
+              >
                 {prevChapter ? (
                   <TouchableOpacity
                     style={[
-                      styles.navBtn,
+                      styles.lockedNavBtn,
                       {
-                        backgroundColor: currentTheme.navBtnBg,
-                        borderColor: currentTheme.navBtnBorder,
+                        backgroundColor: currentTheme.cardBg,
+                        borderColor: currentTheme.cardBorder,
                       },
                     ]}
                     onPress={() => navigateChapter(prevChapter.id)}
+                    activeOpacity={0.7}
                   >
-                    <Text style={[styles.navBtnText, { color: currentTheme.text }]}>
-                      ← Ch {prevChapter.chapter_number}
+                    <Ionicons name="chevron-back" size={15} color={currentTheme.text} />
+                    <Text style={[styles.lockedNavBtnText, { color: currentTheme.text }]}>
+                      Ch {prevChapter.chapter_number}
                     </Text>
                   </TouchableOpacity>
                 ) : (
-                  <View />
+                  <View style={{ flex: 1 }} />
                 )}
+
+                <View style={{ width: 14 }} />
+
                 {nextChapter ? (
                   <TouchableOpacity
                     style={[
-                      styles.navBtn,
+                      styles.lockedNavBtn,
                       {
-                        backgroundColor: currentTheme.goldAccent,
-                        borderColor: currentTheme.goldAccent,
+                        backgroundColor: currentTheme.badgeBg,
+                        borderColor: currentTheme.surfaceBorder,
                       },
                     ]}
                     onPress={() => navigateChapter(nextChapter.id)}
+                    activeOpacity={0.7}
                   >
-                    <Text style={[styles.navBtnText, { color: colors.textOnPrimary }]}>
-                      Ch {nextChapter.chapter_number} →
+                    <Text style={[styles.lockedNavBtnText, { color: currentTheme.goldAccent, fontWeight: '700' }]}>
+                      Ch {nextChapter.chapter_number}
                     </Text>
+                    <Ionicons name="chevron-forward" size={15} color={currentTheme.goldAccent} />
                   </TouchableOpacity>
                 ) : (
-                  <View />
+                  <View style={{ flex: 1 }} />
                 )}
               </View>
             )}
@@ -731,7 +788,7 @@ export default function ReadChapterScreen() {
           <ScrollView
             style={styles.content}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: Math.max(100, insets.bottom + 60) }}
             {...panResponder.panHandlers}
             onScroll={(e) => {
               const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
@@ -1462,92 +1519,147 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   lockedScrollContent: {
-    padding: 20,
-    paddingBottom: 80,
+    paddingHorizontal: 20,
+    paddingTop: 12,
     alignItems: 'center',
   },
   lockedCard: {
     width: '100%',
-    maxWidth: 480,
-    padding: 24,
-    borderRadius: 20,
-    borderWidth: 1,
+    maxWidth: 440,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
+    borderRadius: 24,
+    borderWidth: 1.2,
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    elevation: 6,
   },
-  lockedIconBadge: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 1,
+  lockedIconWrapper: {
+    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
+  },
+  lockedIconBadge: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockedSparkleBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  lockedChapterNumber: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    marginBottom: 4,
   },
   lockedTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     textAlign: 'center',
+    lineHeight: 25,
     marginBottom: 10,
+    paddingHorizontal: 4,
   },
   lockedPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingVertical: 4.5,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 14,
   },
   lockedPillText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   lockedDescription: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 20,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 18,
+    paddingHorizontal: 4,
   },
   lockedBenefitBox: {
     width: '100%',
-    padding: 16,
-    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
     borderWidth: 1,
-    gap: 12,
-    marginBottom: 22,
+    gap: 11,
+    marginBottom: 20,
   },
   lockedBenefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
+  lockedCheckCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   lockedBenefitText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '500',
     flex: 1,
+    lineHeight: 18,
   },
-  lockedPrimaryBtn: {
+  lockedPrimaryBtnWrapper: {
     width: '100%',
     height: 48,
-    borderRadius: 12,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 10,
+    shadowColor: '#d4a843',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  lockedPrimaryBtnGradient: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginBottom: 12,
+    paddingHorizontal: 16,
   },
   lockedPrimaryBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#000',
+    fontSize: 14.5,
+    fontWeight: '800',
+    color: '#0A0E14',
+    letterSpacing: 0.2,
   },
   lockedSecondaryBtn: {
     width: '100%',
     height: 44,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1555,6 +1667,34 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   lockedSecondaryBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  lockedNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    maxWidth: 440,
+    paddingHorizontal: 4,
+    marginTop: 8,
+  },
+  lockedNavBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  lockedNavBtnText: {
     fontSize: 13,
     fontWeight: '600',
   },
