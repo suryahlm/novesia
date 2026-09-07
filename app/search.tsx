@@ -22,6 +22,7 @@ import NovelPreviewSheet from '../components/NovelPreviewSheet';
 import { useTheme } from '../lib/ThemeProvider';
 import { useLanguage } from '../lib/i18n';
 import { apiGet } from '../lib/apiClient';
+import { ErrorState } from '../components/ErrorState';
 
 const RECENT_SEARCHES_KEY = 'novesia_recent_searches';
 const MAX_RECENT_SEARCHES = 8;
@@ -71,6 +72,7 @@ export default function SearchScreen() {
   const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [previewNovel, setPreviewNovel] = useState<any | null>(null);
 
@@ -90,6 +92,7 @@ export default function SearchScreen() {
     }
 
     setLoading(true);
+    setIsError(false);
     try {
       const res = await apiGet<{ novels?: any[]; data?: any[] }>('/api/novels/search', {
         q: trimmed,
@@ -106,6 +109,7 @@ export default function SearchScreen() {
       }
     } catch (e) {
       console.error(e);
+      setIsError(true);
     }
     setLoading(false);
   }, []);
@@ -305,6 +309,13 @@ export default function SearchScreen() {
             columnGap={gridGap}
             rowGap={12}
           />
+        ) : isError && query.trim().length > 0 ? (
+          <View style={{ paddingTop: 40 }}>
+            <ErrorState
+              message={lang === 'en' ? 'Failed to search novels. Please check your internet connection.' : 'Gagal mencari novel. Periksa koneksi internet Anda.'}
+              onRetry={() => searchNovels(query)}
+            />
+          </View>
         ) : showEmpty ? (
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 10 }}>
             <Ionicons name="alert-circle-outline" size={42} color={colors.textMuted} />

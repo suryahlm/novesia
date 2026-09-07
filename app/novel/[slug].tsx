@@ -7,21 +7,24 @@ import {
   ActivityIndicator,
   Share,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { apiGet, apiPost } from '../../lib/apiClient';
+import { apiPost } from '../../lib/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../lib/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatViews, cleanChapterTitle } from '../../lib/utils';
 import { CustomDialog } from '../../components/CustomDialog';
+import { ErrorState } from '../../components/ErrorState';
 import { useTheme } from '../../lib/ThemeProvider';
 import { trackBookmarkAdded } from '../../lib/gamification';
 import { useFonts, Poppins_400Regular } from '@expo-google-fonts/poppins';
 import { requestTranslation } from '../../lib/translationRequestService';
+import { useNovelDetail, useNovelChapters } from '../../lib/useNovelsQuery';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -62,9 +65,31 @@ export default function NovelDetailScreen() {
   });
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const [novel, setNovel] = useState<Novel | null>(null);
-  const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: novelData,
+    isLoading: loadingNovel,
+    isError: isErrorNovel,
+    refetch: refetchNovel,
+  } = useNovelDetail(slug);
+
+  const novel = (novelData as unknown as Novel) || null;
+
+  const {
+    data: chaptersData,
+    isLoading: loadingChapters,
+    isError: isErrorChapters,
+    refetch: refetchChapters,
+  } = useNovelChapters(slug);
+
+  const chapters: Chapter[] = (chaptersData as any) || [];
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([refetchNovel(), refetchChapters()]);
+    setRefreshing(false);
+  }, [refetchNovel, refetchChapters]);
+
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [lastReadChapter, setLastReadChapter] = useState<number | null>(null);
   const [lastReadChapterId, setLastReadChapterId] = useState<string | null>(null);
@@ -82,10 +107,6 @@ export default function NovelDetailScreen() {
     showCancel?: boolean;
     onConfirm?: () => void;
   }>({ title: '', message: '' });
-
-  useEffect(() => {
-    fetchNovel();
-  }, [slug]);
 
   // Track Novel View (1 View per day per novel per device)
   useEffect(() => {
@@ -220,41 +241,44 @@ export default function NovelDetailScreen() {
     }, [novel])
   );
 
-  const fetchNovel = async () => {
-    try {
-      const novelData = await apiGet<Novel>(`/api/novels/${slug}`);
-
-      if (novelData && novelData.id) {
-        setNovel(novelData);
-        // Fetch chapters
-        const chapterRes = await apiGet<{ chapters?: any[]; data?: any[] }>(
-          `/api/chapters/${slug}`,
-          { limit: 2000 }
-        );
-        const chapterData = chapterRes.chapters || chapterRes.data || (Array.isArray(chapterRes) ? chapterRes : []);
-        setChapters(chapterData);
-      }
-    } catch (e) {
-      console.error('fetchNovel error:', e);
-    }
-    setLoading(false);
-  };
-
-  if (loading) {
+  if (loadingNovel && !novel) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <View style={{ width: '100%', paddingHorizontal: 16, marginBottom: 32 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '600' }}>{t.back}</Text>
+          </TouchableOpacity>
+        </View>
         <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.textSecondary, marginTop: 14, fontSize: 14 }}>
+          {lang === 'id' ? 'Memuat novel...' : 'Loading novel...'}
+        </Text>
       </View>
     );
   }
 
-  if (!novel) {
+  if (isErrorNovel || !novel) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <Text style={styles.errorText}>{t.novel_not_found}</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={[styles.backBtnText, { color: colors.primary }]}>← {t.back}</Text>
-        </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+        <View style={{ width: '100%', paddingHorizontal: 16 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '600' }}>{t.back}</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        >
+          <ErrorState
+            message={isErrorNovel ? 'Gagal memuat data novel. Periksa koneksi internet Anda.' : t.novel_not_found}
+            onRetry={() => {
+              refetchNovel();
+              refetchChapters();
+            }}
+          />
+        </ScrollView>
       </View>
     );
   }
@@ -290,7 +314,13 @@ export default function NovelDetailScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
+      >
         {/* ═══ 1. IMMERSIVE HERO WITH AMBIENT BACKDROP ═══ */}
         <View style={styles.heroContainer}>
           {novel.cover_url && (
@@ -567,7 +597,35 @@ export default function NovelDetailScreen() {
             )}
           </View>
 
-          {chapters.length === 0 ? (
+          {loadingChapters && chapters.length === 0 ? (
+            <View style={{ paddingVertical: 28, alignItems: 'center', gap: 10 }}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+                {lang === 'id' ? 'Memuat daftar bab...' : 'Loading chapters...'}
+              </Text>
+            </View>
+          ) : isErrorChapters && chapters.length === 0 ? (
+            <View style={{ paddingVertical: 24, alignItems: 'center', gap: 12 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
+                {lang === 'id' ? 'Gagal memuat daftar bab.' : 'Failed to load chapters.'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => refetchChapters()}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 16,
+                  backgroundColor: colors.surfaceElevated,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '600' }}>
+                  {lang === 'id' ? 'Coba Lagi' : 'Retry'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : chapters.length === 0 ? (
             <View style={styles.emptyBox}>
               <Text style={styles.emptyIcon}>📝</Text>
               <Text style={styles.emptyText}>{t.no_chapters}</Text>

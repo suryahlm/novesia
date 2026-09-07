@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TextInput,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   StyleSheet,
 } from 'react-native';
@@ -20,6 +21,7 @@ import { GradientBackground } from '../../../components/GradientBackground';
 import { GoldSurface } from '../../../components/GoldSurface';
 import { CustomDialog } from '../../../components/CustomDialog';
 import { useTheme } from '../../../lib/ThemeProvider';
+import { useLanguage } from '../../../lib/i18n';
 import {
   fetchThreadDetail,
   createForumPost,
@@ -33,6 +35,20 @@ export default function ThreadDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t, lang } = useLanguage();
+
+  const formatAuthorName = (name?: string | null) => {
+    if (
+      !name ||
+      name === 'Pembaca Novesia' ||
+      name === 'Novesia Reader' ||
+      name === 'Reader' ||
+      !name.trim()
+    ) {
+      return t.user_reader || (lang === 'en' ? 'Novesia Reader' : 'Pembaca Novesia');
+    }
+    return name;
+  };
 
   const [thread, setThread] = useState<ForumThread | null>(null);
   const [posts, setPosts] = useState<ForumPost[]>([]);
@@ -40,10 +56,33 @@ export default function ThreadDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+  const shouldScrollToEndRef = useRef(false);
 
   // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogMsg, setDialogMsg] = useState({ title: '', message: '' });
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 120);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -69,7 +108,11 @@ export default function ThreadDetailScreen() {
 
     setSubmitting(true);
     const authUser = useAuthStore.getState().user;
-    const userName = authUser?.name || authUser?.email?.split('@')[0] || 'Pembaca Novesia';
+    const userName =
+      authUser?.name ||
+      authUser?.email?.split('@')[0] ||
+      t.user_reader ||
+      (lang === 'en' ? 'Novesia Reader' : 'Pembaca Novesia');
 
     const post = await createForumPost({
       thread_id: thread.id,
@@ -82,12 +125,19 @@ export default function ThreadDetailScreen() {
     setSubmitting(false);
 
     if (post) {
+      shouldScrollToEndRef.current = true;
       setReplyContent('');
       setPosts((prev) => [...prev, post]);
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 50);
     } else {
       setDialogMsg({
-        title: 'Gagal Mengirim Balasan',
-        message: 'Tidak dapat mengirim balasan saat ini. Silakan coba lagi.',
+        title: lang === 'en' ? 'Failed to Send Reply' : 'Gagal Mengirim Balasan',
+        message:
+          lang === 'en'
+            ? 'Could not send reply at this time. Please try again.'
+            : 'Tidak dapat mengirim balasan saat ini. Silakan coba lagi.',
       });
       setDialogVisible(true);
     }
@@ -137,7 +187,7 @@ export default function ThreadDetailScreen() {
             style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary, flex: 1 }}
             numberOfLines={1}
           >
-            {thread?.title || 'Detail Diskusi'}
+            {thread?.title || (lang === 'en' ? 'Discussion Details' : 'Detail Diskusi')}
           </Text>
         </View>
 
@@ -147,12 +197,21 @@ export default function ThreadDetailScreen() {
           </View>
         ) : (
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{ flex: 1 }}
           >
             <FlatList
+              ref={flatListRef}
               data={posts}
               keyExtractor={(p) => p.id}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              onContentSizeChange={() => {
+                if (shouldScrollToEndRef.current) {
+                  shouldScrollToEndRef.current = false;
+                  flatListRef.current?.scrollToEnd({ animated: true });
+                }
+              }}
               contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 }}
               refreshControl={
                 <RefreshControl
@@ -206,7 +265,7 @@ export default function ThreadDetailScreen() {
                           <Text
                             style={{ fontSize: 13, fontWeight: '800', color: colors.textPrimary }}
                           >
-                            {thread.user_name}
+                            {formatAuthorName(thread.user_name)}
                           </Text>
                           {isThreadVip && (
                             <View
@@ -228,11 +287,14 @@ export default function ThreadDetailScreen() {
                           )}
                         </View>
                         <Text style={{ fontSize: 11, color: colors.textMuted }}>
-                          {new Date(thread.created_at).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
+                          {new Date(thread.created_at).toLocaleDateString(
+                            lang === 'en' ? 'en-US' : 'id-ID',
+                            {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            }
+                          )}
                         </Text>
                       </View>
                     </View>
@@ -272,7 +334,12 @@ export default function ThreadDetailScreen() {
                       }}
                     >
                       <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '700' }}>
-                        {posts.length} Balasan
+                        {posts.length}{' '}
+                        {lang === 'en'
+                          ? posts.length === 1
+                            ? 'Reply'
+                            : 'Replies'
+                          : 'Balasan'}
                       </Text>
                     </View>
                   </View>
@@ -320,13 +387,16 @@ export default function ThreadDetailScreen() {
                       <Text
                         style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}
                       >
-                        {item.user_name}
+                        {formatAuthorName(item.user_name)}
                       </Text>
                       <Text style={{ fontSize: 10.5, color: colors.textMuted, flex: 1 }}>
-                        {new Date(item.created_at).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                        })}
+                        {new Date(item.created_at).toLocaleDateString(
+                          lang === 'en' ? 'en-US' : 'id-ID',
+                          {
+                            day: 'numeric',
+                            month: 'short',
+                          }
+                        )}
                       </Text>
                     </View>
                     <Text
@@ -345,7 +415,9 @@ export default function ThreadDetailScreen() {
               ListEmptyComponent={
                 <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                   <Text style={{ fontSize: 12, color: colors.textMuted }}>
-                    Belum ada balasan. Jadilah yang pertama membalas!
+                    {lang === 'en'
+                      ? 'No replies yet. Be the first to reply!'
+                      : 'Belum ada balasan. Jadilah yang pertama membalas!'}
                   </Text>
                 </View>
               }
@@ -358,7 +430,7 @@ export default function ThreadDetailScreen() {
                 alignItems: 'center',
                 paddingHorizontal: 16,
                 paddingTop: 10,
-                paddingBottom: Math.max(10, insets.bottom + 8),
+                paddingBottom: keyboardVisible ? 10 : Math.max(10, insets.bottom + 8),
                 backgroundColor: colors.surface,
                 borderTopWidth: 1,
                 borderTopColor: colors.border,
@@ -378,7 +450,7 @@ export default function ThreadDetailScreen() {
                   color: colors.textPrimary,
                   maxHeight: 80,
                 }}
-                placeholder="Tulis balasan..."
+                placeholder={lang === 'en' ? 'Write a reply...' : 'Tulis balasan...'}
                 placeholderTextColor={colors.textMuted}
                 value={replyContent}
                 onChangeText={setReplyContent}

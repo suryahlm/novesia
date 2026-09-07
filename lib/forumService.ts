@@ -71,8 +71,7 @@ export async function fetchCategoryThreads(categorySlug: string): Promise<{
 }> {
   try {
     const data = await apiGet<{ category: ForumCategory; threads: ForumThread[] }>(
-      `/api/forum/threads`,
-      { categorySlug, limit: 100 }
+      `/api/forum/categories/${encodeURIComponent(categorySlug)}`
     );
     return {
       category: data.category || null,
@@ -159,3 +158,135 @@ export async function createForumPost(params: {
     return null;
   }
 }
+
+export const FORUM_CATEGORY_TRANSLATIONS: Record<
+  string,
+  { en: { name: string; description: string }; id: { name: string; description: string } }
+> = {
+  'diskusi-novel-umum': {
+    id: {
+      name: 'Diskusi Novel Umum',
+      description: 'Ruang diskusi seputar berbagai judul novel terjemahan di Novesia.',
+    },
+    en: {
+      name: 'General Novel Discussion',
+      description: 'Discussion space for translated novel titles on Novesia.',
+    },
+  },
+  'diskusi-umum': {
+    id: {
+      name: 'Diskusi Umum',
+      description: 'Ruang bebas untuk berdiskusi seputar novel, cerita, dan dunia kepenulisan.',
+    },
+    en: {
+      name: 'General Discussion',
+      description: 'Open space to discuss novels, stories, and the world of writing.',
+    },
+  },
+  'rekomendasi-novel': {
+    id: {
+      name: 'Rekomendasi Novel',
+      description: 'Bagikan dan temukan rekomendasi novel-novel terbaik dari pembaca lain.',
+    },
+    en: {
+      name: 'Novel Recommendations',
+      description: 'Share and discover the best novel recommendations from fellow readers.',
+    },
+  },
+  'rekomendasi-review': {
+    id: {
+      name: 'Rekomendasi & Review',
+      description: 'Bagikan rekomendasi novel terbaik dan ulasan favoritmu.',
+    },
+    en: {
+      name: 'Recommendations & Reviews',
+      description: 'Share top novel recommendations and your favorite reviews.',
+    },
+  },
+  'spoiler-dan-teori': {
+    id: {
+      name: 'Spoiler & Teori',
+      description: 'Bahas kelanjutan chapter dan teori cerita tanpa takut merusak kejutan.',
+    },
+    en: {
+      name: 'Spoilers & Theories',
+      description: 'Discuss upcoming chapters and story theories without spoiling the fun.',
+    },
+  },
+  'teori-spoiler': {
+    id: {
+      name: 'Teori & Spoiler',
+      description: 'Ruang bahas teori jalan cerita, plot twist, dan spoiler chapter novel.',
+    },
+    en: {
+      name: 'Theories & Spoilers',
+      description: 'Space to discuss storyline theories, plot twists, and novel chapter spoilers.',
+    },
+  },
+  'saran-dan-masukan': {
+    id: {
+      name: 'Saran & Masukan',
+      description: 'Kritik, saran, dan ide pengembangan untuk aplikasi dan web Novesia.',
+    },
+    en: {
+      name: 'Feedback & Suggestions',
+      description: 'Feedback, suggestions, and development ideas for Novesia app and web.',
+    },
+  },
+  'kritik-saran': {
+    id: {
+      name: 'Kritik & Saran',
+      description: 'Masukan untuk kualitas terjemahan, fitur aplikasi, atau request judul novel baru.',
+    },
+    en: {
+      name: 'Critiques & Suggestions',
+      description: 'Feedback on translation quality, app features, or new novel requests.',
+    },
+  },
+  'lounge-santai': {
+    id: {
+      name: 'Lounge Santai',
+      description: 'Ngobrol santai dan kenalan dengan sesama komunitas pembaca Novesia.',
+    },
+    en: {
+      name: 'Casual Lounge',
+      description: 'Casual chatter and mingling with the Novesia reader community.',
+    },
+  },
+};
+
+export function getLocalizedCategory(
+  category: ForumCategory | null | undefined,
+  lang: 'en' | 'id'
+): { name: string; description: string | null } {
+  if (!category) {
+    return {
+      name: lang === 'en' ? 'Forum Discussion' : 'Diskusi Forum',
+      description: null,
+    };
+  }
+
+  const translation = FORUM_CATEGORY_TRANSLATIONS[category.slug];
+  if (translation) {
+    return {
+      name: translation[lang]?.name || category.name,
+      description: translation[lang]?.description || category.description,
+    };
+  }
+
+  const entry = Object.values(FORUM_CATEGORY_TRANSLATIONS).find(
+    (t) => t.id.name === category.name || t.en.name === category.name
+  );
+  if (entry) {
+    return {
+      name: entry[lang]?.name || category.name,
+      description: entry[lang]?.description || category.description,
+    };
+  }
+
+  return {
+    name: category.name,
+    description: category.description,
+  };
+}
+

@@ -17,6 +17,7 @@ import { GoldSurface } from './GoldSurface';
 import { ShimmerText } from './ShimmerText';
 import { useTheme } from '../lib/ThemeProvider';
 import { signInWithEmail, signUpWithEmail } from '../lib/authService';
+import { useGoogleSignIn } from '../lib/useGoogleSignIn';
 
 export interface AuthModalProps {
   visible: boolean;
@@ -27,6 +28,7 @@ export interface AuthModalProps {
 
 export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' }: AuthModalProps) {
   const { colors } = useTheme();
+  const { signIn: signInGoogle, loading: googleLoading } = useGoogleSignIn();
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -34,6 +36,17 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleGoogleSignIn = async () => {
+    setErrorMsg(null);
+    const res = await signInGoogle();
+    if (res.success) {
+      if (onSuccess) onSuccess();
+      onClose();
+    } else if (res.error) {
+      setErrorMsg(res.error);
+    }
+  };
 
   const handleSubmit = async () => {
     setErrorMsg(null);
@@ -202,6 +215,40 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
           )}
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 6 }}>
+            {/* Tombol Lanjutkan dengan Google */}
+            <Pressable
+              onPress={handleGoogleSignIn}
+              disabled={googleLoading || loading}
+              style={({ pressed }) => [
+                styles.googleBtn,
+                {
+                  backgroundColor: colors.surfaceElevated,
+                  borderColor: colors.border,
+                  opacity: pressed || googleLoading ? 0.75 : 1,
+                },
+              ]}
+            >
+              {googleLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <View style={styles.googleBtnContent}>
+                  <Ionicons name="logo-google" size={17} color="#EA4335" />
+                  <Text style={[styles.googleBtnText, { color: colors.textPrimary }]}>
+                    Lanjutkan dengan Google
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
+            {/* Pemisah atau */}
+            <View style={styles.dividerRow}>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+              <Text style={[styles.dividerText, { color: colors.textMuted }]}>
+                atau dengan email
+              </Text>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            </View>
+
             {mode === 'signup' && (
               <View>
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nama Tampilan</Text>
@@ -214,7 +261,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
                       color: colors.textPrimary,
                     },
                   ]}
-                  placeholder="Mis: Surya Halim"
+                  placeholder="Mis: Pembaca Novel"
                   placeholderTextColor={colors.textMuted}
                   value={name}
                   onChangeText={setName}
@@ -392,5 +439,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 13.5,
+  },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 11,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  googleBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  googleBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    opacity: 0.7,
+  },
+  dividerText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });

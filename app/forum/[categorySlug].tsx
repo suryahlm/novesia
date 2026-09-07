@@ -22,94 +22,139 @@ import { ShimmerText } from '../../components/ShimmerText';
 import { GoldSurface } from '../../components/GoldSurface';
 import { CustomDialog } from '../../components/CustomDialog';
 import { useTheme } from '../../lib/ThemeProvider';
+import { useLanguage } from '../../lib/i18n';
 import {
   fetchCategoryThreads,
   createForumThread,
   ForumCategory,
   ForumThread,
+  getLocalizedCategory,
 } from '../../lib/forumService';
 import { useAuthStore } from '../../lib/useAuthStore';
 
 function ThreadCard({ thread, onPress }: { thread: ForumThread; onPress: () => void }) {
   const { colors } = useTheme();
+  const { t, lang } = useLanguage();
   const isVip = thread.user_role === 'VIP';
+
+  const formatAuthorName = (name?: string | null) => {
+    if (
+      !name ||
+      name === 'Pembaca Novesia' ||
+      name === 'Novesia Reader' ||
+      name === 'Reader' ||
+      !name.trim()
+    ) {
+      return t.user_reader || (lang === 'en' ? 'Novesia Reader' : 'Pembaca Novesia');
+    }
+    return name;
+  };
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        borderRadius: 14,
+        borderRadius: 12,
         backgroundColor: pressed ? colors.surfaceElevated : colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
-        padding: 14,
+        padding: 12,
         marginHorizontal: 16,
-        marginBottom: 10,
+        marginBottom: 8,
       })}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 7 }}>
         <View
           style={{
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            backgroundColor: isVip ? colors.primaryMuted : colors.surfaceElevated,
+            width: 26,
+            height: 26,
+            borderRadius: 13,
+            backgroundColor: isVip ? (colors.primaryMuted || colors.primary + '20') : colors.surfaceElevated,
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 1,
             borderColor: isVip ? colors.primary : colors.border,
           }}
         >
-          <Ionicons name="person" size={14} color={isVip ? colors.primary : colors.textMuted} />
+          <Ionicons name="person" size={13} color={isVip ? colors.primary : colors.textMuted} />
         </View>
 
         <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, flex: 1 }}>
-          {thread.user_name}
+          {formatAuthorName(thread.user_name)}
         </Text>
 
         {isVip && (
           <View
             style={{
-              paddingHorizontal: 6,
-              paddingVertical: 2,
+              paddingHorizontal: 5,
+              paddingVertical: 1.5,
               borderRadius: 4,
-              backgroundColor: colors.primaryMuted,
+              backgroundColor: colors.primaryMuted || colors.primary + '20',
               borderWidth: 1,
-              borderColor: colors.primary + '44',
+              borderColor: colors.primary + '40',
             }}
           >
-            <Text style={{ fontSize: 9.5, fontWeight: '800', color: colors.primary }}>VIP</Text>
+            <Text style={{ fontSize: 9, fontWeight: '800', color: colors.primary }}>VIP</Text>
           </View>
         )}
 
-        <Text style={{ fontSize: 11, color: colors.textMuted }}>
-          {new Date(thread.created_at).toLocaleDateString('id-ID', {
+        <Text style={{ fontSize: 10.5, color: colors.textMuted }}>
+          {new Date(thread.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'id-ID', {
             day: 'numeric',
             month: 'short',
           })}
         </Text>
       </View>
 
-      <Text style={{ fontSize: 14.5, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 }}>
+      <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 3 }}>
         {thread.title}
       </Text>
 
-      <Text style={{ fontSize: 12.5, color: colors.textSecondary, lineHeight: 18 }} numberOfLines={2}>
+      <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 17 }} numberOfLines={2}>
         {thread.content}
       </Text>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 10 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Ionicons name="chatbubble-outline" size={13} color={colors.textMuted} />
-          <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '600' }}>
-            {thread.post_count} balasan
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            paddingHorizontal: 7,
+            paddingVertical: 2.5,
+            borderRadius: 5,
+            backgroundColor: colors.surfaceElevated,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
+          <Ionicons name="chatbubble-outline" size={11} color={colors.primary} />
+          <Text style={{ fontSize: 10.5, color: colors.textPrimary, fontWeight: '600' }}>
+            {thread.post_count}{' '}
+            {lang === 'en'
+              ? thread.post_count === 1
+                ? 'reply'
+                : 'replies'
+              : 'balasan'}
           </Text>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Ionicons name="eye-outline" size={13} color={colors.textMuted} />
-          <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '600' }}>
-            {thread.view_count} dilihat
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            paddingHorizontal: 7,
+            paddingVertical: 2.5,
+            borderRadius: 5,
+            backgroundColor: colors.surfaceElevated,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
+          <Ionicons name="eye-outline" size={11} color={colors.textMuted} />
+          <Text style={{ fontSize: 10.5, color: colors.textMuted, fontWeight: '600' }}>
+            {thread.view_count}
           </Text>
         </View>
       </View>
@@ -122,8 +167,10 @@ export default function CategoryThreadsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t, lang } = useLanguage();
 
   const [category, setCategory] = useState<ForumCategory | null>(null);
+  const localizedCategory = getLocalizedCategory(category, lang);
   const [threads, setThreads] = useState<ForumThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -161,8 +208,11 @@ export default function CategoryThreadsScreen() {
   const handleCreateThread = async () => {
     if (!newTitle.trim() || !newContent.trim()) {
       setDialogMsg({
-        title: 'Form Belum Lengkap',
-        message: 'Mohon isi judul dan isi diskusi sebelum menerbitkan thread.',
+        title: lang === 'en' ? 'Incomplete Form' : 'Form Belum Lengkap',
+        message:
+          lang === 'en'
+            ? 'Please fill in both title and content before posting.'
+            : 'Mohon isi judul dan isi diskusi sebelum menerbitkan thread.',
       });
       setDialogVisible(true);
       return;
@@ -172,7 +222,11 @@ export default function CategoryThreadsScreen() {
     setSubmitting(true);
 
     const authUser = useAuthStore.getState().user;
-    const userName = authUser?.name || authUser?.email?.split('@')[0] || 'Pembaca Novesia';
+    const userName =
+      authUser?.name ||
+      authUser?.email?.split('@')[0] ||
+      t.user_reader ||
+      (lang === 'en' ? 'Novesia Reader' : 'Pembaca Novesia');
 
     const created = await createForumThread({
       category_id: category.id,
@@ -192,8 +246,11 @@ export default function CategoryThreadsScreen() {
       await loadData();
     } else {
       setDialogMsg({
-        title: 'Gagal Membuat Thread',
-        message: 'Terjadi kesalahan saat menerbitkan diskusi baru. Silakan coba lagi.',
+        title: lang === 'en' ? 'Failed to Create Thread' : 'Gagal Membuat Thread',
+        message:
+          lang === 'en'
+            ? 'An error occurred while publishing the new discussion. Please try again.'
+            : 'Terjadi kesalahan saat menerbitkan diskusi baru. Silakan coba lagi.',
       });
       setDialogVisible(true);
     }
@@ -243,29 +300,33 @@ export default function CategoryThreadsScreen() {
               style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary }}
               numberOfLines={1}
             >
-              {category?.name || 'Diskusi Forum'}
+              {localizedCategory.name}
             </Text>
-            {category?.description ? (
+            {localizedCategory.description ? (
               <Text style={{ fontSize: 11, color: colors.textMuted }} numberOfLines={1}>
-                {category.description}
+                {localizedCategory.description}
               </Text>
             ) : null}
           </View>
 
-          {/* Top Header Compose Button (Komiku Pattern) */}
-          <Pressable onPress={() => setModalVisible(true)} hitSlop={8}>
-            <GoldSurface
-              shimmer
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="add" size={20} color={colors.textOnPrimary} />
-            </GoldSurface>
+          {/* Top Header Compose Button */}
+          <Pressable
+            onPress={() => setModalVisible(true)}
+            hitSlop={8}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              backgroundColor: pressed ? colors.primary + 'D9' : colors.primary,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
+            })}
+          >
+            <Ionicons name="add" size={16} color={colors.textOnPrimary} />
+            <Text style={{ fontSize: 11.5, fontWeight: '700', color: colors.textOnPrimary }}>
+              {lang === 'en' ? 'Discussion' : 'Diskusi'}
+            </Text>
           </Pressable>
         </View>
 
@@ -308,7 +369,7 @@ export default function CategoryThreadsScreen() {
                   <Ionicons name="chatbubbles-outline" size={26} color={colors.primary} />
                 </View>
                 <Text style={{ fontSize: 15, fontWeight: '800', color: colors.textPrimary }}>
-                  Belum Ada Diskusi
+                  {lang === 'en' ? 'No Discussions Yet' : 'Belum Ada Diskusi'}
                 </Text>
                 <Text
                   style={{
@@ -318,7 +379,9 @@ export default function CategoryThreadsScreen() {
                     marginTop: 4,
                   }}
                 >
-                  Jadilah orang pertama yang memulai topik obrolan di kategori ini!
+                  {lang === 'en'
+                    ? 'Be the first to start a conversation in this category!'
+                    : 'Jadilah orang pertama yang memulai topik obrolan di kategori ini!'}
                 </Text>
               </View>
             }
@@ -330,7 +393,7 @@ export default function CategoryThreadsScreen() {
       {/* New Thread Modal */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}
         >
           <View
@@ -354,7 +417,7 @@ export default function CategoryThreadsScreen() {
               }}
             >
               <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>
-                Buat Diskusi Baru
+                {lang === 'en' ? 'Create New Discussion' : 'Buat Diskusi Baru'}
               </Text>
               <Pressable onPress={() => setModalVisible(false)} hitSlop={8}>
                 <Ionicons name="close" size={22} color={colors.textMuted} />
@@ -363,7 +426,7 @@ export default function CategoryThreadsScreen() {
 
             {/* Input Judul */}
             <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 6 }}>
-              Judul Topik
+              {lang === 'en' ? 'Topic Title' : 'Judul Topik'}
             </Text>
             <TextInput
               style={{
@@ -377,7 +440,7 @@ export default function CategoryThreadsScreen() {
                 color: colors.textPrimary,
                 marginBottom: 14,
               }}
-              placeholder="Mis: Teori plot chapter terbaru..."
+              placeholder={lang === 'en' ? 'e.g. Theory about latest chapter...' : 'Mis: Teori plot chapter terbaru...'}
               placeholderTextColor={colors.textMuted}
               value={newTitle}
               onChangeText={setNewTitle}
@@ -385,7 +448,7 @@ export default function CategoryThreadsScreen() {
 
             {/* Input Isi */}
             <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 6 }}>
-              Isi Diskusi
+              {lang === 'en' ? 'Discussion Content' : 'Isi Diskusi'}
             </Text>
             <TextInput
               style={{
@@ -401,7 +464,7 @@ export default function CategoryThreadsScreen() {
                 textAlignVertical: 'top',
                 marginBottom: 20,
               }}
-              placeholder="Tuliskan pendapat atau topik obrolan Anda..."
+              placeholder={lang === 'en' ? 'Write your thoughts or discussion topic...' : 'Tuliskan pendapat atau topik obrolan Anda...'}
               placeholderTextColor={colors.textMuted}
               value={newContent}
               onChangeText={setNewContent}
@@ -426,7 +489,7 @@ export default function CategoryThreadsScreen() {
                   <ActivityIndicator size="small" color={colors.textOnPrimary} />
                 ) : (
                   <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textOnPrimary }}>
-                    Terbitkan Diskusi
+                    {lang === 'en' ? 'Publish Discussion' : 'Terbitkan Diskusi'}
                   </Text>
                 )}
               </GoldSurface>

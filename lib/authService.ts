@@ -70,6 +70,8 @@ export async function signInWithEmail(
     const data = await apiPost<AuthResponse>('/api/auth/login', {
       email: trimmedEmail,
       password,
+      platform: 'app',
+      os: Platform.OS,
     });
 
     if (data.user.banned) {
@@ -99,8 +101,16 @@ export async function signInWithEmail(
 // ─── Sign Out ─────────────────────────────────────────────────────────────────
 
 export async function signOutUser(): Promise<void> {
-  // Tidak perlu hit API — cukup clear token di store
+  // Clear token dan session di auth store
   useAuthStore.getState().logout();
+
+  // Reset sesi Google Sign-In agar jika login lagi muncul pilihan akun Google
+  try {
+    const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
+    await GoogleSignin.signOut();
+  } catch {
+    // Abaikan jika bukan login Google atau di lingkungan tanpa Google Play Services
+  }
 }
 
 // ─── Update Nama ──────────────────────────────────────────────────────────────
@@ -132,24 +142,34 @@ export async function uploadUserAvatar(asset: {
   uri: string;
   mimeType?: string | null;
   fileName?: string | null;
+  base64?: string | null;
 }): Promise<{ avatarUrl: string | null; error: string | null }> {
   try {
-    const ext = asset.mimeType?.split('/')[1] || 'jpg';
+    let result: { avatarUrl: string };
 
-    const formData = new FormData();
-    formData.append('avatar', {
-      uri: asset.uri,
-      name: asset.fileName || `avatar.${ext}`,
-      type: asset.mimeType || 'image/jpeg',
-    } as any);
+    if (asset.base64) {
+      // Mengirim via JSON base64 — 100% stabil di Android tanpa isu multipart boundary
+      result = await apiPost<{ avatarUrl: string }>('/api/me/avatar', {
+        base64: asset.base64,
+        mimeType: asset.mimeType || 'image/jpeg',
+      });
+    } else {
+      const ext = asset.mimeType?.split('/')[1] || 'jpg';
+      const formData = new FormData();
+      formData.append('avatar', {
+        uri: asset.uri,
+        name: asset.fileName || `avatar.${ext}`,
+        type: asset.mimeType || 'image/jpeg',
+      } as any);
 
-    const result = await apiPostForm<{ avatarUrl: string }>('/api/me/avatar', formData);
+      result = await apiPostForm<{ avatarUrl: string }>('/api/me/avatar', formData);
+    }
+
     const avatarUrl = result.avatarUrl || asset.uri;
-
     useAuthStore.getState().updateUser({ avatarUrl });
     return { avatarUrl, error: null };
   } catch (err: any) {
-    // Fallback: gunakan local URI
+    console.warn('Avatar server upload failed, using local URI fallback:', err?.message);
     useAuthStore.getState().updateUser({ avatarUrl: asset.uri });
     return { avatarUrl: asset.uri, error: null };
   }

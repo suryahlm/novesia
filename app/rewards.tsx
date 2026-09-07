@@ -1,37 +1,35 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   Platform,
   StatusBar,
   Clipboard,
   Dimensions,
   TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { useLanguage } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeProvider';
+import { GradientBackground } from '../components/GradientBackground';
 import { getAppConfig, AppConfig } from '../lib/appConfig';
 
 const { width } = Dimensions.get('window');
-const STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 40) : 0;
-const GOLD = '#d4a843';
-const GOLD_DIM = 'rgba(212,168,67,0.15)';
-const DARK_BG = '#0a0a0f';
-const CARD_BG = '#111118';
-const BORDER = '#1e1e2e';
 
 const DEFAULT_REWARDS = [10, 20, 30, 40, 50, 60, 70];
 const CHECKIN_KEY = 'novesia_daily_checkin';
 const COINS_KEY = 'novesia_coins';
 
 interface CheckinData {
-  lastDate: string; // ISO date string
-  streak: number;   // 0-6 (day index in the week)
+  lastDate: string;
+  streak: number;
   weekStart: string;
 }
 
@@ -49,6 +47,8 @@ function getWeekStart() {
 export default function RewardsScreen() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { colors, isDark } = useTheme();
+
   const [coins, setCoins] = useState(0);
   const [checkin, setCheckin] = useState<CheckinData>({ lastDate: '', streak: 0, weekStart: '' });
   const [checkedToday, setCheckedToday] = useState(false);
@@ -64,7 +64,7 @@ export default function RewardsScreen() {
   const [adCooldownEnd, setAdCooldownEnd] = useState(0);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const MAX_AD_WATCHES = 3;
-  const COOLDOWN_MS = 40 * 60 * 1000; // 40 minutes
+  const COOLDOWN_MS = 40 * 60 * 1000;
   const AD_WATCH_KEY = 'novesia_ad_watches';
 
   const DAILY_REWARDS = appConfig?.daily_checkin_rewards || DEFAULT_REWARDS;
@@ -76,7 +76,6 @@ export default function RewardsScreen() {
     getAppConfig().then(setAppConfig);
   }, []);
 
-  // Countdown timer
   useEffect(() => {
     if (adCooldownEnd <= 0) return;
     const interval = setInterval(() => {
@@ -110,7 +109,6 @@ export default function RewardsScreen() {
         const data: CheckinData = JSON.parse(storedCheckin);
         const currentWeek = getWeekStart();
 
-        // Reset if new week
         if (data.weekStart !== currentWeek) {
           const resetData = { lastDate: '', streak: 0, weekStart: currentWeek };
           setCheckin(resetData);
@@ -125,7 +123,6 @@ export default function RewardsScreen() {
         await AsyncStorage.setItem(CHECKIN_KEY, JSON.stringify(initData));
       }
 
-      // Generate referral code if not exists
       if (storedRef) {
         setReferralCode(storedRef);
       } else {
@@ -179,13 +176,11 @@ export default function RewardsScreen() {
     const code = friendCode.trim().toUpperCase();
     if (!code || code.length < 5) return;
 
-    // Cannot claim own code
     if (code === referralCode) {
       showToast('❌ ' + t.referral_own_code);
       return;
     }
 
-    // Cannot claim twice
     if (alreadyClaimed) {
       showToast('❌ ' + t.referral_already_claimed);
       return;
@@ -205,7 +200,6 @@ export default function RewardsScreen() {
     if (cooldownRemaining > 0) return;
     if (adWatchCount >= MAX_AD_WATCHES) return;
 
-    // TODO: Show actual rewarded ad here
     const reward = adReward;
     const newCoins = coins + reward;
     const newCount = adWatchCount + 1;
@@ -215,7 +209,6 @@ export default function RewardsScreen() {
     await AsyncStorage.setItem(COINS_KEY, newCoins.toString());
 
     if (newCount >= MAX_AD_WATCHES) {
-      // Start cooldown
       const cooldownEnd = Date.now() + COOLDOWN_MS;
       setAdCooldownEnd(cooldownEnd);
       setCooldownRemaining(COOLDOWN_MS);
@@ -237,7 +230,6 @@ export default function RewardsScreen() {
           setAdCooldownEnd(cooldownEnd);
           setCooldownRemaining(cooldownEnd - Date.now());
         } else if (cooldownEnd && cooldownEnd <= Date.now()) {
-          // Cooldown expired — reset
           setAdWatchCount(0);
           await AsyncStorage.setItem(AD_WATCH_KEY, JSON.stringify({ count: 0, cooldownEnd: 0 }));
         } else {
@@ -254,264 +246,574 @@ export default function RewardsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={DARK_BG} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <GradientBackground />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Toast */}
       {toast && (
-        <View style={styles.toast}>
-          <Text style={styles.toastText}>{toast}</Text>
+        <View style={[styles.toast, { backgroundColor: colors.surfaceElevated, borderColor: colors.primary }]}>
+          <Text style={[styles.toastText, { color: colors.textPrimary }]}>{toast}</Text>
         </View>
       )}
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#e2e8f0" />
-        </TouchableOpacity>
-        <View style={styles.headerTitleRow}>
-          <Text style={{ fontSize: 22 }}>🎁</Text>
-          <Text style={styles.headerTitle}>{t.rewards}</Text>
-        </View>
-        <View style={styles.coinsBadge}>
-          <Text style={{ fontSize: 14 }}>🪙</Text>
-          <Text style={styles.coinsText}>{coins.toLocaleString()}</Text>
-        </View>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
-        {/* ═══ DAILY CHECK-IN ═══ */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={{ fontSize: 18 }}>📅</Text>
-            <Text style={styles.cardTitle}>{t.daily_checkin}</Text>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        {/* Header */}
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Kembali"
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          </Pressable>
+          <View style={styles.headerTitleRow}>
+            <Text style={{ fontSize: 20 }}>🎁</Text>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t.rewards}</Text>
           </View>
-          <Text style={styles.cardSubtitle}>
-            {t.checkin_week}: {checkin.streak}/7 {t.checkin_days}
-          </Text>
+          <View
+            style={[
+              styles.coinsBadge,
+              {
+                backgroundColor: colors.primaryMuted || colors.primary + '18',
+                borderColor: colors.primary + '40',
+              },
+            ]}
+          >
+            <Text style={{ fontSize: 13 }}>🪙</Text>
+            <Text style={[styles.coinsText, { color: colors.primary }]}>
+              {coins.toLocaleString()}
+            </Text>
+          </View>
+        </View>
 
-          {/* 7-day grid */}
-          <View style={styles.dayGrid}>
-            {DAILY_REWARDS.map((reward, i) => {
-              const isDone = i < checkin.streak;
-              const isToday = i === checkin.streak && !checkedToday;
-              return (
-                <View key={i} style={styles.dayItem}>
-                  <View style={[
-                    styles.dayCircle,
-                    isDone && styles.dayCircleDone,
-                    isToday && styles.dayCircleToday,
-                  ]}>
-                    {isDone ? (
-                      <Ionicons name="checkmark-circle" size={28} color="#22c55e" />
-                    ) : (
-                      <Text style={[styles.dayReward, isDone && { color: '#22c55e' }]}>
-                        🪙{reward}
-                      </Text>
-                    )}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* DAILY CHECK-IN */}
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={{ fontSize: 18 }}>📅</Text>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+                {t.daily_checkin}
+              </Text>
+            </View>
+            <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
+              {t.checkin_week}: {checkin.streak}/7 {t.checkin_days}
+            </Text>
+
+            {/* 7-day grid */}
+            <View style={styles.dayGrid}>
+              {DAILY_REWARDS.map((reward, i) => {
+                const isDone = i < checkin.streak;
+                const isToday = i === checkin.streak && !checkedToday;
+                return (
+                  <View key={i} style={styles.dayItem}>
+                    <View
+                      style={[
+                        styles.dayCircle,
+                        {
+                          backgroundColor: colors.surfaceElevated,
+                          borderColor: colors.border,
+                        },
+                        isDone && {
+                          borderColor: colors.primary,
+                          backgroundColor: colors.primaryMuted || colors.primary + '18',
+                        },
+                        isToday && {
+                          borderColor: colors.primary,
+                          borderWidth: 2,
+                        },
+                      ]}
+                    >
+                      {isDone ? (
+                        <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
+                      ) : (
+                        <Text
+                          style={[
+                            styles.dayReward,
+                            { color: isToday ? colors.primary : colors.textMuted },
+                          ]}
+                        >
+                          +{reward}
+                        </Text>
+                      )}
+                    </View>
+                    <Text style={[styles.dayLabel, { color: colors.textMuted }]}>
+                      {t.day} {i + 1}
+                    </Text>
                   </View>
-                  <Text style={styles.dayLabel}>{t.day} {i + 1}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Check-in button */}
-          {checkedToday ? (
-            <View style={styles.checkinDone}>
-              <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
-              <Text style={styles.checkinDoneText}>{t.checkin_done}</Text>
+                );
+              })}
             </View>
-          ) : (
-            <TouchableOpacity style={styles.checkinBtn} onPress={handleCheckin}>
-              <Text style={styles.checkinBtnText}>{t.checkin_btn}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
 
-        {/* ═══ REFERRAL CODE ═══ */}
-        <View style={styles.card}>
-          <View style={styles.refRow}>
-            <Ionicons name="people" size={20} color={GOLD} />
-            <Text style={styles.cardTitleSmall}>{t.referral_code}</Text>
-            <View style={styles.refCodeBox}>
-              <Text style={styles.refCodeText}>{referralCode}</Text>
-            </View>
-            <TouchableOpacity onPress={handleCopy} style={styles.copyBtn}>
-              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={copied ? '#22c55e' : '#94a3b8'} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Friend's referral */}
-        <View style={styles.card}>
-          <View style={styles.refRow}>
-            <Ionicons name="gift" size={20} color={GOLD} />
-            <TextInput
-              style={styles.refInputField}
-              value={friendCode}
-              onChangeText={setFriendCode}
-              placeholder={t.referral_friend_code}
-              placeholderTextColor="#475569"
-              autoCapitalize="characters"
-              maxLength={10}
-            />
-            <TouchableOpacity
-              style={[styles.claimBtn, !friendCode.trim() && { opacity: 0.4 }]}
-              onPress={handleClaimReferral}
-              disabled={!friendCode.trim()}
-            >
-              <Text style={styles.claimBtnText}>{t.referral_claim}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ═══ WATCH ADS ═══ */}
-        <View style={styles.card}>
-          <View style={styles.refRow}>
-            <Ionicons name="videocam" size={20} color={GOLD} />
-            <Text style={styles.cardTitleSmall}>{t.watch_ads}</Text>
-            <View style={styles.adBadges}>
-              {Array.from({ length: MAX_AD_WATCHES }).map((_, i) => (
-                <View key={i} style={[styles.adBadge, i < adWatchCount && { backgroundColor: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.3)', borderWidth: 1 }]}>
-                  <Text style={[styles.adBadgeText, i < adWatchCount && { color: '#22c55e' }]}>+{adReward}</Text>
-                </View>
-              ))}
-            </View>
-            {cooldownRemaining > 0 ? (
-              <View style={styles.cooldownBadge}>
-                <Ionicons name="time-outline" size={14} color="#f59e0b" />
-                <Text style={styles.cooldownBadgeText}>{formatCountdown(cooldownRemaining)}</Text>
+            {/* Check-in button */}
+            {checkedToday ? (
+              <View
+                style={[
+                  styles.checkinDone,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
+                <Text style={[styles.checkinDoneText, { color: colors.primary }]}>
+                  {t.checkin_done}
+                </Text>
               </View>
             ) : (
-              <TouchableOpacity
-                style={[styles.adRewardBtn, adWatchCount >= MAX_AD_WATCHES && { opacity: 0.4 }]}
-                onPress={handleWatchAd}
-                disabled={adWatchCount >= MAX_AD_WATCHES}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.checkinBtn,
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: pressed ? 0.88 : 1,
+                  },
+                ]}
+                onPress={handleCheckin}
+                accessibilityRole="button"
+                accessibilityLabel="Klaim reward harian"
               >
-                <Text style={styles.adRewardText}>+{adReward}</Text>
-                <Text style={{ fontSize: 12 }}>🪙</Text>
-              </TouchableOpacity>
+                <Text style={[styles.checkinBtnText, { color: colors.textOnPrimary }]}>
+                  {t.checkin_btn}
+                </Text>
+              </Pressable>
             )}
           </View>
-        </View>
 
-        {/* ═══ VIP HINT ═══ */}
-        <View style={[styles.card, { borderColor: 'rgba(212,168,67,0.3)', backgroundColor: 'rgba(212,168,67,0.06)' }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Text style={{ fontSize: 28 }}>💎</Text>
-            <Text style={styles.vipText}>{t.rewards_vip_hint}</Text>
+          {/* REFERRAL CODE */}
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.refRow}>
+              <Ionicons name="people" size={18} color={colors.primary} />
+              <Text style={[styles.cardTitleSmall, { color: colors.textPrimary }]}>
+                {t.referral_code}
+              </Text>
+              <View
+                style={[
+                  styles.refCodeBox,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.refCodeText, { color: colors.primary }]}>
+                  {referralCode}
+                </Text>
+              </View>
+              <Pressable
+                onPress={handleCopy}
+                style={({ pressed }) => [styles.copyBtn, { opacity: pressed ? 0.7 : 1 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Salin kode referral"
+              >
+                <Ionicons
+                  name={copied ? 'checkmark' : 'copy-outline'}
+                  size={18}
+                  color={copied ? colors.primary : colors.textMuted}
+                />
+              </Pressable>
+            </View>
           </View>
-        </View>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          {/* Friend's referral */}
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.refRow}>
+              <Ionicons name="gift" size={18} color={colors.primary} />
+              <TextInput
+                style={[
+                  styles.refInputField,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                  },
+                ]}
+                value={friendCode}
+                onChangeText={setFriendCode}
+                placeholder={t.referral_friend_code}
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="characters"
+                maxLength={10}
+              />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.claimBtn,
+                  {
+                    backgroundColor: friendCode.trim() ? colors.primary : colors.surfaceElevated,
+                    borderColor: colors.border,
+                    opacity: !friendCode.trim() ? 0.5 : pressed ? 0.8 : 1,
+                  },
+                ]}
+                onPress={handleClaimReferral}
+                disabled={!friendCode.trim()}
+                accessibilityRole="button"
+                accessibilityLabel="Klaim bonus referral teman"
+              >
+                <Text
+                  style={[
+                    styles.claimBtnText,
+                    {
+                      color: friendCode.trim() ? colors.textOnPrimary : colors.textMuted,
+                    },
+                  ]}
+                >
+                  {t.referral_claim}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* WATCH ADS */}
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.refRow}>
+              <Ionicons name="videocam" size={18} color={colors.primary} />
+              <Text style={[styles.cardTitleSmall, { color: colors.textPrimary }]}>
+                {t.watch_ads}
+              </Text>
+              <View style={styles.adBadges}>
+                {Array.from({ length: MAX_AD_WATCHES }).map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.adBadge,
+                      {
+                        backgroundColor: colors.surfaceElevated,
+                        borderColor: colors.border,
+                      },
+                      i < adWatchCount && {
+                        backgroundColor: colors.primaryMuted || colors.primary + '18',
+                        borderColor: colors.primary + '40',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.adBadgeText,
+                        {
+                          color: i < adWatchCount ? colors.primary : colors.textMuted,
+                        },
+                      ]}
+                    >
+                      +{adReward}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              {cooldownRemaining > 0 ? (
+                <View
+                  style={[
+                    styles.cooldownBadge,
+                    {
+                      backgroundColor: colors.surfaceElevated,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+                  <Text style={[styles.cooldownBadgeText, { color: colors.textMuted }]}>
+                    {formatCountdown(cooldownRemaining)}
+                  </Text>
+                </View>
+              ) : (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.adRewardBtn,
+                    {
+                      backgroundColor: colors.primary,
+                      opacity: adWatchCount >= MAX_AD_WATCHES ? 0.4 : pressed ? 0.85 : 1,
+                    },
+                  ]}
+                  onPress={handleWatchAd}
+                  disabled={adWatchCount >= MAX_AD_WATCHES}
+                  accessibilityRole="button"
+                  accessibilityLabel="Tonton iklan dan klaim koin"
+                >
+                  <Text style={[styles.adRewardText, { color: colors.textOnPrimary }]}>
+                    +{adReward}
+                  </Text>
+                  <Text style={{ fontSize: 11 }}>🪙</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+
+          {/* VIP HINT */}
+          <View
+            style={[
+              styles.card,
+              {
+                borderColor: colors.primary + '40',
+                backgroundColor: colors.primaryMuted || colors.primary + '12',
+              },
+            ]}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ fontSize: 24 }}>💎</Text>
+              <Text style={[styles.vipText, { color: colors.textPrimary }]}>
+                {t.rewards_vip_hint}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: DARK_BG },
-
+  container: {
+    flex: 1,
+  },
   toast: {
-    position: 'absolute', top: STATUSBAR_HEIGHT + 60, alignSelf: 'center', zIndex: 50,
-    backgroundColor: 'rgba(34,197,94,0.9)', paddingHorizontal: 20, paddingVertical: 10,
+    position: 'absolute',
+    top: 50,
+    alignSelf: 'center',
+    zIndex: 999,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 20,
+    borderWidth: 1,
   },
-  toastText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-
+  toastText: {
+    fontWeight: '700',
+    fontSize: 13,
+  },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingTop: STATUSBAR_HEIGHT + 12, paddingBottom: 16, paddingHorizontal: 16,
-    borderBottomWidth: 1, borderBottomColor: BORDER,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
   },
-  backBtn: { padding: 8 },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginLeft: 8 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#e2e8f0' },
+  backBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    marginLeft: 6,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
   coinsBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: GOLD_DIM, paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(212,168,67,0.3)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
   },
-  coinsText: { fontSize: 15, fontWeight: '800', color: GOLD },
-
-  scrollContent: { padding: 16 },
-
+  coinsText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  scrollContent: {
+    padding: 16,
+    gap: 12,
+  },
   card: {
-    backgroundColor: CARD_BG, borderRadius: 16, padding: 14,
-    marginBottom: 10, borderWidth: 1, borderColor: BORDER,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  cardTitle: { fontSize: 18, fontWeight: '800', color: '#e2e8f0' },
-  cardTitleSmall: { fontSize: 15, fontWeight: '700', color: '#cbd5e1', flex: 1 },
-  cardSubtitle: { fontSize: 12, color: '#64748b', marginBottom: 16 },
-
-  // Daily check-in grid
-  dayGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  dayItem: { alignItems: 'center', width: (width - 68) / 7 },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  cardTitleSmall: {
+    fontSize: 14,
+    fontWeight: '700',
+    flex: 1,
+  },
+  cardSubtitle: {
+    fontSize: 12,
+    marginBottom: 14,
+  },
+  dayGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  dayItem: {
+    alignItems: 'center',
+    width: (width - 64) / 7,
+  },
   dayCircle: {
-    width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#1e1e2e',
-    justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  dayCircleDone: { borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)' },
-  dayCircleToday: { borderColor: GOLD, borderWidth: 2 },
-  dayReward: { fontSize: 9, fontWeight: '700', color: '#64748b' },
-  dayLabel: { fontSize: 9, color: '#475569', marginTop: 4, fontWeight: '600' },
-
+  dayReward: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  dayLabel: {
+    fontSize: 10,
+    marginTop: 4,
+    fontWeight: '600',
+  },
   checkinDone: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: 'rgba(34,197,94,0.08)', borderRadius: 14, paddingVertical: 14,
-    borderWidth: 1, borderColor: 'rgba(34,197,94,0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
   },
-  checkinDoneText: { fontSize: 14, fontWeight: '700', color: '#22c55e' },
-
+  checkinDoneText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
   checkinBtn: {
-    backgroundColor: GOLD, borderRadius: 14, paddingVertical: 14, alignItems: 'center',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
   },
-  checkinBtnText: { fontSize: 15, fontWeight: '800', color: '#0a0a0f' },
-
-  // Referral
-  refRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  checkinBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  refRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   refCodeBox: {
-    backgroundColor: 'rgba(212,168,67,0.08)', paddingHorizontal: 16, paddingVertical: 10,
-    borderRadius: 10, borderWidth: 1, borderColor: 'rgba(212,168,67,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  refCodeText: { fontSize: 16, fontWeight: '900', color: GOLD, letterSpacing: 2 },
-  copyBtn: { padding: 8 },
-
+  refCodeText: {
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  copyBtn: {
+    padding: 6,
+  },
   refInputField: {
-    flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: BORDER,
-    fontSize: 13, color: '#e2e8f0', fontWeight: '700', letterSpacing: 1,
+    flex: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
-
   claimBtn: {
-    backgroundColor: 'rgba(255,255,255,0.06)', paddingHorizontal: 16, paddingVertical: 10,
-    borderRadius: 10, borderWidth: 1, borderColor: BORDER,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  claimBtnText: { fontSize: 13, fontWeight: '700', color: '#cbd5e1' },
-
-  // Watch Ads
-  adBadges: { flexDirection: 'row', gap: 6 },
+  claimBtnText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  adBadges: {
+    flexDirection: 'row',
+    gap: 6,
+  },
   adBadge: {
-    backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 8, paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  adBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  adRewardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
   },
-  adBadgeText: { fontSize: 10, fontWeight: '700', color: '#64748b' },
-  adRewardBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(34,197,94,0.15)', paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 10, borderWidth: 1, borderColor: 'rgba(34,197,94,0.3)',
+  adRewardText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
-  adRewardText: { fontSize: 14, fontWeight: '800', color: '#22c55e' },
   cooldownBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(245,158,11,0.1)', paddingHorizontal: 12, paddingVertical: 8,
-    borderRadius: 10, borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  cooldownBadgeText: { fontSize: 13, fontWeight: '800', color: '#f59e0b' },
-
-  // VIP Hint
-  vipText: { fontSize: 13, color: '#94a3b8', lineHeight: 20, flex: 1 },
+  cooldownBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  vipText: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    flex: 1,
+  },
 });

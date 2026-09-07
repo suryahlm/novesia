@@ -82,6 +82,7 @@ function NovelListRowBase({ novel, onPress, onLongPress }: NovelListRowProps) {
           <GlossyBadge
             label={isCompleted ? (lang === 'id' ? 'Tamat' : 'Completed') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
             tone={statusTone}
+            size="sm"
           />
           {novel.genres && novel.genres.length > 0 && (
             <View

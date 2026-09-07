@@ -1,40 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
   Switch,
-  Platform, 
-  StatusBar, 
-  Modal, 
-  FlatList, 
-  Dimensions 
+  Platform,
+  StatusBar,
+  Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useLanguage } from '../lib/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 40) : 0;
+import { useLanguage } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeProvider';
+import { GradientBackground } from '../components/GradientBackground';
+import { LanguageSheet } from '../components/LanguageSheet';
+import { CustomDialog } from '../components/CustomDialog';
 
-const LANGUAGES = [
-  { id: 'en', label: 'English', flag: '🇬🇧' },
-  { id: 'id', label: 'Indonesia', flag: '🇮🇩' },
-];
+const SETTINGS_KEY = 'novesia_reading_settings';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { lang, t, changeLang } = useLanguage();
-  
-  const [notifications, setNotifications] = useState(true);
-  const [langModalVisible, setLangModalVisible] = useState(false);
-  const [updateModalVisible, setUpdateModalVisible] = useState(false);
-  const [textSize, setTextSize] = useState(16);
+  const { lang, t } = useLanguage();
+  const { colors, isDark } = useTheme();
 
-  const SETTINGS_KEY = 'novesia_reading_settings';
+  const [notifications, setNotifications] = useState(true);
+  const [langSheetVisible, setLangSheetVisible] = useState(false);
+  const [updateDialogVisible, setUpdateDialogVisible] = useState(false);
+  const [textSize, setTextSize] = useState(18);
 
   useEffect(() => {
     loadTextSize();
@@ -60,270 +57,377 @@ export default function SettingsScreen() {
     } catch {}
   };
 
-  const handleCheckUpdates = () => {
-    setUpdateModalVisible(true);
+  const openWebLegal = (path: 'privacy' | 'terms') => {
+    const url = `https://novesia.cc/${path}?lang=${lang}`;
+    Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
   };
 
-  const PremiumModal = ({ visible, onClose, title, data, onSelect, selectedValue }: any) => (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity 
-        style={styles.modalOverlay} 
-        activeOpacity={1} 
-        onPress={onClose}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#64748b" />
-            </TouchableOpacity>
-          </View>
-          
-          <FlatList
-            data={data}
-            keyExtractor={(item: any) => typeof item === 'string' ? item : item.id}
-            renderItem={({ item }) => {
-              const isObj = typeof item !== 'string';
-              const label = isObj ? item.label : item;
-              const id = isObj ? item.id : item;
-              const isSelected = selectedValue === id;
-              
-              return (
-                <TouchableOpacity 
-                  style={[styles.modalOption, isSelected && styles.modalOptionActive]}
-                  onPress={() => {
-                    onSelect(id);
-                    onClose();
-                  }}
-                >
-                  <View style={styles.optionLeft}>
-                    {isObj && <Text style={styles.optionFlag}>{item.flag}</Text>}
-                    <Text style={[styles.optionText, isSelected && styles.optionTextActive]}>
-                      {label}
-                    </Text>
-                  </View>
-                  {isSelected && <Ionicons name="checkmark-circle" size={22} color="#d4a843" />}
-                </TouchableOpacity>
-              );
-            }}
-            contentContainerStyle={styles.modalList}
-          />
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
-
-  const PremiumInfoModal = ({ visible, onClose, title, message, icon }: any) => (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.infoModalOverlay}>
-        <View style={styles.infoModalContainer}>
-          <View style={styles.infoIconCircle}>
-            <Ionicons name={icon} size={40} color="#d4a843" />
-          </View>
-          <Text style={styles.infoTitle}>{title}</Text>
-          <Text style={styles.infoMessage}>{message}</Text>
-          <TouchableOpacity style={styles.infoButton} onPress={onClose}>
-            <Text style={styles.infoButtonText}>{t.close}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-
-  const SettingRow = ({ icon, label, value, onPress, isSwitch, switchValue, onSwitchChange }: any) => (
-    <TouchableOpacity 
-      style={styles.settingRow} 
+  const SettingRow = ({
+    icon,
+    label,
+    value,
+    onPress,
+    isSwitch,
+    switchValue,
+    onSwitchChange,
+  }: {
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    value?: string;
+    onPress?: () => void;
+    isSwitch?: boolean;
+    switchValue?: boolean;
+    onSwitchChange?: (val: boolean) => void;
+  }) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.settingRow,
+        {
+          backgroundColor: pressed && !isSwitch ? colors.surfaceElevated : 'transparent',
+        },
+      ]}
       onPress={onPress}
       disabled={isSwitch}
-      activeOpacity={0.7}
+      accessibilityRole={isSwitch ? 'switch' : 'button'}
+      accessibilityLabel={label}
     >
       <View style={styles.rowLeft}>
-        <View style={styles.iconContainer}>
-          <Ionicons name={icon} size={20} color="#d4a843" />
+        <View
+          style={[
+            styles.iconContainer,
+            {
+              backgroundColor: colors.primaryMuted || colors.primary + '18',
+              borderColor: colors.primary + '30',
+            },
+          ]}
+        >
+          <Ionicons name={icon} size={18} color={colors.primary} />
         </View>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, { color: colors.textPrimary }]}>{label}</Text>
       </View>
+
       <View style={styles.rowRight}>
         {isSwitch ? (
-          <Switch 
-            value={switchValue} 
+          <Switch
+            value={switchValue}
             onValueChange={onSwitchChange}
-            trackColor={{ false: '#1e1e2e', true: '#d4a843' }}
-            thumbColor="#fff"
+            trackColor={{ false: colors.surfaceElevated, true: colors.primary }}
+            thumbColor={switchValue ? colors.textOnPrimary : colors.textMuted}
           />
         ) : (
-          <>
-            <Text style={styles.value}>{value}</Text>
-            <Ionicons name="chevron-forward" size={16} color="#475569" />
-          </>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            {value ? (
+              <Text style={[styles.value, { color: colors.textMuted }]}>{value}</Text>
+            ) : null}
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          </View>
         )}
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent />
-      
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.title}>{t.settings}</Text>
-        <View style={{ width: 40 }} />
-      </View>
-      
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>{t.preferences}</Text>
-          <View style={styles.card}>
-            <SettingRow 
-              icon="language-outline" 
-              label={t.language} 
-              value={lang === 'en' ? 'English' : 'Indonesia'}
-              onPress={() => setLangModalVisible(true)}
-            />
-            <View style={styles.divider} />
-            <SettingRow 
-              icon="notifications-outline" 
-              label={t.notifications} 
-              isSwitch
-              switchValue={notifications}
-              onSwitchChange={setNotifications}
-            />
-          </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <GradientBackground />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        {/* Header */}
+        <View
+          style={[
+            styles.header,
+            {
+              borderBottomColor: colors.border,
+            },
+          ]}
+        >
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [
+              styles.backBtn,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Kembali"
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          </Pressable>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t.settings}</Text>
+          <View style={{ width: 40 }} />
         </View>
 
-        {/* Reading Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>{t.reading_section}</Text>
-          <View style={styles.card}>
-            <View style={styles.settingRow}>
-              <View style={styles.rowLeft}>
-                <View style={styles.iconContainer}>
-                  <Ionicons name="text-outline" size={20} color="#d4a843" />
-                </View>
-                <View style={{ marginLeft: 14, flex: 1 }}>
-                  <Text style={styles.label}>{t.text_size}</Text>
-                  <Text style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>{t.text_size_desc}</Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.divider} />
-            <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <TouchableOpacity
-                  style={styles.sizeBtn}
-                  onPress={() => updateTextSize(Math.max(12, textSize - 1))}
-                >
-                  <Text style={styles.sizeBtnText}>A-</Text>
-                </TouchableOpacity>
-                <View style={styles.sizeSliderTrack}>
-                  <View style={[styles.sizeSliderFill, { width: `${((textSize - 12) / 16) * 100}%` }]} />
-                </View>
-                <TouchableOpacity
-                  style={styles.sizeBtn}
-                  onPress={() => updateTextSize(Math.min(28, textSize + 1))}
-                >
-                  <Text style={styles.sizeBtnText}>A+</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                <Text style={{ fontSize: 10, color: '#475569' }}>{t.text_size_small}</Text>
-                <Text style={{ fontSize: 12, color: '#d4a843', fontWeight: '700' }}>{textSize}px</Text>
-                <Text style={{ fontSize: 10, color: '#475569' }}>{t.text_size_large}</Text>
-              </View>
-              <Text style={{ fontSize: textSize, color: '#94a3b8', marginTop: 12, lineHeight: textSize * 1.6 }}>
-                The quick brown fox jumps over the lazy dog.
-              </Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Preferences Section */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionHeader, { color: colors.primary }]}>
+              {t.preferences}
+            </Text>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <SettingRow
+                icon="language-outline"
+                label={t.language}
+                value={lang === 'en' ? 'English 🇬🇧' : 'Indonesia 🇮🇩'}
+                onPress={() => setLangSheetVisible(true)}
+              />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <SettingRow
+                icon="notifications-outline"
+                label={t.notifications}
+                isSwitch
+                switchValue={notifications}
+                onSwitchChange={setNotifications}
+              />
             </View>
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>{t.about}</Text>
-          <View style={styles.card}>
-            <SettingRow 
-              icon="cloud-download-outline" 
-              label={t.check_updates} 
-              value="v1.0.26"
-              onPress={handleCheckUpdates}
-            />
-            <View style={styles.divider} />
-            <SettingRow 
-              icon="shield-checkmark-outline" 
-              label={t.privacy_policy} 
-              onPress={() => {}}
-            />
-            <View style={styles.divider} />
-            <SettingRow 
-              icon="document-text-outline" 
-              label={t.terms} 
-              onPress={() => {}}
-            />
+          {/* Reading Section */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionHeader, { color: colors.primary }]}>
+              {t.reading_section}
+            </Text>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <View style={styles.settingRow}>
+                <View style={styles.rowLeft}>
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      {
+                        backgroundColor: colors.primaryMuted || colors.primary + '18',
+                        borderColor: colors.primary + '30',
+                      },
+                    ]}
+                  >
+                    <Ionicons name="text-outline" size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ marginLeft: 14, flex: 1 }}>
+                    <Text style={[styles.label, { color: colors.textPrimary, marginLeft: 0 }]}>
+                      {t.text_size}
+                    </Text>
+                    <Text style={[styles.subLabel, { color: colors.textMuted }]}>
+                      {t.text_size_desc}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+              <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.sizeBtn,
+                      {
+                        backgroundColor: colors.surfaceElevated,
+                        borderColor: colors.border,
+                        opacity: pressed ? 0.7 : 1,
+                      },
+                    ]}
+                    onPress={() => updateTextSize(Math.max(12, textSize - 1))}
+                    accessibilityRole="button"
+                    accessibilityLabel="Kecilkan teks"
+                  >
+                    <Text style={[styles.sizeBtnText, { color: colors.primary }]}>A-</Text>
+                  </Pressable>
+
+                  <View
+                    style={[
+                      styles.sizeSliderTrack,
+                      { backgroundColor: colors.surfaceElevated },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.sizeSliderFill,
+                        {
+                          backgroundColor: colors.primary,
+                          width: `${((textSize - 12) / 16) * 100}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.sizeBtn,
+                      {
+                        backgroundColor: colors.surfaceElevated,
+                        borderColor: colors.border,
+                        opacity: pressed ? 0.7 : 1,
+                      },
+                    ]}
+                    onPress={() => updateTextSize(Math.min(28, textSize + 1))}
+                    accessibilityRole="button"
+                    accessibilityLabel="Besarkan teks"
+                  >
+                    <Text style={[styles.sizeBtnText, { color: colors.primary }]}>A+</Text>
+                  </Pressable>
+                </View>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    marginTop: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                    {t.text_size_small}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.primary,
+                      fontWeight: '800',
+                    }}
+                  >
+                    {textSize}px
+                  </Text>
+                  <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                    {t.text_size_large}
+                  </Text>
+                </View>
+
+                <Text
+                  style={{
+                    fontSize: textSize,
+                    color: colors.textSecondary,
+                    marginTop: 14,
+                    lineHeight: textSize * 1.6,
+                    paddingHorizontal: 4,
+                  }}
+                >
+                  {lang === 'id'
+                    ? 'Rubah cokelat yang lincah melompati anjing pemalas.'
+                    : 'The quick brown fox jumps over the lazy dog.'}
+                </Text>
+              </View>
+            </View>
           </View>
-        </View>
 
-        <Text style={styles.footerText}>Novesia App v1.0.26 Build 2026</Text>
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          {/* About Section */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionHeader, { color: colors.primary }]}>
+              {t.about}
+            </Text>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <SettingRow
+                icon="cloud-download-outline"
+                label={t.check_updates}
+                value="v1.0.26"
+                onPress={() => setUpdateDialogVisible(true)}
+              />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <SettingRow
+                icon="shield-checkmark-outline"
+                label={t.privacy_policy}
+                onPress={() => openWebLegal('privacy')}
+              />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <SettingRow
+                icon="document-text-outline"
+                label={t.terms}
+                onPress={() => openWebLegal('terms')}
+              />
+            </View>
+          </View>
 
-      {/* Language Modal */}
-      <PremiumModal
-        visible={langModalVisible}
-        onClose={() => setLangModalVisible(false)}
-        title={t.select_language}
-        data={LANGUAGES}
-        selectedValue={lang}
-        onSelect={(id: any) => changeLang(id)}
+          <Text style={[styles.footerText, { color: colors.textMuted }]}>
+            Novesia App v1.0.26 Build 2026
+          </Text>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </SafeAreaView>
+
+      {/* Language Bottom Sheet */}
+      <LanguageSheet
+        visible={langSheetVisible}
+        onClose={() => setLangSheetVisible(false)}
       />
 
-      {/* Update info modal */}
-      <PremiumInfoModal
-        visible={updateModalVisible}
-        onClose={() => setUpdateModalVisible(false)}
+      {/* Update Check Info Dialog */}
+      <CustomDialog
+        visible={updateDialogVisible}
+        onClose={() => setUpdateDialogVisible(false)}
         title={t.check_updates}
-        message={t.app_is_up_to_date + " (v1.0.26)"}
+        message={`${t.app_is_up_to_date} (v1.0.26)`}
         icon="cloud-done-outline"
+        tone="gold"
+        showCancel={false}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0f' },
-  header: { 
-    paddingTop: STATUSBAR_HEIGHT + 20, 
-    paddingBottom: 20, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    backgroundColor: '#0a0a0f',
+  container: {
+    flex: 1,
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 10 },
-  section: { marginBottom: 24 },
-  sectionHeader: { 
-    fontSize: 12, 
-    fontWeight: '800', 
-    color: '#d4a843', 
-    marginBottom: 10, 
-    letterSpacing: 1.5,
+  header: {
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginBottom: 8,
+    letterSpacing: 1.2,
     marginLeft: 4,
+    textTransform: 'uppercase',
   },
   card: {
-    backgroundColor: '#111118',
-    borderRadius: 22,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#1e1e2e',
     overflow: 'hidden',
   },
   settingRow: {
@@ -331,134 +435,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 18,
-  },
-  rowLeft: { flexDirection: 'row', alignItems: 'center' },
-  iconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(212, 168, 67, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  label: { fontSize: 16, color: '#e2e8f0', marginLeft: 14, fontWeight: '600' },
-  rowRight: { flexDirection: 'row', alignItems: 'center' },
-  value: { fontSize: 14, color: '#64748b', marginRight: 8, fontWeight: '500' },
-  divider: { height: 1, backgroundColor: '#1e1e2e', marginLeft: 68 },
-  footerText: { 
-    textAlign: 'center', 
-    color: '#334155', 
-    fontSize: 12, 
-    marginTop: 20,
-    fontWeight: '600'
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: '#111118',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingTop: 20,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
-    maxHeight: SCREEN_HEIGHT * 0.7,
-    borderWidth: 1,
-    borderColor: '#1e1e2e',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e1e2e',
-  },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#fff' },
-  modalList: { paddingHorizontal: 16, paddingTop: 10 },
-  modalOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 8,
-  },
-  modalOptionActive: { backgroundColor: 'rgba(212, 168, 67, 0.1)' },
-  optionLeft: { flexDirection: 'row', alignItems: 'center' },
-  optionFlag: { fontSize: 20, marginRight: 14 },
-  optionText: { fontSize: 16, color: '#94a3b8', fontWeight: '600' },
-  optionTextActive: { color: '#fff' },
-  infoModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 30,
-  },
-  infoModalContainer: {
-    width: '100%',
-    backgroundColor: '#111118',
-    borderRadius: 28,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#1e1e2e',
-  },
-  infoIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(212, 168, 67, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  infoTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  infoMessage: {
-    fontSize: 14,
-    color: '#94a3b8',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  infoButton: {
-    backgroundColor: '#d4a843',
     paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 16,
-    width: '100%',
+  },
+  rowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  infoButtonText: {
-    color: '#0a0a0f',
-    fontWeight: '800',
-    fontSize: 15,
+  label: {
+    fontSize: 14,
+    marginLeft: 12,
+    fontWeight: '600',
+  },
+  subLabel: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  value: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    marginLeft: 64,
+  },
+  footerText: {
+    textAlign: 'center',
+    fontSize: 11.5,
+    marginTop: 16,
+    fontWeight: '500',
   },
   sizeBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(212, 168, 67, 0.12)',
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sizeBtnText: { fontSize: 16, fontWeight: '700', color: '#d4a843' },
+  sizeBtnText: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
   sizeSliderTrack: {
     flex: 1,
     height: 6,
-    backgroundColor: '#1e1e2e',
     borderRadius: 3,
     overflow: 'hidden',
   },
-  sizeSliderFill: { height: '100%', backgroundColor: '#d4a843', borderRadius: 3 },
+  sizeSliderFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
 });

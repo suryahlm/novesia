@@ -26,6 +26,7 @@ import { CustomDialog, DialogTone } from '../components/CustomDialog';
 import { AuthModal } from '../components/AuthModal';
 import { useAuthStore } from '../lib/useAuthStore';
 import { useTheme } from '../lib/ThemeProvider';
+import { useLanguage } from '../lib/i18n';
 import { updateUserName, uploadUserAvatar, deleteUserAccount } from '../lib/authService';
 import { getHistory } from '../lib/history';
 import { getUserGamificationStats, UserGamificationStats } from '../lib/gamification';
@@ -100,6 +101,7 @@ function InfoRow({
 export default function AkunScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t, lang } = useLanguage();
   const user = useAuthStore((s) => s.user);
 
   const [tab, setTab] = useState<AccountTab>('info');
@@ -169,8 +171,11 @@ export default function AkunScreen() {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
         showPopup({
-          title: 'Izin Galeri Ditolak',
-          message: 'Aktifkan izin akses galeri untuk aplikasi Novesia lewat pengaturan HP Anda.',
+          title: lang === 'id' ? 'Izin Galeri Ditolak' : 'Gallery Permission Denied',
+          message:
+            lang === 'id'
+              ? 'Aktifkan izin akses galeri untuk aplikasi Novesia lewat pengaturan HP Anda.'
+              : 'Please enable gallery access permissions for Novesia in your device settings.',
           icon: 'alert-circle-outline',
           tone: 'warning',
           showCancel: false,
@@ -183,6 +188,7 @@ export default function AkunScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
+        base64: true,
       });
 
       if (result.canceled || !result.assets?.[0]) return;
@@ -192,11 +198,12 @@ export default function AkunScreen() {
         uri: asset.uri,
         mimeType: asset.mimeType,
         fileName: asset.fileName,
+        base64: asset.base64,
       });
 
       if (res.error) {
         showPopup({
-          title: 'Gagal Upload Foto',
+          title: t.photo_failed_title,
           message: res.error,
           icon: 'alert-circle-outline',
           tone: 'danger',
@@ -204,8 +211,8 @@ export default function AkunScreen() {
         });
       } else {
         showPopup({
-          title: 'Foto Profil Diperbarui',
-          message: 'Foto profil baru Anda berhasil disimpan!',
+          title: t.photo_updated_title,
+          message: t.photo_updated_msg,
           icon: 'checkmark-circle-outline',
           tone: 'success',
           showCancel: false,
@@ -213,8 +220,8 @@ export default function AkunScreen() {
       }
     } catch (err: any) {
       showPopup({
-        title: 'Gagal Ganti Foto',
-        message: err?.message || 'Terjadi kesalahan saat memilih foto.',
+        title: t.photo_failed_title,
+        message: err?.message || (lang === 'id' ? 'Terjadi kesalahan saat memilih foto.' : 'Failed to select photo.'),
         tone: 'danger',
         showCancel: false,
       });
@@ -234,8 +241,8 @@ export default function AkunScreen() {
     const trimmed = nameDraft.trim();
     if (trimmed.length < 3 || trimmed.length > 15) {
       showPopup({
-        title: 'Nama Tidak Valid',
-        message: 'Nama harus antara 3 sampai 15 karakter.',
+        title: lang === 'id' ? 'Nama Tidak Valid' : 'Invalid Name',
+        message: lang === 'id' ? 'Nama harus antara 3 sampai 15 karakter.' : 'Name must be between 3 and 15 characters.',
         tone: 'warning',
         showCancel: false,
       });
@@ -249,15 +256,18 @@ export default function AkunScreen() {
     if (res.success) {
       setEditingName(false);
       showPopup({
-        title: 'Nama Berhasil Diubah',
-        message: `Nama tampilan Anda telah diperbarui menjadi "${trimmed}".`,
+        title: lang === 'id' ? 'Nama Berhasil Diubah' : 'Name Updated',
+        message:
+          lang === 'id'
+            ? `Nama tampilan Anda telah diperbarui menjadi "${trimmed}".`
+            : `Your display name has been updated to "${trimmed}".`,
         tone: 'success',
         showCancel: false,
       });
     } else {
       showPopup({
-        title: 'Gagal Mengubah Nama',
-        message: res.error || 'Terjadi kesalahan.',
+        title: lang === 'id' ? 'Gagal Mengubah Nama' : 'Failed to Update Name',
+        message: res.error || (lang === 'id' ? 'Terjadi kesalahan.' : 'An error occurred.'),
         tone: 'danger',
         showCancel: false,
       });
@@ -267,13 +277,12 @@ export default function AkunScreen() {
   // Hapus Akun
   const confirmDeleteAccount = () => {
     showPopup({
-      title: 'Hapus Akun?',
-      message:
-        'Semua data login, XP, dan riwayat akun Anda akan dihapus permanen. Bookmark yang tersimpan lokal di HP tidak ikut terhapus. Tindakan ini tidak dapat dibatalkan.',
+      title: t.delete_dialog_title,
+      message: t.delete_dialog_msg,
       icon: 'trash-outline',
       tone: 'danger',
-      confirmText: 'Hapus Akun',
-      cancelText: 'Batal',
+      confirmText: t.delete_dialog_confirm,
+      cancelText: t.cancel,
       showCancel: true,
       onConfirm: async () => {
         await deleteUserAccount();
@@ -323,11 +332,11 @@ export default function AkunScreen() {
             <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
           </Pressable>
           <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary, flex: 1, textAlign: 'center', marginRight: 24 }}>
-            Detail Profil
+            {t.profile_details_title}
           </Text>
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 95 }} showsVerticalScrollIndicator={false}>
           {/* Avatar & User Details */}
           <View style={{ alignItems: 'center', gap: 10, marginBottom: 24, marginTop: 8 }}>
             <View style={{ position: 'relative' }}>
@@ -380,14 +389,14 @@ export default function AkunScreen() {
 
             {uploadingAvatar && (
               <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '600' }}>
-                Mengupload foto, tunggu sebentar...
+                {t.uploading_photo_hint}
               </Text>
             )}
 
             {/* Display Name with Edit Pencil */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={{ fontSize: 18, fontWeight: '800', color: colors.textPrimary }}>
-                {user ? user.name : 'Pembaca Novesia'}
+                {user ? user.name : (lang === 'id' ? 'Pembaca Novesia' : 'Novesia Reader')}
               </Text>
               {user && (
                 <Pressable onPress={openEditName} hitSlop={10}>
@@ -422,7 +431,7 @@ export default function AkunScreen() {
                   color: isVip ? colors.primary : colors.textMuted,
                 }}
               >
-                {user ? (isVip ? 'VIP Member' : user.email) : 'Tamu - Belum Masuk'}
+                {user ? (isVip ? t.member_vip : user.email) : t.member_guest}
               </Text>
             </View>
 
@@ -430,7 +439,7 @@ export default function AkunScreen() {
               <Pressable onPress={() => setAuthModalVisible(true)} style={{ marginTop: 6 }}>
                 <GoldSurface style={{ paddingHorizontal: 20, paddingVertical: 8, borderRadius: 12 }}>
                   <Text style={{ color: colors.textOnPrimary, fontSize: 13, fontWeight: '800' }}>
-                    Masuk / Daftar Akun
+                    {t.sign_in_register || (lang === 'id' ? 'Masuk / Daftar Akun' : 'Sign In / Register')}
                   </Text>
                 </GoldSurface>
               </Pressable>
@@ -439,9 +448,9 @@ export default function AkunScreen() {
 
           {/* Reading Statistics Row */}
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
-            <StatCard icon="bookmark" label="Bookmark" value={bookmarkCount} />
-            <StatCard icon="book" label="Lanjut Baca" value={historyCount} />
-            <StatCard icon="trophy" label="Level" value={gamification ? `Lv.${gamification.level}` : 'Lv.1'} />
+            <StatCard icon="bookmark" label={t.stat_bookmark} value={bookmarkCount} />
+            <StatCard icon="book" label={t.stat_continue_reading} value={historyCount} />
+            <StatCard icon="trophy" label={t.stat_level} value={gamification ? `Lv.${gamification.level}` : 'Lv.1'} />
           </View>
 
           {/* Level dan Rank Card */}
@@ -459,7 +468,7 @@ export default function AkunScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="trophy" size={18} color={colors.primary} />
               <Text style={{ fontSize: 14.5, fontWeight: '700', color: colors.textPrimary }}>
-                Level dan Rank Pembaca
+                {t.reader_level_rank}
               </Text>
             </View>
 
@@ -467,7 +476,7 @@ export default function AkunScreen() {
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Text style={{ fontSize: 13.5, fontWeight: '800', color: colors.textSecondary }}>
-                    Level {gamification.level}
+                    {t.stat_level} {gamification.level}
                   </Text>
                   <Text style={{ fontSize: 11.5, color: colors.textMuted }}>
                     {gamification.xpIntoLevel} / {gamification.xpForCurrentLevel} XP
@@ -496,14 +505,14 @@ export default function AkunScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                     <Ionicons name="flame" size={14} color={colors.primary} />
                     <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                      {gamification.currentStreak} hari beruntun
+                      {gamification.currentStreak} {t.streak_days}
                     </Text>
                   </View>
                 </View>
 
                 {gamification.nextRank && (
                   <Text style={{ fontSize: 11, color: colors.textMuted }}>
-                    {gamification.xpToNextRank} XP lagi ke Rank {gamification.nextRank}
+                    {gamification.xpToNextRank} {t.xp_left_to} Rank {gamification.nextRank}
                   </Text>
                 )}
               </>
@@ -524,7 +533,7 @@ export default function AkunScreen() {
           >
             {(['info', 'comments'] as const).map((key) => {
               const active = tab === key;
-              const label = key === 'info' ? 'Informasi Akun' : 'Komentar Saya';
+              const label = key === 'info' ? t.tab_account_info : t.tab_my_comments;
               const icon = key === 'info' ? 'information-circle-outline' : 'chatbubble-outline';
 
               return (
@@ -585,32 +594,32 @@ export default function AkunScreen() {
                     paddingVertical: 4,
                   }}
                 >
-                  <InfoRow icon="mail-outline" label="Email" value={user.email} />
-                  <InfoRow icon="shield-checkmark-outline" label="Status" value={isVip ? 'VIP Member' : 'Member Biasa'} />
+                  <InfoRow icon="mail-outline" label={t.info_email} value={user.email} />
+                  <InfoRow icon="shield-checkmark-outline" label={t.info_status} value={isVip ? t.member_vip : t.member_regular} />
                   <InfoRow
                     icon="calendar-outline"
-                    label="Bergabung"
+                    label={t.info_joined}
                     value={
                       user.createdAt
-                        ? new Date(user.createdAt).toLocaleDateString('id-ID', {
+                        ? new Date(user.createdAt).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
                             day: 'numeric',
                             month: 'short',
                             year: 'numeric',
                           })
-                        : 'Pengguna Novesia'
+                        : (lang === 'id' ? 'Pengguna Novesia' : 'Novesia User')
                     }
                   />
                 </View>
 
                 {/* Hapus Akun Button */}
-                <Pressable onPress={confirmDeleteAccount} style={{ marginTop: 20 }}>
+                <Pressable onPress={confirmDeleteAccount} style={{ marginTop: 24, marginBottom: 20 }}>
                   <View
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: 8,
-                      paddingVertical: 12,
+                      paddingVertical: 13,
                       borderRadius: 12,
                       borderWidth: 1,
                       borderColor: colors.danger + '44',
@@ -619,7 +628,7 @@ export default function AkunScreen() {
                   >
                     <Ionicons name="trash-outline" size={16} color={colors.danger} />
                     <Text style={{ fontSize: 13, color: colors.danger, fontWeight: '700' }}>
-                      Hapus Akun
+                      {t.delete_account_btn}
                     </Text>
                   </View>
                 </Pressable>
@@ -627,21 +636,25 @@ export default function AkunScreen() {
             ) : (
               <EmptyNotice
                 icon="person-circle-outline"
-                title="Anda Belum Masuk"
-                subtitle="Masuk atau daftar untuk melihat informasi akun, email, dan status keanggotaan Anda."
+                title={t.not_logged_in_title}
+                subtitle={t.not_logged_in_desc}
               />
             )
           ) : !user ? (
             <EmptyNotice
               icon="chatbubble-outline"
-              title="Belum Ada Komentar"
-              subtitle="Masuk atau daftar untuk mulai berkomentar di novel dan forum diskusi Novesia."
+              title={t.no_comments_title}
+              subtitle={
+                lang === 'id'
+                  ? 'Masuk atau daftar untuk mulai berkomentar di novel dan forum diskusi Novesia.'
+                  : 'Sign in or register to start commenting on novels and forums.'
+              }
             />
           ) : (
             <EmptyNotice
               icon="chatbubble-outline"
-              title="Belum Ada Komentar"
-              subtitle="Komentar yang Anda tulis pada bab novel dan forum akan muncul di sini."
+              title={t.no_comments_title}
+              subtitle={t.no_comments_desc}
             />
           )}
         </ScrollView>
@@ -672,12 +685,12 @@ export default function AkunScreen() {
             }}
           >
             <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary }}>
-              Ganti Nama Tampilan
+              {t.edit_name_title}
             </Text>
             <TextInput
               value={nameDraft}
               onChangeText={(v) => setNameDraft(v.slice(0, 15))}
-              placeholder="Nama tampilan baru"
+              placeholder={t.edit_name_placeholder}
               placeholderTextColor={colors.textMuted}
               maxLength={15}
               autoFocus
@@ -693,7 +706,7 @@ export default function AkunScreen() {
               }}
             />
             <Text style={{ fontSize: 11, color: colors.textMuted }}>
-              {nameDraft.trim().length}/15 karakter (minimal 3 karakter)
+              {nameDraft.trim().length}/15 {t.edit_name_hint}
             </Text>
 
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
@@ -711,7 +724,9 @@ export default function AkunScreen() {
                   borderColor: colors.border,
                 }}
               >
-                <Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: '700' }}>Batal</Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: '700' }}>
+                  {t.cancel}
+                </Text>
               </Pressable>
 
               <Pressable
@@ -731,7 +746,7 @@ export default function AkunScreen() {
                     <ActivityIndicator size="small" color={colors.textOnPrimary} />
                   ) : (
                     <Text style={{ fontSize: 13, color: colors.textOnPrimary, fontWeight: '800' }}>
-                      Simpan
+                      {t.save}
                     </Text>
                   )}
                 </GoldSurface>
@@ -747,8 +762,8 @@ export default function AkunScreen() {
         onClose={() => setAuthModalVisible(false)}
         onSuccess={() => {
           showPopup({
-            title: 'Berhasil Masuk!',
-            message: 'Selamat datang kembali di Novesia.',
+            title: lang === 'id' ? 'Berhasil Masuk!' : 'Welcome Back!',
+            message: lang === 'id' ? 'Selamat datang kembali di Novesia.' : 'Welcome back to Novesia.',
             tone: 'success',
             showCancel: false,
           });

@@ -34,6 +34,7 @@ import { useNotifications } from '../../lib/useNotificationsQuery';
 import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 import { getHistory, HistoryItem } from '../../lib/history';
 import { SkeletonCarousel, SkeletonNovelGrid, SkeletonBox } from '../../components/SkeletonLoader';
+import { ErrorState } from '../../components/ErrorState';
 
 const LANGUAGE_FILTERS = [
   { key: 'all', label: 'Semua' },
@@ -56,10 +57,10 @@ export default function HomeScreen() {
   const [activeLang, setActiveLang] = useState<LanguageFilterKey>('all');
 
   // Fast TanStack Query with 5-minute memory cache
-  const { data: novels = [], isLoading: loadingPopular } = usePopularNovels();
-  const { data: latestNovels = [], isLoading: loadingLatest } = useLatestNovels();
+  const { data: novels = [], isLoading: loadingPopular, isError: isErrorPopular } = usePopularNovels();
+  const { data: latestNovels = [], isLoading: loadingLatest, isError: isErrorLatest } = useLatestNovels();
   const { data: indonesianNovels = [], isLoading: loadingIndonesian } = useIndonesianNovels();
-  const { data: featuredNovels = [], isLoading: loadingFeatured } = useFeaturedBanner(activeLang);
+  const { data: featuredNovels = [], isLoading: loadingFeatured, isError: isErrorFeatured } = useFeaturedBanner(activeLang);
   const homeBanners = useHomeBanners();
   const notifications = useNotifications();
   const [refreshing, setRefreshing] = useState(false);
@@ -139,6 +140,33 @@ export default function HomeScreen() {
   );
 
   const isInitialLoading = (loadingPopular || loadingFeatured) && novels.length === 0 && featuredNovels.length === 0;
+  const isInitialError = (isErrorPopular && isErrorFeatured) && novels.length === 0 && featuredNovels.length === 0;
+
+  if (isInitialError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <GradientBackground />
+        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+              />
+            }
+          >
+            <ErrorState
+              message={lang === 'id' ? 'Gagal memuat beranda. Periksa koneksi internet Anda.' : 'Failed to load home. Please check your internet connection.'}
+              onRetry={onRefresh}
+            />
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
   if (isInitialLoading) {
     return (
@@ -257,13 +285,14 @@ export default function HomeScreen() {
               alignSelf: 'center',
               flexDirection: 'row',
               alignItems: 'center',
-              backgroundColor: 'rgba(18, 22, 30, 0.75)',
+              width: 276,
+              backgroundColor: 'rgba(18, 22, 30, 0.65)',
               borderRadius: 999,
-              padding: 3.5,
-              borderWidth: 1,
+              padding: 2.5,
+              borderWidth: 0.8,
               borderColor: 'rgba(255, 255, 255, 0.08)',
-              marginTop: 2,
-              marginBottom: 18,
+              marginTop: 0,
+              marginBottom: 14,
             }}
           >
             {LANGUAGE_FILTERS.map((option) => {
@@ -276,23 +305,29 @@ export default function HomeScreen() {
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
                   style={({ pressed }) => ({
-                    paddingVertical: 5.5,
-                    paddingHorizontal: 16,
+                    flex: 1,
+                    paddingVertical: 3.5,
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     borderRadius: 999,
                     backgroundColor: active
                       ? (colors.primaryMuted || colors.primary + '22')
                       : 'transparent',
-                    borderWidth: 1,
+                    borderWidth: 0.8,
                     borderColor: active ? (colors.primary + '55') : 'transparent',
                     opacity: pressed ? 0.75 : 1,
                   })}
                 >
                   <Text
                     style={{
-                      fontSize: 12,
+                      fontSize: 11,
+                      lineHeight: 14,
                       fontWeight: active ? '700' : '500',
                       color: active ? colors.primary : '#94a3b8',
                       letterSpacing: 0.2,
+                      textAlign: 'center',
+                      textAlignVertical: 'center',
+                      includeFontPadding: false,
                     }}
                   >
                     {filterLabel}

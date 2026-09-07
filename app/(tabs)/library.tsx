@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -15,12 +16,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { GradientBackground } from '../../components/GradientBackground';
-import { ShimmerText } from '../../components/ShimmerText';
 import { CoverImage } from '../../components/CoverImage';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
 import { apiGet } from '../../lib/apiClient';
-import { getHistory, HistoryItem } from '../../lib/history';
+import { getHistory, clearHistory, HistoryItem } from '../../lib/history';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -36,6 +36,23 @@ interface SavedNovel {
   status: string | null;
   total_views?: number;
   rating?: number | null;
+}
+
+function formatRelativeTime(timestamp: number, lang: string): string {
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  if (minutes < 1) return lang === 'en' ? 'Just now' : 'Baru saja';
+  if (minutes < 60) return `${minutes} ${lang === 'en' ? 'min ago' : 'mnt lalu'}`;
+  if (hours < 24) return `${hours} ${lang === 'en' ? 'h ago' : 'jam lalu'}`;
+  if (days < 7) return `${days} ${lang === 'en' ? 'd ago' : 'hari lalu'}`;
+
+  return new Date(timestamp).toLocaleDateString(lang === 'en' ? 'en-US' : 'id-ID', {
+    day: 'numeric',
+    month: 'short',
+  });
 }
 
 export default function LibraryScreen() {
@@ -110,22 +127,40 @@ export default function LibraryScreen() {
     } catch {}
   };
 
+  const handleClearHistory = () => {
+    Alert.alert(
+      lang === 'en' ? 'Clear Reading History' : 'Hapus Riwayat Membaca',
+      lang === 'en'
+        ? 'Are you sure you want to clear all reading history?'
+        : 'Yakin ingin menghapus seluruh riwayat membaca Anda?',
+      [
+        { text: lang === 'en' ? 'Cancel' : 'Batal', style: 'cancel' },
+        {
+          text: lang === 'en' ? 'Clear All' : 'Hapus Semua',
+          style: 'destructive',
+          onPress: async () => {
+            await clearHistory();
+            setHistory([]);
+          },
+        },
+      ]
+    );
+  };
+
+  const totalCount = activeTab === 'bookmarks' ? bookmarks.length : history.length;
+  const subtitle =
+    activeTab === 'bookmarks'
+      ? `${totalCount} ${lang === 'en' ? 'novels saved' : 'novel tersimpan'}`
+      : `${totalCount} ${lang === 'en' ? 'chapters read' : 'riwayat baca'}`;
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <GradientBackground />
-      {/* Ambient shimmer top-left */}
+
+      {/* Subtle ambient glow */}
       <LinearGradient
-        colors={[colors.primary + '2E', colors.primary + '0F', 'rgba(13,16,18,0)']}
-        locations={[0, 0.35, 0.7]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
-      {/* Ambient shimmer bottom-right */}
-      <LinearGradient
-        colors={['rgba(13,16,18,0)', colors.primary + '0D', colors.primary + '1F']}
-        locations={[0.5, 0.78, 1]}
+        colors={[colors.primary + '20', colors.primary + '06', 'rgba(13,16,18,0)']}
+        locations={[0, 0.3, 0.6]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -133,81 +168,115 @@ export default function LibraryScreen() {
       />
 
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        {/* Header Title with Shimmer */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 12 }}>
-          <ShimmerText
-            style={{ fontSize: 24, fontWeight: '900', letterSpacing: 0.5 }}
-            baseColor={colors.primary}
-            shineColor="rgba(255,250,230,0.95)"
-          >
-            {t.tab_library}
-          </ShimmerText>
-        </View>
+        {/* Header Title with Subtitle & Action */}
+        <View style={styles.headerContainer}>
+          <View style={styles.headerTopRow}>
+            <View>
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+                {t.tab_library || 'Library'}
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+                {subtitle}
+              </Text>
+            </View>
 
-        {/* Tab Switcher (Bookmarks vs History) */}
-        <View
-          style={{
-            flexDirection: 'row',
-            paddingHorizontal: 16,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-            marginBottom: 16,
-          }}
-        >
-          <Pressable
-            onPress={() => setActiveTab('bookmarks')}
-            accessibilityRole="button"
-            accessibilityState={{ selected: activeTab === 'bookmarks' }}
-            style={{
-              paddingVertical: 12,
-              marginRight: 24,
-              borderBottomWidth: 2,
-              borderBottomColor: activeTab === 'bookmarks' ? colors.primary : 'transparent',
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                color: activeTab === 'bookmarks' ? colors.primary : colors.textMuted,
-                fontWeight: activeTab === 'bookmarks' ? '700' : '500',
-              }}
-            >
-              {t.bookmark} ({bookmarks.length})
-            </Text>
-          </Pressable>
+            {/* Clear History Button in Header */}
+            {activeTab === 'history' && history.length > 0 && (
+              <Pressable
+                onPress={handleClearHistory}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.clearHistoryBtn,
+                  {
+                    backgroundColor: pressed ? colors.surfaceElevated : colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Ionicons name="trash-outline" size={14} color={colors.textMuted} />
+                <Text style={[styles.clearHistoryText, { color: colors.textMuted }]}>
+                  {lang === 'en' ? 'Clear' : 'Hapus'}
+                </Text>
+              </Pressable>
+            )}
+          </View>
 
-          <Pressable
-            onPress={() => setActiveTab('history')}
-            accessibilityRole="button"
-            accessibilityState={{ selected: activeTab === 'history' }}
-            style={{
-              paddingVertical: 12,
-              borderBottomWidth: 2,
-              borderBottomColor: activeTab === 'history' ? colors.primary : 'transparent',
-            }}
+          {/* Minimalist Segmented Pill Control */}
+          <View
+            style={[
+              styles.segmentedContainer,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
           >
-            <Text
-              style={{
-                fontSize: 14,
-                color: activeTab === 'history' ? colors.primary : colors.textMuted,
-                fontWeight: activeTab === 'history' ? '700' : '500',
-              }}
+            <Pressable
+              onPress={() => setActiveTab('bookmarks')}
+              style={[
+                styles.segmentedTab,
+                activeTab === 'bookmarks' && [
+                  styles.segmentedTabActive,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    borderColor: colors.primary + '40',
+                  },
+                ],
+              ]}
             >
-              {lang === 'en' ? 'History' : 'Riwayat'} ({history.length})
-            </Text>
-          </Pressable>
+              <Ionicons
+                name={activeTab === 'bookmarks' ? 'bookmark' : 'bookmark-outline'}
+                size={13}
+                color={activeTab === 'bookmarks' ? colors.primary : colors.textMuted}
+              />
+              <Text
+                style={[
+                  styles.segmentedTabText,
+                  {
+                    color: activeTab === 'bookmarks' ? colors.primary : colors.textMuted,
+                    fontWeight: activeTab === 'bookmarks' ? '700' : '500',
+                  },
+                ]}
+              >
+                {t.bookmark || 'Bookmark'} ({bookmarks.length})
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setActiveTab('history')}
+              style={[
+                styles.segmentedTab,
+                activeTab === 'history' && [
+                  styles.segmentedTabActive,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    borderColor: colors.primary + '40',
+                  },
+                ],
+              ]}
+            >
+              <Ionicons
+                name={activeTab === 'history' ? 'time' : 'time-outline'}
+                size={13}
+                color={activeTab === 'history' ? colors.primary : colors.textMuted}
+              />
+              <Text
+                style={[
+                  styles.segmentedTabText,
+                  {
+                    color: activeTab === 'history' ? colors.primary : colors.textMuted,
+                    fontWeight: activeTab === 'history' ? '700' : '500',
+                  },
+                ]}
+              >
+                {lang === 'en' ? 'History' : 'Riwayat'} ({history.length})
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Tab Contents */}
         {activeTab === 'bookmarks' ? (
           bookmarks.length === 0 && !loading ? (
             <ScrollView
-              contentContainerStyle={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: 32,
-              }}
+              contentContainerStyle={styles.emptyContainer}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
@@ -217,37 +286,41 @@ export default function LibraryScreen() {
                 />
               }
             >
-              <Ionicons name="bookmark-outline" size={48} color={colors.textMuted} />
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: colors.textPrimary,
-                  fontWeight: '700',
-                  marginTop: 12,
-                  textAlign: 'center',
-                }}
+              <View
+                style={[
+                  styles.emptyIconBadge,
+                  { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                ]}
               >
-                {lang === 'en' ? 'Your library is empty' : 'Library Anda masih kosong'}
+                <Ionicons name="bookmark-outline" size={26} color={colors.primary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                {lang === 'en' ? 'No Saved Novels' : 'Belum Ada Novel Tersimpan'}
               </Text>
-              <Text
-                style={{
-                  fontSize: 12.5,
-                  color: colors.textMuted,
-                  textAlign: 'center',
-                  marginTop: 6,
-                  lineHeight: 18,
-                }}
-              >
+              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
                 {lang === 'en'
-                  ? 'Save favorite novels via the bookmark icon to read them later.'
-                  : 'Simpan novel favorit lewat ikon bookmark di halaman detail untuk membacanya kembali.'}
+                  ? 'Bookmark favorite novels to easily access and read them anytime.'
+                  : 'Simpan novel favorit Anda lewat ikon bookmark agar mudah dibaca kapan saja.'}
               </Text>
+              <Pressable
+                onPress={() => router.push('/(tabs)/explore')}
+                style={[
+                  styles.emptyActionBtn,
+                  { backgroundColor: colors.surface, borderColor: colors.primary + '50' },
+                ]}
+              >
+                <Ionicons name="compass-outline" size={14} color={colors.primary} />
+                <Text style={[styles.emptyActionBtnText, { color: colors.primary }]}>
+                  {lang === 'en' ? 'Explore Novels' : 'Jelajahi Novel'}
+                </Text>
+              </Pressable>
             </ScrollView>
           ) : (
             <FlatList
+              style={{ flex: 1 }}
               data={bookmarks}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, gap: 10 }}
+              contentContainerStyle={styles.listContent}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
@@ -259,57 +332,73 @@ export default function LibraryScreen() {
               renderItem={({ item }) => (
                 <Pressable
                   onPress={() => router.push(`/novel/${item.nu_slug}` as any)}
-                  style={({ pressed }) => ({
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: pressed ? colors.surfaceElevated : colors.surface,
-                    borderRadius: 14,
-                    padding: 10,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  })}
+                  style={({ pressed }) => [
+                    styles.novelCard,
+                    {
+                      backgroundColor: pressed ? colors.surfaceElevated : colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}
                 >
                   <View
-                    style={{
-                      width: 58,
-                      height: 80,
-                      borderRadius: 8,
-                      overflow: 'hidden',
-                      backgroundColor: colors.surfaceElevated,
-                    }}
+                    style={[
+                      styles.coverWrapper,
+                      { backgroundColor: colors.surfaceElevated },
+                    ]}
                   >
                     <CoverImage
                       uri={item.cover_url}
                       title={item.title}
-                      width={58}
-                      height={80}
+                      width={62}
+                      height={86}
                       borderRadius={8}
                     />
                   </View>
 
-                  <View style={{ flex: 1, marginLeft: 12, gap: 3 }}>
+                  <View style={styles.cardDetails}>
                     <Text
                       numberOfLines={2}
-                      style={{
-                        fontSize: 13.5,
-                        fontWeight: '700',
-                        color: colors.textPrimary,
-                        lineHeight: 18,
-                      }}
+                      style={[styles.cardTitle, { color: colors.textPrimary }]}
                     >
                       {item.title}
                     </Text>
-                    <Text style={{ fontSize: 11, color: colors.textMuted }}>
-                      {item.author || 'Author Unknown'}
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.cardAuthor, { color: colors.textMuted }]}
+                    >
+                      {item.author || (lang === 'en' ? 'Author Unknown' : 'Penulis Tidak Diketahui')}
                     </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
-                        {item.total_chapters} {lang === 'id' ? 'Bab' : 'Chapters'}
-                      </Text>
-                      {item.rating && (
-                        <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '600' }}>
-                          ⭐ {item.rating.toFixed(1)}
+
+                    <View style={styles.statsRow}>
+                      <View
+                        style={[
+                          styles.statBadge,
+                          {
+                            backgroundColor: colors.primaryMuted || colors.primary + '18',
+                            borderColor: colors.primary + '30',
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.statBadgeText, { color: colors.primary }]}>
+                          {item.total_chapters} {lang === 'id' ? 'Bab' : 'Ch'}
                         </Text>
+                      </View>
+
+                      {item.rating != null && item.rating > 0 && (
+                        <View
+                          style={[
+                            styles.statBadge,
+                            {
+                              backgroundColor: colors.surfaceElevated,
+                              borderColor: colors.border,
+                            },
+                          ]}
+                        >
+                          <Ionicons name="star" size={10} color={colors.primary} />
+                          <Text style={[styles.statBadgeText, { color: colors.textPrimary }]}>
+                            {item.rating.toFixed(1)}
+                          </Text>
+                        </View>
                       )}
                     </View>
                   </View>
@@ -317,16 +406,16 @@ export default function LibraryScreen() {
                   <Pressable
                     onPress={() => removeBookmark(item.id)}
                     hitSlop={8}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 18,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      backgroundColor: colors.primaryMuted,
-                    }}
+                    style={({ pressed }) => [
+                      styles.bookmarkActionBtn,
+                      {
+                        backgroundColor: pressed
+                          ? colors.primary + '30'
+                          : colors.primaryMuted || colors.primary + '15',
+                      },
+                    ]}
                   >
-                    <Ionicons name="bookmark" size={18} color={colors.primary} />
+                    <Ionicons name="bookmark" size={16} color={colors.primary} />
                   </Pressable>
                 </Pressable>
               )}
@@ -334,12 +423,7 @@ export default function LibraryScreen() {
           )
         ) : history.length === 0 && !loading ? (
           <ScrollView
-            contentContainerStyle={{
-              flex: 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingHorizontal: 32,
-            }}
+            contentContainerStyle={styles.emptyContainer}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -349,37 +433,41 @@ export default function LibraryScreen() {
               />
             }
           >
-            <Ionicons name="time-outline" size={48} color={colors.textMuted} />
-            <Text
-              style={{
-                fontSize: 16,
-                color: colors.textPrimary,
-                fontWeight: '700',
-                marginTop: 12,
-                textAlign: 'center',
-              }}
+            <View
+              style={[
+                styles.emptyIconBadge,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+              ]}
             >
-              {t.no_history}
+              <Ionicons name="time-outline" size={26} color={colors.primary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+              {t.no_history || 'Riwayat Membaca Kosong'}
             </Text>
-            <Text
-              style={{
-                fontSize: 12.5,
-                color: colors.textMuted,
-                textAlign: 'center',
-                marginTop: 6,
-                lineHeight: 18,
-              }}
-            >
+            <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
               {lang === 'en'
-                ? 'Novels you read will appear here automatically.'
-                : 'Novel yang Anda baca akan tercatat di sini secara otomatis.'}
+                ? 'Novels and chapters you read will appear here automatically.'
+                : 'Novel dan chapter yang Anda baca akan tercatat di sini secara otomatis.'}
             </Text>
+            <Pressable
+              onPress={() => router.push('/(tabs)/explore')}
+              style={[
+                styles.emptyActionBtn,
+                { backgroundColor: colors.surface, borderColor: colors.primary + '50' },
+              ]}
+            >
+              <Ionicons name="book-outline" size={14} color={colors.primary} />
+              <Text style={[styles.emptyActionBtnText, { color: colors.primary }]}>
+                {lang === 'en' ? 'Start Reading' : 'Mulai Membaca'}
+              </Text>
+            </Pressable>
           </ScrollView>
         ) : (
           <FlatList
+            style={{ flex: 1 }}
             data={history}
             keyExtractor={(item) => item.novel_id + '_' + item.last_chapter_id}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, gap: 10 }}
+            contentContainerStyle={styles.listContent}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -391,60 +479,75 @@ export default function LibraryScreen() {
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => router.push(`/read/${item.last_chapter_id}` as any)}
-                style={({ pressed }) => ({
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: pressed ? colors.surfaceElevated : colors.surface,
-                  borderRadius: 14,
-                  padding: 10,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                })}
+                style={({ pressed }) => [
+                  styles.novelCard,
+                  {
+                    backgroundColor: pressed ? colors.surfaceElevated : colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
               >
                 <View
-                  style={{
-                    width: 58,
-                    height: 80,
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                    backgroundColor: colors.surfaceElevated,
-                  }}
+                  style={[
+                    styles.coverWrapper,
+                    { backgroundColor: colors.surfaceElevated },
+                  ]}
                 >
                   <CoverImage
                     uri={item.cover}
                     title={item.title}
-                    width={58}
-                    height={80}
+                    width={62}
+                    height={86}
                     borderRadius={8}
                   />
                 </View>
 
-                <View style={{ flex: 1, marginLeft: 12, gap: 3 }}>
+                <View style={styles.cardDetails}>
                   <Text
                     numberOfLines={2}
-                    style={{
-                      fontSize: 13.5,
-                      fontWeight: '700',
-                      color: colors.textPrimary,
-                      lineHeight: 18,
-                    }}
+                    style={[styles.cardTitle, { color: colors.textPrimary }]}
                   >
                     {item.title}
                   </Text>
-                  <Text style={{ fontSize: 11.5, color: colors.primary, fontWeight: '700' }}>
-                    {lang === 'en' ? 'Last read: Ch ' : 'Terakhir baca: Ch '}
-                    {item.last_chapter}
-                  </Text>
-                  <Text style={{ fontSize: 10, color: colors.textMuted }}>
-                    {new Date(item.timestamp).toLocaleDateString(lang === 'en' ? 'en-US' : 'id-ID', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </Text>
+
+                  <View style={styles.historyMetaRow}>
+                    <View
+                      style={[
+                        styles.statBadge,
+                        {
+                          backgroundColor: colors.primaryMuted || colors.primary + '18',
+                          borderColor: colors.primary + '30',
+                        },
+                      ]}
+                    >
+                      <Ionicons name="book-outline" size={10} color={colors.primary} />
+                      <Text style={[styles.statBadgeText, { color: colors.primary }]}>
+                        {lang === 'en' ? 'Ch ' : 'Bab '}
+                        {item.last_chapter}
+                      </Text>
+                    </View>
+
+                    <Text style={[styles.historyTime, { color: colors.textMuted }]}>
+                      {formatRelativeTime(item.timestamp, lang)}
+                    </Text>
+                  </View>
                 </View>
 
-                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                {/* Minimalist Resume Button */}
+                <View
+                  style={[
+                    styles.resumeBtn,
+                    {
+                      backgroundColor: colors.surfaceElevated,
+                      borderColor: colors.primary + '40',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.resumeBtnText, { color: colors.primary }]}>
+                    {lang === 'en' ? 'Read' : 'Lanjut'}
+                  </Text>
+                  <Ionicons name="arrow-forward" size={11} color={colors.primary} />
+                </View>
               </Pressable>
             )}
           />
@@ -453,3 +556,194 @@ export default function LibraryScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 10,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  headerSubtitle: {
+    fontSize: 11.5,
+    marginTop: 2,
+    fontWeight: '400',
+  },
+  clearHistoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 7,
+    borderWidth: 1,
+  },
+  clearHistoryText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  // Segmented Pill Tab
+  segmentedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 9,
+    padding: 2.5,
+    borderWidth: 1,
+  },
+  segmentedTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    borderRadius: 7,
+  },
+  segmentedTabActive: {
+    borderWidth: 1,
+  },
+  segmentedTabText: {
+    fontSize: 12,
+  },
+
+  // Novel Card
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+    gap: 8,
+  },
+  novelCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: 1,
+    gap: 10,
+  },
+  coverWrapper: {
+    width: 62,
+    height: 86,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  cardDetails: {
+    flex: 1,
+    gap: 3,
+  },
+  cardTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  cardAuthor: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  statBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  statBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  bookmarkActionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 2,
+  },
+
+  // History Meta
+  historyMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  historyTime: {
+    fontSize: 10.5,
+    fontWeight: '500',
+  },
+  resumeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 7,
+    borderWidth: 1,
+    marginRight: 2,
+  },
+  resumeBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  // Empty State
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingTop: 60,
+  },
+  emptyIconBadge: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  emptyActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  emptyActionBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+});

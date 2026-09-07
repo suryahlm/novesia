@@ -15,18 +15,22 @@ export interface GlossyBadgeProps {
   label: string;
   tone: GlossyBadgeTone;
   cardWidth?: number;
+  size?: 'sm' | 'md';
 }
 
 const REFERENCE_WIDTH = 170;
 const MIN_SCALE = 0.82;
 const MAX_SCALE = 1.1;
 
-export function GlossyBadge({ label, tone, cardWidth }: GlossyBadgeProps) {
+export function GlossyBadge({ label, tone, cardWidth, size = 'md' }: GlossyBadgeProps) {
   const isCorner = cardWidth !== undefined;
+  const isSmall = size === 'sm';
   const scale = isCorner
     ? Math.min(MAX_SCALE, Math.max(MIN_SCALE, cardWidth / REFERENCE_WIDTH))
+    : isSmall
+    ? 0.9
     : 1;
-  const fontSize = 11 * scale;
+  const fontSize = isSmall ? 10 : 11 * scale;
 
   return (
     <LinearGradient
@@ -39,9 +43,9 @@ export function GlossyBadge({ label, tone, cardWidth }: GlossyBadgeProps) {
         borderTopRightRadius: 6,
         borderTopLeftRadius: isCorner ? 0 : 6,
         borderBottomRightRadius: isCorner ? 0 : 6,
-        paddingHorizontal: 10 * scale,
-        paddingTop: isCorner ? 2.5 * scale : 3.5 * scale,
-        paddingBottom: isCorner ? 4.5 * scale : 3.5 * scale,
+        paddingHorizontal: isSmall ? 7 : 10 * scale,
+        paddingTop: isCorner ? 2.5 * scale : isSmall ? 2 : 3.5 * scale,
+        paddingBottom: isCorner ? 4.5 * scale : isSmall ? 2 : 3.5 * scale,
         borderLeftWidth: 1,
         borderBottomWidth: 1,
         borderTopWidth: isCorner ? 0 : 1,

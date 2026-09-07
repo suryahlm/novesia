@@ -1,11 +1,17 @@
 /**
- * useNovelsQuery.ts — Novel data fetching hooks untuk novesia-app
- * Menggantikan Supabase queries dengan novesia-api REST calls.
- * Pola Komiku: React Query dengan staleTime cache.
+ * useNovelsQuery.ts — Novel & Chapter data fetching hooks untuk novesia-app
+ * Pola Komiku: React Query dengan staleTime cache, timeout abort, dan payload ringkas.
  */
+
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { apiGet } from './apiClient';
 
+/**
+ * Batas jumlah novel yang diambil di halaman Beranda (Update Terbaru / Populer).
+ * Mengurangi limit dari 100 ke 15 memotong payload jaringan hingga ~85%,
+ * membuat aplikasi tetap super cepat dan ringan meski di jaringan 3G/lelet.
+ */
+export const HOME_LIST_LIMIT = 15;
 export const INFINITE_PAGE_SIZE = 18;
 
 export interface NovelItem {
@@ -25,7 +31,36 @@ export interface NovelItem {
   source?: string;
   language?: string | null;
   translation_status?: string | null;
+  year?: number | null;
+  original_status?: string | null;
   updated_at?: string;
+}
+
+export interface ChapterItem {
+  id: string;
+  chapter_number: number;
+  chapter_title: string | null;
+  translation_status: string;
+  word_count_original: number;
+  word_count_translated: number;
+  created_at?: string;
+}
+
+export interface ChapterDetailResponse {
+  id: string;
+  chapter_number: number;
+  chapter_title: string | null;
+  content_original: string | null;
+  content_translated: string | null;
+  word_count_original: number;
+  word_count_translated: number;
+  novel_id: string;
+  novel_slug?: string;
+  novel?: { title: string; cover_url: string | null; nu_slug: string };
+  prevChapterNum?: number | null;
+  nextChapterNum?: number | null;
+  prev_chapter?: { id: string; chapter_number: number } | null;
+  next_chapter?: { id: string; chapter_number: number } | null;
 }
 
 // Tipe response dari API yang membungkus array novel
@@ -40,41 +75,59 @@ function extractNovels(res: NovelsResponse | NovelItem[]): NovelItem[] {
   return res.novels || res.data || [];
 }
 
-// ─── Fetch functions ─────────────────────────────────────────────────────────
+// ─── Fetch Functions ─────────────────────────────────────────────────────────
 
-export async function fetchAllNovels(): Promise<NovelItem[]> {
-  try {
-    const res = await apiGet<NovelsResponse>('/api/novels', {
+export async function fetchAllNovels(signal?: AbortSignal, limit = HOME_LIST_LIMIT): Promise<NovelItem[]> {
+  const res = await apiGet<NovelsResponse>(
+    '/api/novels',
+    {
       sort: 'rating',
-      limit: 100,
-    });
-    return extractNovels(res);
-  } catch (e) {
-    console.error('fetchAllNovels error:', e);
-    return [];
-  }
+      limit,
+    },
+    { signal }
+  );
+  return extractNovels(res);
 }
 
-export async function fetchLatestNovelsList(): Promise<NovelItem[]> {
-  try {
-    const res = await apiGet<NovelsResponse>('/api/novels/latest', {
-      limit: 100,
-    });
-    return extractNovels(res);
-  } catch (e) {
-    console.error('fetchLatestNovelsList error:', e);
-    return [];
-  }
+export async function fetchLatestNovelsList(signal?: AbortSignal, limit = HOME_LIST_LIMIT): Promise<NovelItem[]> {
+  const res = await apiGet<NovelsResponse>(
+    '/api/novels/latest',
+    {
+      limit,
+    },
+    { signal }
+  );
+  return extractNovels(res);
 }
 
-export async function fetchNovelDetail(slug: string): Promise<NovelItem | null> {
-  try {
-    const data = await apiGet<NovelItem>(`/api/novels/${slug}`);
-    return data;
-  } catch (e) {
-    console.error('fetchNovelDetail error:', e);
-    return null;
-  }
+export async function fetchIndonesianNovels(signal?: AbortSignal, limit = HOME_LIST_LIMIT): Promise<NovelItem[]> {
+  const res = await apiGet<NovelsResponse>(
+    '/api/novels',
+    {
+      translation_status: 'id_translated',
+      sort: 'updated',
+      limit,
+    },
+    { signal }
+  );
+  return extractNovels(res);
+}
+
+export async function fetchNovelDetail(slug: string, signal?: AbortSignal): Promise<NovelItem> {
+  return await apiGet<NovelItem>(`/api/novels/${slug}`, undefined, { signal });
+}
+
+export async function fetchNovelChapters(slug: string, limit = 2000, signal?: AbortSignal): Promise<ChapterItem[]> {
+  const res = await apiGet<{ chapters?: ChapterItem[]; data?: ChapterItem[] }>(
+    `/api/chapters/${slug}`,
+    { limit },
+    { signal }
+  );
+  return res.chapters || res.data || (Array.isArray(res) ? (res as any) : []);
+}
+
+export async function fetchChapterById(chapterId: string, signal?: AbortSignal): Promise<ChapterDetailResponse> {
+  return await apiGet<ChapterDetailResponse>(`/api/chapters/by-id/${chapterId}`, undefined, { signal });
 }
 
 /**
@@ -90,83 +143,64 @@ function shuffleSample<T>(array: T[], size: number): T[] {
 }
 
 /**
- * Fetch Hero Banner Novel (Pola Komiku: Smart Random 10 dari Top 60 Rating & Cover Valid)
+ * Fetch Hero Banner Novel (Pola Komiku: Smart Random 10 dari Top 20 Rating & Cover Valid)
  */
-export async function fetchFeaturedBanner(lang: string = 'all'): Promise<NovelItem[]> {
-  try {
-    const params: Record<string, string | number> = {
-      sort: 'rating',
-      limit: 60,
-    };
-    if (lang === 'id') {
-      params['translation_status'] = 'id_translated';
-    }
-
-    const res = await apiGet<NovelsResponse>('/api/novels/featured', params);
-    const data = extractNovels(res);
-
-    if (!data || data.length === 0) return [];
-
-    // Prioritaskan novel dengan cover landscape (Pola Komiku)
-    const withLandscape = data.filter((n) => Boolean(n.cover_landscape_url));
-    const withoutLandscape = data.filter((n) => !n.cover_landscape_url);
-
-    const shuffledLandscape = shuffleSample(withLandscape, withLandscape.length);
-    const needed = 10 - shuffledLandscape.length;
-    const shuffledOthers = needed > 0 ? shuffleSample(withoutLandscape, needed) : [];
-
-    return [...shuffledLandscape, ...shuffledOthers].slice(0, 10);
-  } catch (err) {
-    console.error('fetchFeaturedBanner error:', err);
-    return [];
+export async function fetchFeaturedBanner(lang: string = 'all', signal?: AbortSignal): Promise<NovelItem[]> {
+  const params: Record<string, string | number> = {
+    sort: 'rating',
+    limit: 20, // Ringan: hanya minta 20 item untuk pool random banner
+  };
+  if (lang === 'id') {
+    params['translation_status'] = 'id_translated';
   }
-}
 
-export async function fetchIndonesianNovels(): Promise<NovelItem[]> {
-  try {
-    const res = await apiGet<NovelsResponse>('/api/novels', {
-      translation_status: 'id_translated',
-      sort: 'updated',
-      limit: 100,
-    });
-    return extractNovels(res);
-  } catch (e) {
-    console.error('fetchIndonesianNovels error:', e);
-    return [];
-  }
+  const res = await apiGet<NovelsResponse>('/api/novels/featured', params, { signal });
+  const data = extractNovels(res);
+
+  if (!data || data.length === 0) return [];
+
+  // Prioritaskan novel dengan cover landscape (Pola Komiku)
+  const withLandscape = data.filter((n) => Boolean(n.cover_landscape_url));
+  const withoutLandscape = data.filter((n) => !n.cover_landscape_url);
+
+  const shuffledLandscape = shuffleSample(withLandscape, withLandscape.length);
+  const needed = 10 - shuffledLandscape.length;
+  const shuffledOthers = needed > 0 ? shuffleSample(withoutLandscape, needed) : [];
+
+  return [...shuffledLandscape, ...shuffledOthers].slice(0, 10);
 }
 
 export async function fetchPopularNovelsPage(
   page: number = 1,
-  pageSize: number = INFINITE_PAGE_SIZE
+  pageSize: number = INFINITE_PAGE_SIZE,
+  signal?: AbortSignal
 ): Promise<NovelItem[]> {
-  try {
-    const res = await apiGet<NovelsResponse>('/api/novels', {
+  const res = await apiGet<NovelsResponse>(
+    '/api/novels',
+    {
       sort: 'rating',
       limit: pageSize,
       page,
-    });
-    return extractNovels(res);
-  } catch (e) {
-    console.error('fetchPopularNovelsPage error:', e);
-    return [];
-  }
+    },
+    { signal }
+  );
+  return extractNovels(res);
 }
 
 export async function fetchLatestNovelsPage(
   page: number = 1,
-  pageSize: number = INFINITE_PAGE_SIZE
+  pageSize: number = INFINITE_PAGE_SIZE,
+  signal?: AbortSignal
 ): Promise<NovelItem[]> {
-  try {
-    const res = await apiGet<NovelsResponse>('/api/novels/latest', {
+  const res = await apiGet<NovelsResponse>(
+    '/api/novels/latest',
+    {
       limit: pageSize,
       page,
-    });
-    return extractNovels(res);
-  } catch (e) {
-    console.error('fetchLatestNovelsPage error:', e);
-    return [];
-  }
+    },
+    { signal }
+  );
+  return extractNovels(res);
 }
 
 // ─── React Query Hooks ────────────────────────────────────────────────────────
@@ -177,7 +211,7 @@ export async function fetchLatestNovelsPage(
 export function useFeaturedBanner(lang: string = 'all') {
   return useQuery({
     queryKey: ['novels', 'featured-banner', lang],
-    queryFn: () => fetchFeaturedBanner(lang),
+    queryFn: ({ signal }) => fetchFeaturedBanner(lang, signal),
     staleTime: Infinity,
     gcTime: 1000 * 60 * 30,
   });
@@ -187,8 +221,9 @@ export function useFeaturedBanner(lang: string = 'all') {
 export function usePopularNovels() {
   return useQuery({
     queryKey: ['novels', 'popular'],
-    queryFn: fetchAllNovels,
+    queryFn: ({ signal }) => fetchAllNovels(signal, HOME_LIST_LIMIT),
     staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
@@ -196,27 +231,62 @@ export function usePopularNovels() {
 export function useLatestNovels() {
   return useQuery({
     queryKey: ['novels', 'latest'],
-    queryFn: fetchLatestNovelsList,
+    queryFn: ({ signal }) => fetchLatestNovelsList(signal, HOME_LIST_LIMIT),
     staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
-/** Hook Detail Novel — staleTime 5 Menit */
-export function useNovelDetail(slug: string) {
-  return useQuery({
-    queryKey: ['novel', slug],
-    queryFn: () => fetchNovelDetail(slug),
-    enabled: Boolean(slug),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/** Hook Novel Terjemahan Bahasa Indonesia */
+/** Hook Novel Terjemahan Bahasa Indonesia — staleTime 5 Menit */
 export function useIndonesianNovels() {
   return useQuery({
     queryKey: ['novels', 'indonesian'],
-    queryFn: fetchIndonesianNovels,
+    queryFn: ({ signal }) => fetchIndonesianNovels(signal, HOME_LIST_LIMIT),
     staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+  });
+}
+
+/**
+ * Hook Detail Novel — staleTime 5 Menit (Pola Komiku).
+ * Membuka kembali novel yang sama dalam 5 menit langsung instan 0ms tanpa loading spinner.
+ */
+export function useNovelDetail(slug: string) {
+  return useQuery({
+    queryKey: ['novel', slug],
+    queryFn: ({ signal }) => fetchNovelDetail(slug, signal),
+    enabled: Boolean(slug),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+  });
+}
+
+/**
+ * Hook Daftar Bab Novel — staleTime 5 Menit.
+ * Berjalan paralel bersama detail novel sehingga UI tidak terblokir.
+ */
+export function useNovelChapters(slug: string, limit = 2000) {
+  return useQuery({
+    queryKey: ['novel-chapters', slug, limit],
+    queryFn: ({ signal }) => fetchNovelChapters(slug, limit, signal),
+    enabled: Boolean(slug),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+  });
+}
+
+/**
+ * Hook Konten Bab Novel — staleTime 24 Jam (Pola Komiku).
+ * Bab yang sudah diambil disimpan di memory cache, sehingga navigasi maju/mundur
+ * antar-bab terasa instan tanpa spinner.
+ */
+export function useChapterDetail(chapterId: string) {
+  return useQuery({
+    queryKey: ['chapter', chapterId],
+    queryFn: ({ signal }) => fetchChapterById(chapterId, signal),
+    enabled: Boolean(chapterId),
+    staleTime: 1000 * 60 * 60 * 24, // Konten bab bersifat permanen
+    gcTime: 1000 * 60 * 60, // Cache bertahan di memori 1 jam
   });
 }
 
@@ -224,8 +294,8 @@ export function useIndonesianNovels() {
 export function usePopularNovelsInfinite(options?: { enabled?: boolean }) {
   return useInfiniteQuery({
     queryKey: ['novels', 'popular', 'infinite'],
-    queryFn: ({ pageParam = 1 }) =>
-      fetchPopularNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
+    queryFn: ({ pageParam = 1, signal }) =>
+      fetchPopularNovelsPage(pageParam as number, INFINITE_PAGE_SIZE, signal),
     initialPageParam: 1,
     getNextPageParam: (lastPage: NovelItem[] | undefined, _pages, lastPageParam) =>
       !Array.isArray(lastPage) || lastPage.length < INFINITE_PAGE_SIZE
@@ -239,8 +309,8 @@ export function usePopularNovelsInfinite(options?: { enabled?: boolean }) {
 export function useLatestNovelsInfinite(options?: { enabled?: boolean }) {
   return useInfiniteQuery({
     queryKey: ['novels', 'latest', 'infinite'],
-    queryFn: ({ pageParam = 1 }) =>
-      fetchLatestNovelsPage(pageParam as number, INFINITE_PAGE_SIZE),
+    queryFn: ({ pageParam = 1, signal }) =>
+      fetchLatestNovelsPage(pageParam as number, INFINITE_PAGE_SIZE, signal),
     initialPageParam: 1,
     getNextPageParam: (lastPage: NovelItem[] | undefined, _pages, lastPageParam) =>
       !Array.isArray(lastPage) || lastPage.length < INFINITE_PAGE_SIZE
@@ -249,4 +319,3 @@ export function useLatestNovelsInfinite(options?: { enabled?: boolean }) {
     enabled: options?.enabled ?? true,
   });
 }
-

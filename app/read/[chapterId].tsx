@@ -12,7 +12,6 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { apiGet } from '../../lib/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addHistory } from '../../lib/history';
 import { trackChapterRead } from '../../lib/gamification';
@@ -21,7 +20,9 @@ import { useInterstitialAd } from '../../lib/useInterstitialAd';
 import { useTheme } from '../../lib/ThemeProvider';
 import { cleanChapterTitle } from '../../lib/utils';
 import { CustomDialog } from '../../components/CustomDialog';
+import { ErrorState } from '../../components/ErrorState';
 import { requestTranslation } from '../../lib/translationRequestService';
+import { useChapterDetail } from '../../lib/useNovelsQuery';
 
 type ThemeMode = 'dark' | 'light' | 'sepia';
 type Language = 'en' | 'id';
@@ -125,6 +126,8 @@ interface ChapterData {
   novel_id: string;
   novel_slug?: string;
   novel?: { title: string; cover_url: string | null; nu_slug: string };
+  prev_chapter?: SiblingChapter | null;
+  next_chapter?: SiblingChapter | null;
 }
 
 interface SiblingChapter {
@@ -139,11 +142,17 @@ export default function ReadChapterScreen() {
   const { lang: globalLang, t, changeLang } = useLanguage();
   const { onChapterRead } = useInterstitialAd();
 
-  const [chapter, setChapter] = useState<ChapterData | null>(null);
+  const {
+    data: chapterData,
+    isLoading: loading,
+    isError,
+    refetch,
+  } = useChapterDetail(chapterId);
+
+  const chapter: ChapterData | null = (chapterData as any) || null;
   const [novelTitle, setNovelTitle] = useState('');
   const [prevChapter, setPrevChapter] = useState<SiblingChapter | null>(null);
   const [nextChapter, setNextChapter] = useState<SiblingChapter | null>(null);
-  const [loading, setLoading] = useState(true);
 
   // Reading settings
   const [fontSize, setFontSize] = useState(18);
@@ -213,18 +222,6 @@ export default function ReadChapterScreen() {
     setDialogVisible(true);
   };
 
-  useEffect(() => {
-    loadSettings();
-    setLanguage(globalLang);
-  }, [globalLang]);
-
-  useEffect(() => {
-    if (chapterId) {
-      fetchChapter();
-      onChapterRead();
-    }
-  }, [chapterId]);
-
   const SETTINGS_KEY = 'novesia_reading_settings';
 
   const loadSettings = async () => {
@@ -245,69 +242,50 @@ export default function ReadChapterScreen() {
     } catch {}
   }, []);
 
-  const fetchChapter = async () => {
-    setLoading(true);
-    try {
-      // Fetch chapter by ID dari novesia-api
-      const data = await apiGet<{
-        id: string;
-        chapter_number: number;
-        chapter_title: string | null;
-        content_original: string | null;
-        content_translated: string | null;
-        word_count_original: number;
-        word_count_translated: number;
-        novel_id: string;
-        novel_slug?: string;
-        novel?: { title: string; cover_url: string | null; nu_slug: string };
-        prevChapterNum?: number | null;
-        nextChapterNum?: number | null;
-        prev_chapter?: { id: string; chapter_number: number } | null;
-        next_chapter?: { id: string; chapter_number: number } | null;
-      }>(`/api/chapters/by-id/${chapterId}`);
+  useEffect(() => {
+    loadSettings();
+    setLanguage(globalLang);
+  }, [globalLang]);
 
-      if (data) {
-        setChapter(data);
+  useEffect(() => {
+    if (chapter) {
+      const title = chapter.novel?.title || '';
+      if (title) setNovelTitle(title);
 
-        const novelTitle = data.novel?.title || '';
-        const novelCover = data.novel?.cover_url || '';
-        if (novelTitle) setNovelTitle(novelTitle);
+      // Save to Global History
+      if (chapter.novel_id) {
+        addHistory({
+          novel_id: chapter.novel_id,
+          title,
+          cover: chapter.novel?.cover_url || '',
+          last_chapter: chapter.chapter_number,
+          last_chapter_id: chapter.id,
+        });
 
-        // Save to Global History
-        if (data.novel_id) {
-          addHistory({
-            novel_id: data.novel_id,
-            title: novelTitle,
-            cover: novelCover,
-            last_chapter: data.chapter_number,
-            last_chapter_id: data.id,
-          });
+        // Record gamification stats & XP
+        trackChapterRead(chapter.novel_id, chapter.id, chapter.chapter_number);
 
-          // Record gamification stats & XP
-          trackChapterRead(data.novel_id, data.id, data.chapter_number);
-
-          // Save last read chapter per-novel
-          try {
-            await AsyncStorage.setItem(
-              `lastread_${data.novel_id}`,
-              JSON.stringify({
-                chapter_id: data.id,
-                chapter_number: data.chapter_number,
-              })
-            );
-          } catch {}
-        }
-
-        // Prev/Next dari API response
-        setPrevChapter(data.prev_chapter || null);
-        setNextChapter(data.next_chapter || null);
+        // Save last read chapter per-novel
+        AsyncStorage.setItem(
+          `lastread_${chapter.novel_id}`,
+          JSON.stringify({
+            chapter_id: chapter.id,
+            chapter_number: chapter.chapter_number,
+          })
+        ).catch(() => {});
       }
-    } catch (e) {
-      console.error('fetchChapter error:', e);
-    }
 
-    setLoading(false);
-  };
+      // Prev/Next dari response
+      setPrevChapter(chapter.prev_chapter || null);
+      setNextChapter(chapter.next_chapter || null);
+    }
+  }, [chapter]);
+
+  useEffect(() => {
+    if (chapterId) {
+      onChapterRead();
+    }
+  }, [chapterId]);
 
   const navigateChapter = (id: string) => {
     router.replace(`/read/${id}` as any);
@@ -364,21 +342,55 @@ export default function ReadChapterScreen() {
     };
   }, [theme, colors]);
 
-  if (loading) {
+  if (loading && !chapter) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: currentTheme.bg }]}>
+        <View style={{ position: 'absolute', top: 48, left: 16 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ padding: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="arrow-back" size={22} color={currentTheme.text} />
+            <Text style={{ color: currentTheme.text, fontSize: 15, fontWeight: '600' }}>{t.back}</Text>
+          </TouchableOpacity>
+        </View>
         <ActivityIndicator size="large" color={currentTheme.goldAccent} />
+        <Text style={{ color: currentTheme.textMuted, marginTop: 14, fontSize: 14 }}>
+          {language === 'id' ? 'Memuat bab...' : 'Loading chapter...'}
+        </Text>
       </View>
     );
   }
 
-  if (!chapter) {
+  if (isError || !chapter) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={{ color: '#94a3b8', fontSize: 15 }}>{t.chapter_not_found}</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-          <Text style={{ color: currentTheme.goldAccent, fontWeight: '600' }}>← {t.back}</Text>
-        </TouchableOpacity>
+      <View style={[styles.container, { backgroundColor: currentTheme.bg }]}>
+        <View
+          style={[
+            styles.topBar,
+            {
+              backgroundColor: currentTheme.bg,
+              borderBottomColor: currentTheme.headerBorder,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={() => router.back()}
+            hitSlop={8}
+            style={[styles.topIconButton, { borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}
+          >
+            <Ionicons name="arrow-back" size={19} color={currentTheme.text} />
+          </TouchableOpacity>
+          <View style={styles.topCenter}>
+            <Text style={[styles.topTitle, { color: currentTheme.text }]} numberOfLines={1}>
+              {novelTitle || (globalLang === 'id' ? 'Pembaca Bab' : 'Chapter Reader')}
+            </Text>
+          </View>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <ErrorState
+            message={isError ? 'Gagal memuat isi bab. Periksa koneksi internet Anda.' : t.chapter_not_found}
+            onRetry={() => refetch()}
+          />
+        </View>
       </View>
     );
   }

@@ -12,6 +12,15 @@ import 'react-native-reanimated';
 import { LanguageProvider } from '../lib/i18n';
 import { ThemeProvider, useTheme } from '../lib/ThemeProvider';
 import { QueryProvider } from '../lib/QueryProvider';
+import { FirstLaunchDisclaimer } from '../components/FirstLaunchDisclaimer';
+
+import {
+  useFonts,
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
 
 // Hindari splash screen menutup mendadak sebelum root layout siap
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -59,12 +68,21 @@ function RootStack() {
         <Stack.Screen name="rewards" options={{ animation: 'slide_from_right' }} />
       </Stack>
 
-
+      {/* Disclaimer muncul sekali seumur hidup device pada peluncuran pertama */}
+      <FirstLaunchDisclaimer />
     </>
   );
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Poppins: Poppins_400Regular,
+    'Poppins-Regular': Poppins_400Regular,
+    'Poppins-Medium': Poppins_500Medium,
+    'Poppins-SemiBold': Poppins_600SemiBold,
+    'Poppins-Bold': Poppins_700Bold,
+  });
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
