@@ -22,14 +22,26 @@
         "foregroundImage": "./assets/images/adaptive-icon-foreground.png"
       },
       "package": "cc.novesia.app",
-      "versionCode": 9
+      "versionCode": 9,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.WRITE_SETTINGS",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "./plugins/withNetworkSecurityConfig",
       "./plugins/withReleaseSigning.js",
       "expo-router",
       [
