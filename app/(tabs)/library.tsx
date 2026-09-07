@@ -18,6 +18,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GradientBackground } from '../../components/GradientBackground';
 import { CoverImage } from '../../components/CoverImage';
 import { ErrorState } from '../../components/ErrorState';
+import { AuthModal } from '../../components/AuthModal';
+import { useAuthStore } from '../../lib/useAuthStore';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
 import { apiGet } from '../../lib/apiClient';
@@ -61,6 +63,8 @@ export default function LibraryScreen() {
   const { colors } = useTheme();
   const { lang, t } = useLanguage();
 
+  const user = useAuthStore((s) => s.user);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<LibraryTab>('bookmarks');
   const [bookmarks, setBookmarks] = useState<SavedNovel[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -81,6 +85,12 @@ export default function LibraryScreen() {
   };
 
   const loadBookmarks = async () => {
+    const authUser = useAuthStore.getState().user;
+    if (!authUser) {
+      setBookmarks([]);
+      setBookmarkError(false);
+      return;
+    }
     try {
       setBookmarkError(false);
       const lib = await AsyncStorage.getItem(LIBRARY_KEY);
@@ -240,7 +250,7 @@ export default function LibraryScreen() {
                   },
                 ]}
               >
-                {t.bookmark || 'Bookmark'} ({bookmarks.length})
+                {t.bookmark || 'Bookmark'} {user ? `(${bookmarks.length})` : ''}
               </Text>
             </Pressable>
 
@@ -279,7 +289,48 @@ export default function LibraryScreen() {
 
         {/* Tab Contents */}
         {activeTab === 'bookmarks' ? (
-          bookmarkError && bookmarks.length === 0 && !loading ? (
+          !user ? (
+            <ScrollView
+              contentContainerStyle={styles.emptyContainer}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
+                />
+              }
+            >
+              <View
+                style={[
+                  styles.emptyIconBadge,
+                  { backgroundColor: colors.primaryMuted || colors.primary + '18', borderColor: colors.primary + '35' },
+                ]}
+              >
+                <Ionicons name="bookmark" size={26} color={colors.primary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                {lang === 'en' ? 'Sign In to View Bookmarks' : 'Masuk untuk Melihat Simpanan'}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                {lang === 'en'
+                  ? 'Sign in to your account to save novels and access your personal library anytime.'
+                  : 'Masuk ke akun Anda untuk menyimpan novel favorit dan mengakses perpustakaan pribadi Anda kapan saja.'}
+              </Text>
+              <Pressable
+                onPress={() => setAuthModalVisible(true)}
+                style={[
+                  styles.emptyActionBtn,
+                  { backgroundColor: colors.primary, borderColor: colors.primary },
+                ]}
+              >
+                <Ionicons name="log-in-outline" size={16} color="#000" />
+                <Text style={[styles.emptyActionBtnText, { color: '#000', fontWeight: '800' }]}>
+                  {lang === 'en' ? 'Sign In Now' : 'Masuk Sekarang'}
+                </Text>
+              </Pressable>
+            </ScrollView>
+          ) : bookmarkError && bookmarks.length === 0 && !loading ? (
             <ErrorState
               title={lang === 'en' ? 'Failed to Load Bookmarks' : 'Gagal Memuat Bookmark'}
               message={
@@ -568,6 +619,14 @@ export default function LibraryScreen() {
           />
         )}
       </SafeAreaView>
+
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
+        onSuccess={() => {
+          loadData();
+        }}
+      />
     </View>
   );
 }

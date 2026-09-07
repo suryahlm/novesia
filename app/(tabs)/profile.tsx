@@ -507,7 +507,25 @@ export default function ProfileScreen() {
                 icon: 'color-palette-outline' as const,
                 label: t.theme_accent,
                 previewDot: colors.primary,
-                onPress: () => setThemeSheetVisible(true),
+                onPress: () => {
+                  if (!user) {
+                    showPopup({
+                      title: lang === 'id' ? 'Butuh Login' : 'Login Required',
+                      message:
+                        lang === 'id'
+                          ? 'Silakan masuk (login) terlebih dahulu untuk mengubah tema aksen tampilan aplikasi.'
+                          : 'Please sign in to change the theme accent.',
+                      icon: 'color-palette-outline',
+                      tone: 'gold',
+                      confirmText: lang === 'id' ? 'Masuk Sekarang' : 'Sign In',
+                      cancelText: t.cancel || 'Batal',
+                      showCancel: true,
+                      onConfirm: () => setAuthModalVisible(true),
+                    });
+                    return;
+                  }
+                  setThemeSheetVisible(true);
+                },
               },
               {
                 icon: 'language-outline' as const,

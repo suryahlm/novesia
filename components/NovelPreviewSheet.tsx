@@ -22,6 +22,9 @@ import { apiGet } from '../lib/apiClient';
 import { useTheme } from '../lib/ThemeProvider';
 import { useLanguage } from '../lib/i18n';
 import { trackBookmarkAdded } from '../lib/gamification';
+import { CustomDialog, DialogTone } from './CustomDialog';
+import { AuthModal } from './AuthModal';
+import { useAuthStore } from '../lib/useAuthStore';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -56,6 +59,20 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
   const [synopsis, setSynopsis] = useState<string | null>(null);
   const [loadingSynopsis, setLoadingSynopsis] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    message: string;
+    tone?: DialogTone;
+    confirmText?: string;
+    cancelText?: string;
+    showCancel?: boolean;
+    onConfirm?: () => void;
+  }>({
+    title: '',
+    message: '',
+  });
 
   useEffect(() => {
     if (visible && novel) {
@@ -83,6 +100,24 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
 
   const toggleSave = async () => {
     if (!novel) return;
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      setDialogConfig({
+        title: lang === 'id' ? 'Butuh Login' : 'Login Required',
+        message:
+          lang === 'id'
+            ? 'Silakan masuk (login) terlebih dahulu untuk menyimpan novel ke perpustakaan Anda.'
+            : 'Please sign in to your account to save this novel to your library.',
+        tone: 'gold',
+        confirmText: lang === 'id' ? 'Masuk Sekarang' : 'Sign In',
+        cancelText: lang === 'id' ? 'Batal' : 'Cancel',
+        showCancel: true,
+        onConfirm: () => setAuthModalVisible(true),
+      });
+      setDialogVisible(true);
+      return;
+    }
+
     try {
       const lib = await AsyncStorage.getItem(LIBRARY_KEY);
       let saved: string[] = lib ? JSON.parse(lib) : [];
@@ -111,6 +146,24 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
 
   const shareNovel = async () => {
     if (!novel) return;
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      setDialogConfig({
+        title: lang === 'id' ? 'Butuh Login' : 'Login Required',
+        message:
+          lang === 'id'
+            ? 'Silakan masuk (login) terlebih dahulu untuk membagikan novel ini.'
+            : 'Please sign in to share this novel.',
+        tone: 'gold',
+        confirmText: lang === 'id' ? 'Masuk Sekarang' : 'Sign In',
+        cancelText: lang === 'id' ? 'Batal' : 'Cancel',
+        showCancel: true,
+        onConfirm: () => setAuthModalVisible(true),
+      });
+      setDialogVisible(true);
+      return;
+    }
+
     try {
       await Share.share({
         message: `Check out "${novel.title}" on Novesia App!\n\nRead here: novesiaapp://novel/${novel.nu_slug}`,
@@ -298,6 +351,26 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
           </View>
         </View>
       </View>
+
+      <CustomDialog
+        visible={dialogVisible}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        tone={dialogConfig.tone}
+        confirmText={dialogConfig.confirmText}
+        cancelText={dialogConfig.cancelText}
+        showCancel={dialogConfig.showCancel}
+        onConfirm={() => {
+          setDialogVisible(false);
+          dialogConfig.onConfirm?.();
+        }}
+        onClose={() => setDialogVisible(false)}
+      />
+
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
+      />
     </Modal>
   );
 }

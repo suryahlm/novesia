@@ -156,7 +156,7 @@ export default function ReadChapterScreen() {
   } = useChapterDetail(chapterId);
 
   const chapter: ChapterData | null = (chapterData as any) || null;
-  const isLocked = Boolean((chapter as any)?.is_locked || (chapter as any)?.isLocked);
+  const isLocked = false;
   const [authModalVisible, setAuthModalVisible] = useState(false);
   const [novelTitle, setNovelTitle] = useState('');
   const [prevChapter, setPrevChapter] = useState<SiblingChapter | null>(null);
@@ -267,6 +267,29 @@ export default function ReadChapterScreen() {
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify({ fontSize: fs, theme: th, lineHeight: lh }));
     } catch {}
   }, []);
+
+  const handleSelectTheme = (th: ThemeMode) => {
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      setShowSettings(false);
+      setDialogConfig({
+        title: globalLang === 'en' ? 'Login Required' : 'Butuh Login',
+        message:
+          globalLang === 'en'
+            ? 'Please sign in to change the reading theme (Dark, Light, Sepia).'
+            : 'Silakan masuk (login) terlebih dahulu untuk mengubah tema tampilan membaca (Dark, Light, Sepia).',
+        tone: 'gold',
+        confirmText: globalLang === 'en' ? 'Sign In' : 'Masuk Sekarang',
+        cancelText: t.cancel || 'Batal',
+        showCancel: true,
+        onConfirm: () => setAuthModalVisible(true),
+      });
+      setDialogVisible(true);
+      return;
+    }
+    setTheme(th);
+    saveSettings(fontSize, th, lineHeight);
+  };
 
   useEffect(() => {
     loadSettings();
@@ -1065,10 +1088,7 @@ export default function ReadChapterScreen() {
                     },
                     theme === 'dark' && styles.themeCardActive,
                   ]}
-                  onPress={() => {
-                    setTheme('dark');
-                    saveSettings(fontSize, 'dark', lineHeight);
-                  }}
+                  onPress={() => handleSelectTheme('dark')}
                 >
                   <Ionicons name="moon" size={15} color={theme === 'dark' ? currentTheme.goldAccent : '#94a3b8'} />
                   <Text style={[styles.themeCardText, { color: '#E2E8F0', fontWeight: theme === 'dark' ? '700' : '500' }]}>Dark</Text>
@@ -1084,10 +1104,7 @@ export default function ReadChapterScreen() {
                     },
                     theme === 'light' && styles.themeCardActive,
                   ]}
-                  onPress={() => {
-                    setTheme('light');
-                    saveSettings(fontSize, 'light', lineHeight);
-                  }}
+                  onPress={() => handleSelectTheme('light')}
                 >
                   <Ionicons name="sunny" size={15} color={theme === 'light' ? currentTheme.goldAccent : '#f59e0b'} />
                   <Text style={[styles.themeCardText, { color: '#1A1A2E', fontWeight: theme === 'light' ? '700' : '500' }]}>Light</Text>
@@ -1103,10 +1120,7 @@ export default function ReadChapterScreen() {
                     },
                     theme === 'sepia' && styles.themeCardActive,
                   ]}
-                  onPress={() => {
-                    setTheme('sepia');
-                    saveSettings(fontSize, 'sepia', lineHeight);
-                  }}
+                  onPress={() => handleSelectTheme('sepia')}
                 >
                   <Ionicons name="book" size={15} color={theme === 'sepia' ? currentTheme.goldAccent : '#b45309'} />
                   <Text style={[styles.themeCardText, { color: '#3D3225', fontWeight: theme === 'sepia' ? '700' : '500' }]}>Sepia</Text>
