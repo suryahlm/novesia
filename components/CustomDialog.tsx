@@ -90,29 +90,33 @@ export function CustomDialog({
       : 'sparkles');
 
   return (
-    <View style={StyleSheet.absoluteFill}>
-      {/* Dark Backdrop */}
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: 'rgba(0, 0, 0, 0.72)', zIndex: 998 },
-          backdropStyle,
-        ]}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-      </Animated.View>
-
-      {/* Centered Modal Card */}
+    <Modal
+      visible={mounted}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
       <View
         style={{
-          ...StyleSheet.absoluteFill,
+          flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
           padding: 24,
-          zIndex: 999,
-          pointerEvents: 'box-none',
         }}
       >
+        {/* Dark Backdrop */}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: 'rgba(0, 0, 0, 0.72)' },
+            backdropStyle,
+          ]}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </Animated.View>
+
+        {/* Centered Modal Card */}
         <Animated.View
           style={[
             {
@@ -259,6 +263,6 @@ export function CustomDialog({
           </View>
         </Animated.View>
       </View>
-    </View>
+    </Modal>
   );
 }

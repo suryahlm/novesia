@@ -631,7 +631,7 @@ export default function NovelDetailScreen() {
                           const isLastRead = lastReadChapter === ch.chapter_number;
                           return (
                             <TouchableOpacity
-                              key={ch.id}
+                              key={`${ch.id || ch.chapter_number || idx}-${idx}`}
                               style={[
                                 styles.chapterRow,
                                 isLastRead && { backgroundColor: 'rgba(16,185,129,0.08)' },
@@ -666,19 +666,19 @@ export default function NovelDetailScreen() {
         </View>
 
         <View style={{ height: 48 }} />
-
-        <CustomDialog
-          visible={dialogVisible}
-          onClose={() => setDialogVisible(false)}
-          title={dialogConfig.title}
-          message={dialogConfig.message}
-          tone={dialogConfig.tone}
-          confirmText={dialogConfig.confirmText}
-          cancelText={dialogConfig.cancelText}
-          showCancel={dialogConfig.showCancel ?? false}
-          onConfirm={dialogConfig.onConfirm}
-        />
       </ScrollView>
+
+      <CustomDialog
+        visible={dialogVisible}
+        onClose={() => setDialogVisible(false)}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        tone={dialogConfig.tone}
+        confirmText={dialogConfig.confirmText}
+        cancelText={dialogConfig.cancelText}
+        showCancel={dialogConfig.showCancel ?? false}
+        onConfirm={dialogConfig.onConfirm}
+      />
     </View>
   );
 }
