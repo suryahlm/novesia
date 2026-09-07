@@ -124,15 +124,42 @@ export async function updateUserName(
       return { success: false, error: 'Nama harus antara 3 sampai 15 karakter.' };
     }
 
-    await apiPatch('/api/me', { name: trimmed }, { timeoutMs: 15000 });
-
-    // Update local store optimistically
-    useAuthStore.getState().updateUser({ name: trimmed });
+    const data = await apiPatch<{ user?: any }>('/api/me', { name: trimmed }, { timeoutMs: 15000 });
+    const updatedName = data?.user?.name || trimmed;
+    useAuthStore.getState().updateUser({ name: updatedName });
     return { success: true, error: null };
   } catch (err: any) {
-    // Tetap update local store agar UI responsif
-    useAuthStore.getState().updateUser({ name: name.trim() });
-    return { success: true, error: null };
+    return {
+      success: false,
+      error: err?.message || 'Gagal memperbarui nama di server. Silakan coba lagi.',
+    };
+  }
+}
+
+// ─── Refresh User Profile ─────────────────────────────────────────────────────
+
+export async function refreshUserProfile(): Promise<AuthUser | null> {
+  try {
+    const token = useAuthStore.getState().token;
+    if (!token) return null;
+
+    const data = await apiGet<{ user: any }>('/api/me', undefined, { timeoutMs: 10000 });
+    if (data?.user) {
+      const authUser: AuthUser = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        avatarUrl: data.user.avatarUrl || data.user.avatar_url || null,
+        role: data.user.role,
+        vipUntil: data.user.vipUntil ?? data.user.vip_until ?? null,
+        createdAt: data.user.createdAt ?? data.user.created_at,
+      };
+      useAuthStore.getState().updateUser(authUser);
+      return authUser;
+    }
+    return null;
+  } catch {
+    return null;
   }
 }
 
@@ -145,11 +172,11 @@ export async function uploadUserAvatar(asset: {
   base64?: string | null;
 }): Promise<{ avatarUrl: string | null; error: string | null }> {
   try {
-    let result: { avatarUrl: string };
+    let result: { avatarUrl?: string; avatar_url?: string; user?: any } | null = null;
 
     if (asset.base64) {
       // Mengirim via JSON base64 dengan timeout toleran 45s untuk jaringan seluler lambat
-      result = await apiPost<{ avatarUrl: string }>(
+      result = await apiPost<{ avatarUrl?: string; avatar_url?: string; user?: any }>(
         '/api/me/avatar',
         {
           base64: asset.base64,
@@ -166,18 +193,32 @@ export async function uploadUserAvatar(asset: {
         type: asset.mimeType || 'image/jpeg',
       } as any);
 
-      result = await apiPostForm<{ avatarUrl: string }>('/api/me/avatar', formData, {
-        timeoutMs: 45000,
-      });
+      result = await apiPostForm<{ avatarUrl?: string; avatar_url?: string; user?: any }>(
+        '/api/me/avatar',
+        formData,
+        { timeoutMs: 45000 }
+      );
     }
 
-    const avatarUrl = result.avatarUrl || asset.uri;
-    useAuthStore.getState().updateUser({ avatarUrl });
-    return { avatarUrl, error: null };
+    const serverAvatarUrl =
+      result?.avatarUrl ||
+      result?.avatar_url ||
+      result?.user?.avatarUrl ||
+      result?.user?.avatar_url;
+
+    if (!serverAvatarUrl) {
+      throw new Error('Server tidak mengembalikan tautan foto profil baru.');
+    }
+
+    // Update global auth store dengan URL server baru ber-timestamp anti-cache
+    useAuthStore.getState().updateUser({ avatarUrl: serverAvatarUrl });
+    return { avatarUrl: serverAvatarUrl, error: null };
   } catch (err: any) {
-    console.warn('Avatar server upload failed, using local URI fallback:', err?.message);
-    useAuthStore.getState().updateUser({ avatarUrl: asset.uri });
-    return { avatarUrl: asset.uri, error: null };
+    console.error('Avatar server upload failed:', err);
+    return {
+      avatarUrl: null,
+      error: err?.message || 'Gagal mengunggah foto profil ke server. Silakan coba lagi.',
+    };
   }
 }
 

@@ -27,7 +27,7 @@ import { AuthModal } from '../components/AuthModal';
 import { useAuthStore } from '../lib/useAuthStore';
 import { useTheme } from '../lib/ThemeProvider';
 import { useLanguage } from '../lib/i18n';
-import { updateUserName, uploadUserAvatar, deleteUserAccount } from '../lib/authService';
+import { updateUserName, uploadUserAvatar, deleteUserAccount, refreshUserProfile } from '../lib/authService';
 import { getHistory } from '../lib/history';
 import { getUserGamificationStats, UserGamificationStats } from '../lib/gamification';
 
@@ -137,6 +137,9 @@ export default function AkunScreen() {
 
   useEffect(() => {
     loadCounts();
+    if (user) {
+      refreshUserProfile().catch(() => {});
+    }
   }, []);
 
   const loadCounts = async () => {
@@ -362,7 +365,11 @@ export default function AkunScreen() {
                 }}
               >
                 {user?.avatarUrl ? (
-                  <Image source={{ uri: user.avatarUrl }} style={{ width: 96, height: 96 }} />
+                  <Image
+                    key={user.avatarUrl}
+                    source={{ uri: user.avatarUrl }}
+                    style={{ width: 96, height: 96 }}
+                  />
                 ) : (
                   <Ionicons name="person" size={44} color={colors.primary} />
                 )}

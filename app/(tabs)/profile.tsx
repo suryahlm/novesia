@@ -219,7 +219,11 @@ export default function ProfileScreen() {
                   ]}
                 >
                   {user.avatarUrl ? (
-                    <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+                    <Image
+                      key={user.avatarUrl}
+                      source={{ uri: user.avatarUrl }}
+                      style={styles.avatarImage}
+                    />
                   ) : (
                     <Ionicons name="person" size={36} color={colors.primary} />
                   )}
