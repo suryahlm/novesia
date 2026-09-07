@@ -16,13 +16,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addHistory } from '../../lib/history';
 import { trackChapterRead } from '../../lib/gamification';
 import { useLanguage } from '../../lib/i18n';
-import { useInterstitialAd } from '../../lib/useInterstitialAd';
+import { useChapterInterstitialAd } from '../../lib/useChapterInterstitialAd';
+import { AD_NOTICE_MESSAGE } from '../../lib/ads';
 import { useTheme } from '../../lib/ThemeProvider';
 import { cleanChapterTitle } from '../../lib/utils';
 import { CustomDialog } from '../../components/CustomDialog';
 import { ErrorState } from '../../components/ErrorState';
 import { requestTranslation } from '../../lib/translationRequestService';
 import { useChapterDetail } from '../../lib/useNovelsQuery';
+import { AuthModal } from '../../components/AuthModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ThemeMode = 'dark' | 'light' | 'sepia';
 type Language = 'en' | 'id';
@@ -140,8 +143,9 @@ export default function ReadChapterScreen() {
   const chapterId = (Array.isArray(rawChapterId) ? rawChapterId[0] : rawChapterId) || '';
   const router = useRouter();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { lang: globalLang, t, changeLang } = useLanguage();
-  const { onChapterRead } = useInterstitialAd();
+  const { showForChapter, noticeVisible: adNoticeVisible } = useChapterInterstitialAd();
 
   const {
     data: chapterData,
@@ -151,6 +155,8 @@ export default function ReadChapterScreen() {
   } = useChapterDetail(chapterId);
 
   const chapter: ChapterData | null = (chapterData as any) || null;
+  const isLocked = Boolean((chapter as any)?.is_locked || (chapter as any)?.isLocked);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
   const [novelTitle, setNovelTitle] = useState('');
   const [prevChapter, setPrevChapter] = useState<SiblingChapter | null>(null);
   const [nextChapter, setNextChapter] = useState<SiblingChapter | null>(null);
@@ -253,8 +259,8 @@ export default function ReadChapterScreen() {
       const title = chapter.novel?.title || '';
       if (title) setNovelTitle(title);
 
-      // Save to Global History
-      if (chapter.novel_id) {
+      // Save to Global History only if unlocked
+      if (chapter.novel_id && !isLocked) {
         addHistory({
           novel_id: chapter.novel_id,
           title,
@@ -280,13 +286,13 @@ export default function ReadChapterScreen() {
       setPrevChapter(chapter.prev_chapter || null);
       setNextChapter(chapter.next_chapter || null);
     }
-  }, [chapter]);
+  }, [chapter, isLocked]);
 
   useEffect(() => {
-    if (chapterId) {
-      onChapterRead();
+    if (chapter && !isLocked) {
+      showForChapter(chapter.id);
     }
-  }, [chapterId]);
+  }, [chapter, isLocked, showForChapter]);
 
   const navigateChapter = (id: string) => {
     router.replace(`/read/${id}` as any);
@@ -519,6 +525,29 @@ export default function ReadChapterScreen() {
         />
       </View>
 
+      {/* Floating Ad Cooldown Notice (Pola Komiku) */}
+      {adNoticeVisible && (
+        <View
+          pointerEvents="none"
+          style={[styles.adNoticeContainer, { top: Math.max(16, insets.top + 8) }]}
+        >
+          <View
+            style={[
+              styles.adNoticeCapsule,
+              {
+                backgroundColor: currentTheme.cardBg,
+                borderColor: currentTheme.surfaceBorder,
+              },
+            ]}
+          >
+            <Ionicons name="megaphone-outline" size={14} color={currentTheme.goldAccent} />
+            <Text style={[styles.adNoticeText, { color: currentTheme.text }]}>
+              {AD_NOTICE_MESSAGE}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Language Info Banner */}
       {language === 'id' && !hasTranslation && (
         <View style={[styles.langBanner, { backgroundColor: currentTheme.badgeBg, borderBottomColor: currentTheme.goldAccent + '40' }]}>
@@ -543,8 +572,152 @@ export default function ReadChapterScreen() {
         </View>
       )}
 
-      {/* No Content */}
-      {!displayContent ? (
+      {/* Chapter Content / Locked / No Content */}
+      {isLocked ? (
+        <View style={styles.lockedContainer}>
+          <ScrollView
+            contentContainerStyle={styles.lockedScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View
+              style={[
+                styles.lockedCard,
+                {
+                  backgroundColor: currentTheme.cardBg,
+                  borderColor: currentTheme.cardBorder,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.lockedIconBadge,
+                  {
+                    backgroundColor: currentTheme.badgeBg,
+                    borderColor: currentTheme.surfaceBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="lock-closed" size={36} color={currentTheme.goldAccent} />
+              </View>
+
+              <Text style={[styles.lockedTitle, { color: currentTheme.text }]}>
+                {cleanChapterTitle(chapter.chapter_title, chapter.chapter_number)}
+              </Text>
+
+              <View
+                style={[
+                  styles.lockedPill,
+                  {
+                    backgroundColor: currentTheme.badgeBg,
+                    borderColor: currentTheme.surfaceBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="sparkles" size={13} color={currentTheme.goldAccent} />
+                <Text style={[styles.lockedPillText, { color: currentTheme.goldAccent }]}>
+                  AKSES KHUSUS MEMBER
+                </Text>
+              </View>
+
+              <Text style={[styles.lockedDescription, { color: currentTheme.textMuted }]}>
+                {(chapter as any).lock_message ||
+                  'Sebagai tamu yang belum login, Anda dapat membaca 2 bab pertama dan 2 bab terbaru secara gratis. Masuk atau buat akun gratis sekarang untuk membuka semua bab tanpa batas!'}
+              </Text>
+
+              <View
+                style={[
+                  styles.lockedBenefitBox,
+                  {
+                    backgroundColor: currentTheme.stepperBg,
+                    borderColor: currentTheme.stepperBorder,
+                  },
+                ]}
+              >
+                <View style={styles.lockedBenefitRow}>
+                  <Ionicons name="checkmark-circle" size={17} color={currentTheme.goldAccent} />
+                  <Text style={[styles.lockedBenefitText, { color: currentTheme.text }]}>
+                    Baca semua bab novel favorit gratis 100%
+                  </Text>
+                </View>
+                <View style={styles.lockedBenefitRow}>
+                  <Ionicons name="checkmark-circle" size={17} color={currentTheme.goldAccent} />
+                  <Text style={[styles.lockedBenefitText, { color: currentTheme.text }]}>
+                    Tersinkronisasi otomatis riwayat & bookmark
+                  </Text>
+                </View>
+                <View style={styles.lockedBenefitRow}>
+                  <Ionicons name="checkmark-circle" size={17} color={currentTheme.goldAccent} />
+                  <Text style={[styles.lockedBenefitText, { color: currentTheme.text }]}>
+                    Bisa ikut berkomentar dan berdiskusi di forum
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => setAuthModalVisible(true)}
+                activeOpacity={0.85}
+                style={[styles.lockedPrimaryBtn, { backgroundColor: currentTheme.goldAccent }]}
+              >
+                <Ionicons name="log-in-outline" size={18} color="#000" />
+                <Text style={styles.lockedPrimaryBtnText}>Masuk / Daftar Akun</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.back()}
+                activeOpacity={0.75}
+                style={[styles.lockedSecondaryBtn, { borderColor: currentTheme.cardBorder }]}
+              >
+                <Ionicons name="list-outline" size={16} color={currentTheme.textMuted} />
+                <Text style={[styles.lockedSecondaryBtnText, { color: currentTheme.textMuted }]}>
+                  Kembali ke Daftar Bab
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Sibling navigation if available */}
+            {(prevChapter || nextChapter) && (
+              <View style={[styles.navRow, { marginTop: 12 }]}>
+                {prevChapter ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.navBtn,
+                      {
+                        backgroundColor: currentTheme.navBtnBg,
+                        borderColor: currentTheme.navBtnBorder,
+                      },
+                    ]}
+                    onPress={() => navigateChapter(prevChapter.id)}
+                  >
+                    <Text style={[styles.navBtnText, { color: currentTheme.text }]}>
+                      ← Ch {prevChapter.chapter_number}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View />
+                )}
+                {nextChapter ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.navBtn,
+                      {
+                        backgroundColor: currentTheme.goldAccent,
+                        borderColor: currentTheme.goldAccent,
+                      },
+                    ]}
+                    onPress={() => navigateChapter(nextChapter.id)}
+                  >
+                    <Text style={[styles.navBtnText, { color: colors.textOnPrimary }]}>
+                      Ch {nextChapter.chapter_number} →
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View />
+                )}
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      ) : !displayContent ? (
         <View style={styles.noContentContainer}>
           <Text style={styles.noContentIcon}>📝</Text>
           <Text style={styles.noContentText}>{t.chapter_not_found}</Text>
@@ -942,6 +1115,15 @@ export default function ReadChapterScreen() {
         showCancel={dialogConfig.showCancel ?? false}
         onConfirm={dialogConfig.onConfirm}
       />
+
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
+        onSuccess={() => {
+          setAuthModalVisible(false);
+          refetch();
+        }}
+      />
     </View>
   );
 }
@@ -1273,6 +1455,136 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+
+  // Locked Chapter Styles
+  lockedContainer: {
+    flex: 1,
+  },
+  lockedScrollContent: {
+    padding: 20,
+    paddingBottom: 80,
+    alignItems: 'center',
+  },
+  lockedCard: {
+    width: '100%',
+    maxWidth: 480,
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  lockedIconBadge: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  lockedTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  lockedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  lockedPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  lockedDescription: {
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  lockedBenefitBox: {
+    width: '100%',
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 22,
+  },
+  lockedBenefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  lockedBenefitText: {
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+  },
+  lockedPrimaryBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  lockedPrimaryBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#000',
+  },
+  lockedSecondaryBtn: {
+    width: '100%',
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  lockedSecondaryBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // Ad Notice Capsule Styles (Komiku Pattern)
+  adNoticeContainer: {
+    position: 'absolute',
+    top: 54,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  adNoticeCapsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 24,
+    paddingVertical: 7,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  adNoticeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

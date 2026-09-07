@@ -22,6 +22,7 @@ import { GradientBackground } from '../../components/GradientBackground';
 import { ShimmerText } from '../../components/ShimmerText';
 import { GoldSurface } from '../../components/GoldSurface';
 import { CustomDialog } from '../../components/CustomDialog';
+import { AuthModal } from '../../components/AuthModal';
 import { ErrorState } from '../../components/ErrorState';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
@@ -190,6 +191,7 @@ export default function CategoryThreadsScreen() {
 
   // New Thread Modal
   const [modalVisible, setModalVisible] = useState(false);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -197,6 +199,15 @@ export default function CategoryThreadsScreen() {
   // Custom Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogMsg, setDialogMsg] = useState({ title: '', message: '' });
+
+  const handleOpenCreateModal = () => {
+    const authUser = useAuthStore.getState().user;
+    if (!authUser) {
+      setAuthModalVisible(true);
+      return;
+    }
+    setModalVisible(true);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -239,6 +250,13 @@ export default function CategoryThreadsScreen() {
   };
 
   const handleCreateThread = async () => {
+    const authUser = useAuthStore.getState().user;
+    if (!authUser) {
+      setModalVisible(false);
+      setAuthModalVisible(true);
+      return;
+    }
+
     if (!newTitle.trim() || !newContent.trim()) {
       setDialogMsg({
         title: lang === 'en' ? 'Incomplete Form' : 'Form Belum Lengkap',
@@ -254,10 +272,9 @@ export default function CategoryThreadsScreen() {
     if (!category) return;
     setSubmitting(true);
 
-    const authUser = useAuthStore.getState().user;
     const userName =
-      authUser?.name ||
-      authUser?.email?.split('@')[0] ||
+      authUser.name ||
+      authUser.email?.split('@')[0] ||
       t.user_reader ||
       (lang === 'en' ? 'Novesia Reader' : 'Pembaca Novesia');
 
@@ -345,7 +362,7 @@ export default function CategoryThreadsScreen() {
 
           {/* Top Header Compose Button */}
           <Pressable
-            onPress={() => setModalVisible(true)}
+            onPress={handleOpenCreateModal}
             hitSlop={8}
             style={({ pressed }) => ({
               flexDirection: 'row',
@@ -550,6 +567,12 @@ export default function CategoryThreadsScreen() {
         message={dialogMsg.message}
         tone="warning"
         showCancel={false}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
       />
     </View>
   );

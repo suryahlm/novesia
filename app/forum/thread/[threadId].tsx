@@ -21,6 +21,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GradientBackground } from '../../../components/GradientBackground';
 import { GoldSurface } from '../../../components/GoldSurface';
 import { CustomDialog } from '../../../components/CustomDialog';
+import { AuthModal } from '../../../components/AuthModal';
 import { ErrorState } from '../../../components/ErrorState';
 import { useTheme } from '../../../lib/ThemeProvider';
 import { useLanguage } from '../../../lib/i18n';
@@ -62,6 +63,8 @@ export default function ThreadDetailScreen() {
   const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const authUser = useAuthStore((s) => s.user);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const shouldScrollToEndRef = useRef(false);
 
@@ -88,7 +91,9 @@ export default function ThreadDetailScreen() {
     );
     const hideSub = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardVisible(false)
+      () => {
+        setKeyboardVisible(false);
+      }
     );
     return () => {
       showSub.remove();
@@ -191,14 +196,18 @@ export default function ThreadDetailScreen() {
   };
 
   const handleSendReply = async () => {
+    if (!authUser) {
+      setAuthModalVisible(true);
+      return;
+    }
     if (!replyContent.trim()) return;
     if (!thread) return;
 
     setSubmitting(true);
-    const authUser = useAuthStore.getState().user;
+    const currentUser = useAuthStore.getState().user || authUser;
     const userName =
-      authUser?.name ||
-      authUser?.email?.split('@')[0] ||
+      currentUser?.name ||
+      currentUser?.email?.split('@')[0] ||
       t.user_reader ||
       (lang === 'en' ? 'Novesia Reader' : 'Pembaca Novesia');
 
@@ -209,9 +218,9 @@ export default function ThreadDetailScreen() {
       thread_id: thread.id,
       content: contentToSend,
       user_name: userName,
-      user_avatar: authUser?.avatarUrl || null,
-      user_id: authUser?.id || null,
-      user_role: (authUser?.role as 'USER' | 'VIP' | 'ADMIN') || 'USER',
+      user_avatar: currentUser?.avatarUrl || null,
+      user_id: currentUser?.id || null,
+      user_role: (currentUser?.role as 'USER' | 'VIP' | 'ADMIN') || 'USER',
     });
 
     setSubmitting(false);
@@ -561,64 +570,105 @@ export default function ThreadDetailScreen() {
               }
             />
 
-            {/* Reply Input Bar */}
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingHorizontal: 16,
-                paddingTop: 10,
-                paddingBottom: keyboardVisible ? 10 : Math.max(10, insets.bottom + 8),
-                backgroundColor: colors.surface,
-                borderTopWidth: 1,
-                borderTopColor: colors.border,
-                gap: 10,
-              }}
-            >
-              <TextInput
+            {/* Reply Input Bar or Guest Login Prompt */}
+            {!authUser ? (
+              <View
                 style={{
-                  flex: 1,
-                  backgroundColor: colors.surfaceElevated,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  paddingHorizontal: 14,
-                  paddingVertical: 8,
-                  fontSize: 13,
-                  color: colors.textPrimary,
-                  maxHeight: 80,
-                }}
-                placeholder={lang === 'en' ? 'Write a reply...' : 'Tulis balasan...'}
-                placeholderTextColor={colors.textMuted}
-                value={replyContent}
-                onChangeText={setReplyContent}
-                multiline
-              />
-
-              <Pressable
-                onPress={handleSendReply}
-                disabled={submitting || !replyContent.trim()}
-                style={({ pressed }) => ({
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: replyContent.trim() ? colors.primary : colors.surfaceElevated,
+                  flexDirection: 'row',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: pressed ? 0.7 : 1,
-                })}
+                  justifyContent: 'space-between',
+                  paddingHorizontal: 16,
+                  paddingTop: 12,
+                  paddingBottom: Math.max(12, insets.bottom + 8),
+                  backgroundColor: colors.surface,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.border,
+                  gap: 12,
+                }}
               >
-                {submitting ? (
-                  <ActivityIndicator size="small" color={colors.textOnPrimary} />
-                ) : (
-                  <Ionicons
-                    name="send"
-                    size={18}
-                    color={replyContent.trim() ? colors.textOnPrimary : colors.textMuted}
-                  />
-                )}
-              </Pressable>
-            </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                    {lang === 'en' ? 'Sign in to join discussion' : 'Masuk untuk membalas diskusi'}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
+                    {lang === 'en'
+                      ? 'Guests can only read messages'
+                      : 'Pengunjung belum login hanya dapat membaca pesan'}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setAuthModalVisible(true)}
+                  style={({ pressed }) => ({
+                    backgroundColor: pressed ? colors.primary + 'D9' : colors.primary,
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                  })}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textOnPrimary }}>
+                    {lang === 'en' ? 'Sign In' : 'Masuk'}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 16,
+                  paddingTop: 10,
+                  paddingBottom: keyboardVisible ? 10 : Math.max(10, insets.bottom + 8),
+                  backgroundColor: colors.surface,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.border,
+                  gap: 10,
+                }}
+              >
+                <TextInput
+                  style={{
+                    flex: 1,
+                    backgroundColor: colors.surfaceElevated,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    fontSize: 13,
+                    color: colors.textPrimary,
+                    maxHeight: 80,
+                  }}
+                  placeholder={lang === 'en' ? 'Write a reply...' : 'Tulis balasan...'}
+                  placeholderTextColor={colors.textMuted}
+                  value={replyContent}
+                  onChangeText={setReplyContent}
+                  multiline
+                />
+
+                <Pressable
+                  onPress={handleSendReply}
+                  disabled={submitting || !replyContent.trim()}
+                  style={({ pressed }) => ({
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: replyContent.trim() ? colors.primary : colors.surfaceElevated,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  {submitting ? (
+                    <ActivityIndicator size="small" color={colors.textOnPrimary} />
+                  ) : (
+                    <Ionicons
+                      name="send"
+                      size={18}
+                      color={replyContent.trim() ? colors.textOnPrimary : colors.textMuted}
+                    />
+                  )}
+                </Pressable>
+              </View>
+            )}
           </KeyboardAvoidingView>
         )}
       </SafeAreaView>
@@ -630,6 +680,12 @@ export default function ThreadDetailScreen() {
         title={dialogMsg.title}
         message={dialogMsg.message}
         showCancel={false}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
       />
     </View>
   );

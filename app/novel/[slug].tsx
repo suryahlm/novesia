@@ -688,6 +688,7 @@ export default function NovelDetailScreen() {
                           const hasContent = (ch.word_count_original || 0) > 0;
                           const wc = ch.word_count_translated || ch.word_count_original || 0;
                           const isLastRead = lastReadChapter === ch.chapter_number;
+                          const isLocked = Boolean((ch as any).is_locked || (ch as any).isLocked);
                           return (
                             <TouchableOpacity
                               key={`${ch.id || ch.chapter_number || idx}-${idx}`}
@@ -701,17 +702,26 @@ export default function NovelDetailScreen() {
                               activeOpacity={hasContent ? 0.65 : 1}
                             >
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                                <View style={[styles.statusDot, { backgroundColor: hasContent ? (isLastRead ? '#10B981' : colors.primary) : '#475569' }]} />
-                                <Text style={[styles.chapterNumText, { color: isLastRead ? '#10B981' : colors.primary }]}>
+                                <View style={[styles.statusDot, { backgroundColor: isLocked ? '#D4A843' : (hasContent ? (isLastRead ? '#10B981' : colors.primary) : '#475569') }]} />
+                                <Text style={[styles.chapterNumText, { color: isLocked ? '#D4A843' : (isLastRead ? '#10B981' : colors.primary) }]}>
                                   #{ch.chapter_number}
                                 </Text>
                                 <Text style={[styles.chapterTitleText, isLastRead && { color: '#F8FAFC', fontWeight: '700' }]} numberOfLines={1}>
                                   {cleanChapterTitle(ch.chapter_title, ch.chapter_number)}
                                 </Text>
                               </View>
-                              <Text style={styles.chapterWordText}>
-                                {hasContent ? `${wc} ${lang === 'id' ? 'kata' : 'w'}` : (lang === 'id' ? 'Segera' : 'Pending')}
-                              </Text>
+                              {isLocked ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(212,168,67,0.12)', paddingHorizontal: 6, paddingVertical: 2.5, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(212,168,67,0.3)' }}>
+                                  <Ionicons name="lock-closed" size={10} color="#D4A843" />
+                                  <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#D4A843' }}>
+                                    {lang === 'id' ? 'KUNCI' : 'LOCK'}
+                                  </Text>
+                                </View>
+                              ) : (
+                                <Text style={styles.chapterWordText}>
+                                  {hasContent ? `${wc} ${lang === 'id' ? 'kata' : 'w'}` : (lang === 'id' ? 'Segera' : 'Pending')}
+                                </Text>
+                              )}
                             </TouchableOpacity>
                           );
                         })}
