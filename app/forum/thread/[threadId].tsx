@@ -68,6 +68,7 @@ export default function ThreadDetailScreen() {
   // Real-time synchronization refs
   const latestTimestampRef = useRef<string | null>(null);
   const isSyncingRef = useRef<boolean>(false);
+  const isNearBottomRef = useRef<boolean>(true);
 
   // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -79,7 +80,9 @@ export default function ThreadDetailScreen() {
       () => {
         setKeyboardVisible(true);
         setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
+          try {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          } catch {}
         }, 120);
       }
     );
@@ -95,7 +98,13 @@ export default function ThreadDetailScreen() {
 
   const loadData = useCallback(
     async (isInitial = false) => {
-      if (!threadId) return;
+      if (!threadId) {
+        if (isInitial) {
+          setLoading(false);
+          setIsError(true);
+        }
+        return;
+      }
       if (isInitial) {
         setLoading(true);
         setIsError(false);
@@ -142,10 +151,14 @@ export default function ThreadDetailScreen() {
           if (lastOne?.created_at) {
             latestTimestampRef.current = lastOne.created_at;
           }
-          // Smoothly scroll to the bottom when new message arrives
-          setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          }, 80);
+          // Smoothly scroll to the bottom when new message arrives if user is near bottom
+          if (isNearBottomRef.current) {
+            setTimeout(() => {
+              try {
+                flatListRef.current?.scrollToEnd({ animated: true });
+              } catch {}
+            }, 80);
+          }
           return merged;
         });
       }
@@ -303,10 +316,20 @@ export default function ThreadDetailScreen() {
               keyExtractor={(p) => p.id}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
+              onScroll={(event) => {
+                const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+                const paddingToBottom = 160;
+                const isNear =
+                  layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+                isNearBottomRef.current = isNear;
+              }}
+              scrollEventThrottle={32}
               onContentSizeChange={() => {
                 if (shouldScrollToEndRef.current) {
                   shouldScrollToEndRef.current = false;
-                  flatListRef.current?.scrollToEnd({ animated: true });
+                  try {
+                    flatListRef.current?.scrollToEnd({ animated: true });
+                  } catch {}
                 }
               }}
               contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 }}

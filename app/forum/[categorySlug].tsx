@@ -205,7 +205,13 @@ export default function CategoryThreadsScreen() {
   );
 
   const loadData = async (showLoader = false) => {
-    if (!categorySlug) return;
+    if (!categorySlug) {
+      if (showLoader) {
+        setLoading(false);
+        setIsError(true);
+      }
+      return;
+    }
     if (showLoader) {
       setLoading(true);
       setIsError(false);

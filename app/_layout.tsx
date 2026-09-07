@@ -61,6 +61,9 @@ function RootStack() {
         <Stack.Screen name="novel/[slug]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="read/[chapterId]" options={{ animation: 'fade' }} />
         <Stack.Screen name="forum" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="forum/[categorySlug]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="forum/thread/[threadId]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="latest-updates" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="account" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="akun" options={{ animation: 'slide_from_right' }} />

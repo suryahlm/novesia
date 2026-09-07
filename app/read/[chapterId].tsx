@@ -136,7 +136,8 @@ interface SiblingChapter {
 }
 
 export default function ReadChapterScreen() {
-  const { chapterId } = useLocalSearchParams<{ chapterId: string }>();
+  const { chapterId: rawChapterId } = useLocalSearchParams<{ chapterId: string }>();
+  const chapterId = (Array.isArray(rawChapterId) ? rawChapterId[0] : rawChapterId) || '';
   const router = useRouter();
   const { colors } = useTheme();
   const { lang: globalLang, t, changeLang } = useLanguage();

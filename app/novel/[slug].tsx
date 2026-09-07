@@ -56,7 +56,8 @@ interface Chapter {
 }
 
 export default function NovelDetailScreen() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug: rawSlug } = useLocalSearchParams<{ slug: string }>();
+  const slug = (Array.isArray(rawSlug) ? rawSlug[0] : rawSlug) || '';
   const router = useRouter();
   const { t, lang, changeLang } = useLanguage();
   useFonts({
