@@ -5,13 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Share,
   TouchableOpacity,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { apiGet, apiPost } from '../../lib/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../lib/i18n';
@@ -20,6 +20,8 @@ import { formatViews, cleanChapterTitle } from '../../lib/utils';
 import { CustomDialog } from '../../components/CustomDialog';
 import { useTheme } from '../../lib/ThemeProvider';
 import { trackBookmarkAdded } from '../../lib/gamification';
+import { useFonts, Poppins_400Regular } from '@expo-google-fonts/poppins';
+import { requestTranslation } from '../../lib/translationRequestService';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -37,6 +39,7 @@ interface Novel {
   year: number | null;
   original_status: string | null;
   status: string | null;
+  source?: string | null;
   total_views?: number;
 }
 
@@ -53,6 +56,10 @@ export default function NovelDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const { t, lang, changeLang } = useLanguage();
+  useFonts({
+    'Poppins-Regular': Poppins_400Regular,
+    Poppins: Poppins_400Regular,
+  });
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [novel, setNovel] = useState<Novel | null>(null);
@@ -62,11 +69,18 @@ export default function NovelDetailScreen() {
   const [lastReadChapter, setLastReadChapter] = useState<number | null>(null);
   const [lastReadChapterId, setLastReadChapterId] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [synopsisExpanded, setSynopsisExpanded] = useState(false);
+  const [titleExpanded, setTitleExpanded] = useState(false);
+  const [isTitleTruncated, setIsTitleTruncated] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
     message: string;
     tone?: 'gold' | 'danger' | 'success' | 'warning' | 'info';
+    confirmText?: string;
+    cancelText?: string;
+    showCancel?: boolean;
+    onConfirm?: () => void;
   }>({ title: '', message: '' });
 
   useEffect(() => {
@@ -86,7 +100,7 @@ export default function NovelDetailScreen() {
           apiPost(`/api/novels/${novel.id}/view`).catch(() => {});
           await AsyncStorage.setItem(viewKey, 'true');
         }
-      } catch (e) {
+      } catch {
         // silent fail
       }
     };
@@ -105,6 +119,63 @@ export default function NovelDetailScreen() {
     };
     checkSaved();
   }, [novel]);
+
+  const hasIndonesianTranslation = Boolean(
+    novel?.synopsis_translated ||
+    chapters.some((c) => (c.word_count_translated || 0) > 0)
+  );
+
+  const handleLanguageToggle = () => {
+    if (!novel) return;
+    const nextLang = lang === 'id' ? 'en' : 'id';
+    if (nextLang === 'id' && !hasIndonesianTranslation) {
+      setDialogConfig({
+        title: lang === 'id' ? 'Terjemahan Belum Tersedia' : 'Translation Not Available',
+        message:
+          lang === 'id'
+            ? `Novel "${novel.title}" belum memiliki terjemahan Bahasa Indonesia. Mau mengajukan request translate agar segera diterjemahkan?`
+            : `"${novel.title}" does not have an Indonesian translation yet. Would you like to request a translation?`,
+        tone: 'gold',
+        confirmText: 'Request Translate',
+        cancelText: t.cancel || 'Batal',
+        showCancel: true,
+        onConfirm: async () => {
+          try {
+            await requestTranslation({
+              novelId: novel.id,
+              novelSlug: novel.nu_slug,
+              novelTitle: novel.title,
+              novelCover: novel.cover_url,
+            });
+            setDialogConfig({
+              title: lang === 'id' ? 'Permintaan Terkirim' : 'Request Submitted',
+              message:
+                lang === 'id'
+                  ? 'Terima kasih! Permintaan terjemahan untuk novel ini telah dicatat dan akan segera diproses oleh admin.'
+                  : 'Thank you! Your translation request has been submitted and will be processed soon.',
+              tone: 'success',
+              confirmText: 'OK',
+              showCancel: false,
+            });
+            setDialogVisible(true);
+          } catch (e: any) {
+            setDialogConfig({
+              title: 'Gagal Mengirim',
+              message: e?.message || 'Gagal mengirim permintaan terjemahan. Silakan coba lagi.',
+              tone: 'danger',
+              confirmText: 'OK',
+              showCancel: false,
+            });
+            setDialogVisible(true);
+          }
+        },
+      });
+      setDialogVisible(true);
+      return;
+    }
+
+    changeLang(nextLang);
+  };
 
   const toggleSave = async () => {
     if (!novel) return;
@@ -125,6 +196,7 @@ export default function NovelDetailScreen() {
         title: 'Gagal Menyimpan',
         message: 'Tidak dapat menyimpan novel ke dalam library Anda.',
         tone: 'danger',
+        showCancel: false,
       });
       setDialogVisible(true);
     }
@@ -187,65 +259,39 @@ export default function NovelDetailScreen() {
     );
   }
 
+  // Clean synopsis
+  const rawSynopsis = (lang === 'id' && novel.synopsis_translated) 
+    ? novel.synopsis_translated 
+    : novel.synopsis;
+
+  let cleanedSynopsis = (rawSynopsis || '').trim();
+  if (cleanedSynopsis) {
+    const lines = cleanedSynopsis.split('\n');
+    let cutIdx = lines.length;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim();
+      if (!line) { cutIdx = i; continue; }
+      if (line.length < 40 && !line.includes('.') && !line.includes('!') && !line.includes('?') && /^[A-Z]/.test(line)) {
+        cutIdx = i;
+      } else {
+        break;
+      }
+    }
+    cleanedSynopsis = lines.slice(0, cutIdx).join('\n').trim();
+  }
+
+  const isCompleted =
+    novel.status === 'completed' ||
+    novel.status === 'complete' ||
+    novel.status === 'tamat' ||
+    ['completed', 'complete', 'finished', 'tamat'].includes((novel.original_status || '').toLowerCase().trim());
+
+  const realGenres = (novel.genres || []).filter((g: string) => g.toLowerCase() !== 'general');
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Floating Top Navigation: Back button + Quick Language button */}
-      <View
-        style={{
-          position: 'absolute',
-          top: Math.max(insets.top, 14),
-          left: 16,
-          right: 16,
-          zIndex: 99,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pointerEvents: 'box-none',
-        }}
-      >
-        <TouchableOpacity
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            backgroundColor: 'rgba(15,23,42,0.7)',
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.18)',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-          accessibilityLabel={t.back}
-        >
-          <Ionicons name="chevron-back" size={20} color="#ffffff" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 5,
-            paddingHorizontal: 11,
-            paddingVertical: 6,
-            borderRadius: 999,
-            backgroundColor: 'rgba(15,23,42,0.7)',
-            borderWidth: 1,
-            borderColor: colors.primary + '75',
-          }}
-          onPress={() => changeLang(lang === 'id' ? 'en' : 'id')}
-          activeOpacity={0.7}
-          accessibilityLabel="Switch language"
-        >
-          <Ionicons name="globe-outline" size={14} color={colors.primary} />
-          <Text style={{ color: '#ffffff', fontSize: 11.5, fontWeight: '800' }}>
-            {lang === 'id' ? '🇮🇩 ID' : '🇬🇧 EN'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Cover + Overlay */}
+        {/* ═══ 1. IMMERSIVE HERO WITH AMBIENT BACKDROP ═══ */}
         <View style={styles.heroContainer}>
           {novel.cover_url && (
             <Image 
@@ -254,211 +300,255 @@ export default function NovelDetailScreen() {
                 headers: { 'User-Agent': 'NovesiaApp/1.0' }
               }} 
               style={styles.heroBg} 
-              blurRadius={20} 
+              blurRadius={36} 
             />
           )}
-          <View style={styles.heroOverlay} />
+          <LinearGradient
+            colors={[
+              'rgba(8,11,18,0.45)',
+              'rgba(8,11,18,0.88)',
+              colors.background,
+            ]}
+            style={StyleSheet.absoluteFill}
+          />
 
-          <View style={[styles.heroContent, { paddingTop: Math.max(54, insets.top + 46) }]}>
-            {novel.cover_url ? (
-              <Image 
-                source={{ 
-                uri: novel.cover_url, 
-                headers: { 'User-Agent': 'NovesiaApp/1.0' }
-              }} 
-              style={styles.coverImage} 
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <View style={[styles.coverImage, styles.noCover]}>
-              <Text style={{ fontSize: 40 }}>📕</Text>
+          <View style={[styles.heroContent, { paddingTop: Math.max(16, insets.top + 8) }]}>
+            {/* 3D Elevated Book Cover */}
+            <View style={styles.coverWrapper}>
+              {novel.cover_url ? (
+                <Image 
+                  source={{ 
+                    uri: novel.cover_url, 
+                    headers: { 'User-Agent': 'NovesiaApp/1.0' }
+                  }} 
+                  style={styles.coverImage} 
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <View style={[styles.coverImage, styles.noCover]}>
+                  <Text style={{ fontSize: 36 }}>📕</Text>
+                </View>
+              )}
+              {/* Spine Lighting Gloss */}
+              <LinearGradient
+                colors={['rgba(255,255,255,0.22)', 'transparent', 'rgba(0,0,0,0.35)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.coverSpine}
+                pointerEvents="none"
+              />
             </View>
-          )}
-          <View style={styles.heroInfo}>
-            <Text style={styles.novelTitle}>{novel.title}</Text>
-            <Text style={styles.novelAuthor}>{novel.author || 'Unknown Author'}</Text>
-            <View style={styles.statRow}>
-              {novel.rating && (
-                <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
-                  <Text style={[styles.statText, { color: colors.primary }]}>★ {typeof novel.rating === 'number' ? novel.rating.toFixed(1) : novel.rating}</Text>
-                </View>
+
+            {/* Novel Info */}
+            <View style={styles.heroInfo}>
+              <Text 
+                style={styles.novelTitle} 
+                numberOfLines={titleExpanded ? undefined : 3}
+                onTextLayout={(e) => {
+                  if (e.nativeEvent.lines.length > 3) {
+                    setIsTitleTruncated(true);
+                  }
+                }}
+              >
+                {novel.title}
+              </Text>
+
+              {(isTitleTruncated || (novel.title && novel.title.length > 55)) && (
+                <TouchableOpacity
+                  onPress={() => setTitleExpanded(!titleExpanded)}
+                  style={styles.titleToggleBtn}
+                  hitSlop={8}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.titleToggleText, { color: colors.primary }]}>
+                    {titleExpanded 
+                      ? (lang === 'id' ? 'Sembunyikan ▲' : 'Show Less ▲') 
+                      : (lang === 'id' ? 'Judul Lengkap ▼' : 'Full Title ▼')}
+                  </Text>
+                </TouchableOpacity>
               )}
-              <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
-                <Text style={[styles.statText, { color: colors.primary }]}>{novel.total_chapters} ch</Text>
+
+              <View style={styles.authorRow}>
+                <Ionicons name="person-circle-outline" size={13} color={colors.primary} />
+                <Text style={[styles.novelAuthor, { color: colors.primary }]} numberOfLines={1}>
+                  {novel.author || 'Unknown Author'}
+                </Text>
               </View>
-              {novel.year && (
-                <View style={[styles.statBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '40' }]}>
-                  <Text style={[styles.statText, { color: colors.primary }]}>{novel.year}</Text>
-                </View>
-              )}
-              {novel.total_views !== undefined && (
-                <View style={[styles.statBadge, { backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-                  <Text style={[styles.statText, { color: '#e2e8f0' }]}>👁 {formatViews(novel.total_views)}</Text>
-                </View>
-              )}
-              {/* Status Badge: Amber for Ongoing/Berjalan, Emerald for Tamat/Complete */}
-              {(() => {
-                const isCompleted =
-                  novel.status === 'completed' ||
-                  novel.status === 'complete' ||
-                  novel.status === 'tamat' ||
-                  ['completed', 'complete', 'finished', 'tamat'].includes((novel.original_status || '').toLowerCase().trim());
-                return (
-                  <View style={{
-                    backgroundColor: isCompleted ? 'rgba(16,185,129,0.18)' : 'rgba(245,158,11,0.18)',
-                    borderColor: isCompleted ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)',
-                    borderWidth: 1,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4.5,
-                    borderRadius: 8,
-                  }}>
-                    <Text style={{
-                      fontSize: 10,
-                      fontWeight: '800',
-                      color: isCompleted ? '#34D399' : '#FBBF24',
-                      letterSpacing: 0.3,
-                    }}>
-                      {isCompleted ? (lang === 'id' ? 'Tamat' : 'Complete') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
+
+              {/* Meta Badges Row */}
+              <View style={styles.metaRow}>
+                {novel.rating && (
+                  <View style={[styles.metaPill, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '50' }]}>
+                    <Ionicons name="star" size={10} color={colors.primary} />
+                    <Text style={[styles.metaPillText, { color: colors.primary }]}>
+                      {typeof novel.rating === 'number' ? novel.rating.toFixed(1) : novel.rating}
                     </Text>
                   </View>
-                );
-              })()}
-              {/* Save to Library */}
-              <TouchableOpacity
-                style={[
-                  styles.saveBadge,
-                  isSaved && {
-                    backgroundColor: colors.primaryMuted,
-                    borderColor: colors.primary + '60',
-                  },
-                ]}
-                onPress={toggleSave}
-                activeOpacity={0.7}
-              >
-                <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={14} color={isSaved ? colors.primary : '#94a3b8'} />
-              </TouchableOpacity>
-              {/* Share */}
-              <TouchableOpacity
-                style={styles.saveBadge}
-                onPress={() => {
-                  Share.share({
-                    message: `📖 ${novel.title}\n\n${lang === 'id' ? 'Baca di Novesia!' : 'Read on Novesia!'}`,
-                  });
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="share-social-outline" size={14} color="#94a3b8" />
-              </TouchableOpacity>
-              {/* Quick Language Switcher Button */}
-              <TouchableOpacity
-                style={[
-                  styles.saveBadge,
-                  {
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 4,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4.5,
-                    backgroundColor: colors.primaryMuted,
-                    borderColor: colors.primary + '55',
-                  },
-                ]}
-                onPress={() => changeLang(lang === 'id' ? 'en' : 'id')}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="globe-outline" size={13} color={colors.primary} />
-                <Text style={{ fontSize: 10.5, fontWeight: '800', color: colors.primary }}>
-                  {lang === 'id' ? 'ID' : 'EN'}
+                )}
+
+                <View style={styles.metaPill}>
+                  <Text style={styles.metaPillText}>{novel.total_chapters} ch</Text>
+                </View>
+
+                {novel.total_views !== undefined && (
+                  <View style={styles.metaPill}>
+                    <Ionicons name="eye-outline" size={11} color="#94A3B8" />
+                    <Text style={styles.metaPillText}>{formatViews(novel.total_views)}</Text>
+                  </View>
+                )}
+
+                <View style={[styles.metaPill, {
+                  backgroundColor: isCompleted ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
+                  borderColor: isCompleted ? 'rgba(16,185,129,0.45)' : 'rgba(245,158,11,0.45)',
+                }]}>
+                  <View style={{
+                    width: 5,
+                    height: 5,
+                    borderRadius: 2.5,
+                    backgroundColor: isCompleted ? '#34D399' : '#FBBF24',
+                  }} />
+                  <Text style={[styles.metaPillText, { color: isCompleted ? '#34D399' : '#FBBF24' }]}>
+                    {isCompleted ? (lang === 'id' ? 'Tamat' : 'Complete') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Action Toolbar */}
+              <View style={styles.actionToolbar}>
+                {/* Language Switcher */}
+                <TouchableOpacity
+                  style={[
+                    styles.actionBtn,
+                    { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '55' }
+                  ]}
+                  onPress={handleLanguageToggle}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="globe-outline" size={13} color={colors.primary} />
+                  <Text style={[styles.actionBtnText, { color: colors.primary }]}>
+                    {lang === 'id' ? '🇮🇩 ID' : '🇬🇧 EN'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Bookmark Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.actionBtn,
+                    isSaved && { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '65' }
+                  ]}
+                  onPress={toggleSave}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name={isSaved ? 'bookmark' : 'bookmark-outline'} 
+                    size={13.5} 
+                    color={isSaved ? colors.primary : '#94A3B8'} 
+                  />
+                  <Text style={[styles.actionBtnText, { color: isSaved ? colors.primary : '#94A3B8' }]}>
+                    {isSaved ? (lang === 'id' ? 'Tersimpan' : 'Saved') : (lang === 'id' ? 'Simpan' : 'Save')}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Share Button */}
+                <TouchableOpacity
+                  style={styles.actionBtnIconOnly}
+                  onPress={() => {
+                    Share.share({
+                      message: `📖 ${novel.title}\n\n${lang === 'id' ? 'Baca di Novesia!' : 'Read on Novesia!'}`,
+                    });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="share-social-outline" size={14} color="#94A3B8" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Genres Inline */}
+              {realGenres.length > 0 && (
+                <Text style={styles.genreText} numberOfLines={1}>
+                  {realGenres.join('  •  ')}
                 </Text>
-              </TouchableOpacity>
+              )}
             </View>
-            {/* Genre inline in hero */}
-            {(() => {
-              const realGenres = (novel.genres || []).filter((g: string) => g.toLowerCase() !== 'general');
-              if (realGenres.length === 0) return null;
-              return (
-                <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, lineHeight: 18 }}>
-                  {realGenres.join('  -  ')}
-                </Text>
-              );
-            })()}
           </View>
         </View>
-      </View>
 
-      {/* Synopsis */}
-      {(() => {
-        const rawSynopsis = (lang === 'id' && novel.synopsis_translated) 
-          ? novel.synopsis_translated 
-          : novel.synopsis;
-          
-        if (!rawSynopsis) return null;
-
-        // Clean synopsis: strip trailing genre/tag lines embedded in the text
-        let cleaned = rawSynopsis.trim();
-        // Split into lines and remove trailing short lines that look like tags
-        const lines = cleaned.split('\n');
-        let cutIdx = lines.length;
-        for (let i = lines.length - 1; i >= 0; i--) {
-          const line = lines[i].trim();
-          if (!line) { cutIdx = i; continue; }
-          // Genre/tag lines are short (< 40 chars), often Title Case, no periods
-          if (line.length < 40 && !line.includes('.') && !line.includes('!') && !line.includes('?') && /^[A-Z]/.test(line)) {
-            cutIdx = i;
-          } else {
-            break;
-          }
-        }
-        cleaned = lines.slice(0, cutIdx).join('\n').trim();
-        return (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t.synopsis}</Text>
-            <Text style={styles.synopsisText}>{cleaned}</Text>
-          </View>
-        );
-      })()}
-
-      {/* Chapter List */}
-      <View style={styles.section}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <Text style={styles.sectionTitle}>{t.chapter_list} ({chapters.length})</Text>
-          {chapters.length > 0 && (
+        {/* ═══ 2. MINIMALIST READING ACTION BUTTON ═══ */}
+        {chapters.length > 0 && (
+          <View style={styles.ctaWrapper}>
             <TouchableOpacity
-              style={styles.continueBtn}
+              activeOpacity={0.75}
+              style={[
+                styles.ctaMinimalBtn,
+                {
+                  borderColor: colors.primary + '55',
+                  backgroundColor: colors.primaryMuted || 'rgba(255,255,255,0.04)',
+                },
+              ]}
               onPress={() => {
                 if (lastReadChapterId) {
                   router.push(`/read/${lastReadChapterId}` as any);
                 } else {
-                  const firstWithContent = chapters.find(c => (c.word_count_original || 0) > 0);
+                  const firstWithContent = chapters.find(c => (c.word_count_original || 0) > 0) || chapters[0];
                   if (firstWithContent) router.push(`/read/${firstWithContent.id}` as any);
                 }
               }}
             >
-              <Text style={styles.continueBtnText}>
-                ▶ {t.continue_reading_btn} {lastReadChapter ? `Ch-${lastReadChapter}` : ''}
+              <Ionicons name="play" size={11} color={colors.primary} />
+              <Text style={[styles.ctaMinimalText, { color: colors.primary }]}>
+                {lastReadChapter 
+                  ? `${t.continue_reading_btn || 'Lanjut Membaca'} (Bab ${lastReadChapter})` 
+                  : (lang === 'id' ? 'Mulai Membaca' : 'Start Reading')}
               </Text>
             </TouchableOpacity>
-          )}
-        </View>
-        {chapters.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyIcon}>📝</Text>
-            <Text style={styles.emptyText}>{t.no_chapters}</Text>
-            <Text style={styles.emptyHint}>{t.translate_admin}</Text>
           </View>
-        ) : (
-          <>
-            {/* Semua Chapter button */}
-            <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+        )}
+
+        {/* ═══ 3. SINOPSIS SECTION ═══ */}
+        {cleanedSynopsis ? (
+          <View style={styles.cardSection}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <View style={[styles.sectionTitleAccent, { backgroundColor: colors.primary }]} />
+                <Text style={styles.sectionLabel}>{t.synopsis?.toUpperCase() || 'SINOPSIS'}</Text>
+              </View>
+            </View>
+            <Text 
+              style={styles.synopsisText} 
+              numberOfLines={synopsisExpanded ? undefined : 4}
+            >
+              {cleanedSynopsis}
+            </Text>
+            {cleanedSynopsis.length > 180 && (
               <TouchableOpacity
-                style={[
-                  styles.loadChapterBtn,
-                  expandedGroups.size === Math.ceil(chapters.length / 20) && {
-                    backgroundColor: colors.primaryMuted,
-                    borderColor: colors.primary,
-                  },
-                ]}
+                onPress={() => setSynopsisExpanded(!synopsisExpanded)}
+                style={styles.expandBtn}
+                hitSlop={8}
+              >
+                <Text style={[styles.expandBtnText, { color: colors.primary }]}>
+                  {synopsisExpanded 
+                    ? (lang === 'id' ? 'Tutup Selengkapnya ▲' : 'Show Less ▲') 
+                    : (lang === 'id' ? 'Baca Selengkapnya ▼' : 'Read More ▼')}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : null}
+
+        {/* ═══ 4. DAFTAR BAB (CHAPTER LIST) SECTION ═══ */}
+        <View style={styles.cardSection}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <View style={[styles.sectionTitleAccent, { backgroundColor: colors.primary }]} />
+              <Text style={styles.sectionLabel}>{t.chapter_list?.toUpperCase() || 'DAFTAR BAB'}</Text>
+              <View style={styles.countBadge}>
+                <Text style={styles.countBadgeText}>{chapters.length}</Text>
+              </View>
+            </View>
+
+            {chapters.length > 20 && (
+              <TouchableOpacity
                 onPress={() => {
                   if (expandedGroups.size === Math.ceil(chapters.length / 20)) {
                     setExpandedGroups(new Set());
@@ -468,93 +558,130 @@ export default function NovelDetailScreen() {
                     setExpandedGroups(all);
                   }
                 }}
+                hitSlop={8}
               >
-                <Text
-                  style={[
-                    styles.loadChapterBtnText,
-                    expandedGroups.size === Math.ceil(chapters.length / 20) && { color: colors.primary },
-                  ]}
-                >
+                <Text style={[styles.toggleAllText, { color: colors.primary }]}>
                   {expandedGroups.size === Math.ceil(chapters.length / 20) ? t.close_all : t.all_chapters}
                 </Text>
               </TouchableOpacity>
+            )}
+          </View>
+
+          {chapters.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyIcon}>📝</Text>
+              <Text style={styles.emptyText}>{t.no_chapters}</Text>
+              <Text style={styles.emptyHint}>{t.translate_admin}</Text>
             </View>
-            {/* Accordion groups of 20 */}
-            {Array.from({ length: Math.ceil(chapters.length / 20) }, (_, gi) => {
-              const start = gi * 20;
-              const end = Math.min(start + 20, chapters.length);
-              const group = chapters.slice(start, end);
-              const isOpen = expandedGroups.has(gi);
-              const hasLastRead = lastReadChapter != null && lastReadChapter >= (start + 1) && lastReadChapter <= end;
-              return (
-                <View key={gi}>
-                  <TouchableOpacity
-                    style={[
-                      styles.groupBtn,
-                      isOpen && { backgroundColor: colors.primaryMuted, borderColor: colors.primary },
-                      hasLastRead && !isOpen && styles.groupBtnLastRead,
-                    ]}
-                    onPress={() => {
-                      setExpandedGroups(prev => {
-                        const next = new Set(prev);
-                        if (next.has(gi)) next.delete(gi);
-                        else next.add(gi);
-                        return next;
-                      });
-                    }}
-                  >
-                    <Text style={[styles.groupBtnText, isOpen && { color: colors.primary }, hasLastRead && !isOpen && { color: '#22c55e' }]}>
-                      {lang === 'id' ? 'Bab' : 'Chapter'} {start + 1} - {end} {hasLastRead && !isOpen ? `(${lang === 'id' ? 'Bab' : 'Ch'}-${lastReadChapter})` : ''} {isOpen ? '▲' : '▼'}
-                    </Text>
-                  </TouchableOpacity>
-                  {isOpen && group.map((ch) => {
-                    const hasContent = (ch.word_count_original || 0) > 0;
-                    const wc = ch.word_count_translated || ch.word_count_original || 0;
-                    const isLastRead = lastReadChapter === ch.chapter_number;
-                    return (
-                      <TouchableOpacity
-                        key={ch.id}
-                        style={[styles.chapterItem, !hasContent && styles.chapterPending, isLastRead && styles.chapterLastRead]}
-                        onPress={() => hasContent ? router.push(`/read/${ch.id}` as any) : null}
-                        activeOpacity={hasContent ? 0.7 : 1}
-                      >
-                        <View style={styles.chapterLeft}>
-                          <View style={[styles.chapterDot, { backgroundColor: hasContent ? '#22c55e' : '#334155' }]} />
-                          <Text style={[styles.chapterNum, { color: colors.primary }, !hasContent && { color: '#475569' }]}>#{ch.chapter_number}</Text>
-                          <Text style={[styles.chapterTitle, !hasContent && { color: '#475569' }]} numberOfLines={1}>
-                            {cleanChapterTitle(ch.chapter_title, ch.chapter_number)}
-                          </Text>
-                        </View>
-                        {hasContent ? (
-                          <Text style={styles.chapterWords}>{wc} {lang === 'id' ? 'kata' : 'words'}</Text>
-                        ) : (
-                          <Text style={styles.chapterStatusPending}>{lang === 'id' ? 'Belum Tersedia' : 'Pending'}</Text>
+          ) : (
+            <View style={{ gap: 8 }}>
+              {Array.from({ length: Math.ceil(chapters.length / 20) }, (_, gi) => {
+                const start = gi * 20;
+                const end = Math.min(start + 20, chapters.length);
+                const group = chapters.slice(start, end);
+                const isOpen = expandedGroups.has(gi);
+                const hasLastRead = lastReadChapter != null && lastReadChapter >= (start + 1) && lastReadChapter <= end;
+                return (
+                  <View key={gi} style={styles.groupContainer}>
+                    <TouchableOpacity
+                      style={[
+                        styles.groupHeader,
+                        isOpen && { borderColor: colors.primary + '45', backgroundColor: 'rgba(255,255,255,0.035)' },
+                        hasLastRead && !isOpen && { borderColor: '#10B98160', backgroundColor: 'rgba(16,185,129,0.06)' },
+                      ]}
+                      onPress={() => {
+                        setExpandedGroups(prev => {
+                          const next = new Set(prev);
+                          if (next.has(gi)) next.delete(gi);
+                          else next.add(gi);
+                          return next;
+                        });
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Ionicons 
+                          name={isOpen ? "folder-open-outline" : "folder-outline"} 
+                          size={15} 
+                          color={isOpen ? colors.primary : '#94A3B8'} 
+                        />
+                        <Text style={[styles.groupTitle, isOpen && { color: colors.primary }]}>
+                          {lang === 'id' ? 'Bab' : 'Chapter'} {start + 1} – {end}
+                        </Text>
+                        {hasLastRead && (
+                          <View style={styles.lastReadTag}>
+                            <Text style={styles.lastReadTagText}>
+                              {lang === 'id' ? `Bab ${lastReadChapter}` : `Ch ${lastReadChapter}`}
+                            </Text>
+                          </View>
                         )}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              );
-            })}
-          </>
-        )}
-      </View>
+                      </View>
+                      <Ionicons 
+                        name={isOpen ? "chevron-up" : "chevron-down"} 
+                        size={15} 
+                        color={isOpen ? colors.primary : '#64748B'} 
+                      />
+                    </TouchableOpacity>
 
-      <View style={{ height: 40 }} />
+                    {isOpen && (
+                      <View style={styles.groupBody}>
+                        {group.map((ch, idx) => {
+                          const hasContent = (ch.word_count_original || 0) > 0;
+                          const wc = ch.word_count_translated || ch.word_count_original || 0;
+                          const isLastRead = lastReadChapter === ch.chapter_number;
+                          return (
+                            <TouchableOpacity
+                              key={ch.id}
+                              style={[
+                                styles.chapterRow,
+                                isLastRead && { backgroundColor: 'rgba(16,185,129,0.08)' },
+                                !hasContent && { opacity: 0.45 },
+                                idx === group.length - 1 && { borderBottomWidth: 0 },
+                              ]}
+                              onPress={() => hasContent ? router.push(`/read/${ch.id}` as any) : null}
+                              activeOpacity={hasContent ? 0.65 : 1}
+                            >
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                                <View style={[styles.statusDot, { backgroundColor: hasContent ? (isLastRead ? '#10B981' : colors.primary) : '#475569' }]} />
+                                <Text style={[styles.chapterNumText, { color: isLastRead ? '#10B981' : colors.primary }]}>
+                                  #{ch.chapter_number}
+                                </Text>
+                                <Text style={[styles.chapterTitleText, isLastRead && { color: '#F8FAFC', fontWeight: '700' }]} numberOfLines={1}>
+                                  {cleanChapterTitle(ch.chapter_title, ch.chapter_number)}
+                                </Text>
+                              </View>
+                              <Text style={styles.chapterWordText}>
+                                {hasContent ? `${wc} ${lang === 'id' ? 'kata' : 'w'}` : (lang === 'id' ? 'Segera' : 'Pending')}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
 
-      <CustomDialog
-        visible={dialogVisible}
-        onClose={() => setDialogVisible(false)}
-        title={dialogConfig.title}
-        message={dialogConfig.message}
-        tone={dialogConfig.tone}
-        showCancel={false}
-      />
-    </ScrollView>
+        <View style={{ height: 48 }} />
+
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          message={dialogConfig.message}
+          tone={dialogConfig.tone}
+          confirmText={dialogConfig.confirmText}
+          cancelText={dialogConfig.cancelText}
+          showCancel={dialogConfig.showCancel ?? false}
+          onConfirm={dialogConfig.onConfirm}
+        />
+      </ScrollView>
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -563,90 +690,233 @@ const styles = StyleSheet.create({
   backBtn: { marginTop: 16, padding: 12 },
   backBtnText: { fontSize: 14, fontWeight: '600' },
 
-  heroContainer: { minHeight: 220, position: 'relative' },
+  // Hero Section
+  heroContainer: { minHeight: 210, position: 'relative' },
   heroBg: { position: 'absolute', width: '100%', height: '100%' },
-  heroOverlay: { position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(10,10,15,0.75)' },
-  heroContent: { flexDirection: 'row', alignItems: 'center', padding: 20, paddingTop: 50, gap: 16 },
-  coverImage: { width: 110, height: 160, borderRadius: 12, backgroundColor: '#1a1a2e' },
-  noCover: { justifyContent: 'center', alignItems: 'center' },
-  heroInfo: { flex: 1, justifyContent: 'center' },
-  novelTitle: { fontSize: 16, fontWeight: '600', color: '#e2e8f0', lineHeight: 22 },
-  novelAuthor: { fontSize: 13, color: '#94a3b8', marginTop: 4 },
-  saveBadge: {
+  heroContent: { 
+    flexDirection: 'row', 
+    alignItems: 'flex-start', 
+    paddingHorizontal: 16, 
+    paddingBottom: 16,
+    gap: 15,
+  },
+  coverWrapper: {
+    width: 114,
+    height: 165,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.55,
+    shadowRadius: 14,
+    elevation: 10,
+    backgroundColor: '#111622',
+  },
+  coverImage: { width: '100%', height: '100%' },
+  coverSpine: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 8 },
+  noCover: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1e2e' },
+  
+  heroInfo: { flex: 1, justifyContent: 'flex-start', paddingTop: 2 },
+  novelTitle: { 
+    fontFamily: 'Poppins-Regular',
+    fontSize: 15.5, 
+    fontWeight: '400', 
+    color: '#F8FAFC', 
+    lineHeight: 23,
+    letterSpacing: 0.1,
+  },
+  titleToggleBtn: {
+    marginTop: 2,
+    marginBottom: 4,
+    alignSelf: 'flex-start',
+  },
+  titleToggleText: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 10.5,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4.5,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  novelAuthor: { fontSize: 12, fontWeight: '600' },
+
+  // Meta Badges
+  metaRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 },
+  metaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4.5,
     paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    paddingVertical: 2.5,
+    borderRadius: 999,
+    borderWidth: 0.8,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  statRow: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' },
-  statBadge: {
+  metaPillText: { fontSize: 10.5, fontWeight: '700', color: '#cbd5e1' },
+
+  // Action Toolbar
+  actionToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginBottom: 8,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4.5,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingVertical: 5.5,
+    borderRadius: 10,
+    borderWidth: 0.8,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  statText: { fontSize: 11.5, fontWeight: '700' },
-
-  genreContainer: { paddingHorizontal: 20, paddingTop: 16 },
-  genreParagraph: {
-    fontSize: 13, color: '#94a3b8', lineHeight: 22,
-  },
-
-  section: { paddingHorizontal: 20, marginTop: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#e2e8f0' },
-  continueBtn: {
-    backgroundColor: 'rgba(34,197,94,0.15)', borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderWidth: 1, borderColor: '#22c55e',
-  },
-  continueBtnText: { fontSize: 11, fontWeight: '700', color: '#22c55e' },
-  loadChapterBtn: {
-    flex: 1, alignItems: 'center',
-    paddingVertical: 8, borderRadius: 8,
-    backgroundColor: '#111118', borderWidth: 1, borderColor: '#1e1e2e',
-  },
-  loadChapterBtnText: { fontSize: 12, fontWeight: '600', color: '#64748b' },
-  groupBtn: {
-    backgroundColor: '#111118', borderRadius: 10, padding: 12,
-    marginBottom: 4, borderWidth: 1, borderColor: '#1e1e2e',
+  actionBtnIconOnly: {
+    width: 31,
+    height: 31,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    borderWidth: 0.8,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  groupBtnLastRead: { backgroundColor: 'rgba(34,197,94,0.08)', borderColor: '#22c55e' },
-  groupBtnText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
-  synopsisText: { fontSize: 14, color: '#94a3b8', lineHeight: 22 },
+  actionBtnText: { fontSize: 11, fontWeight: '700' },
+  genreText: { fontSize: 11, color: '#94A3B8', marginTop: 2, letterSpacing: 0.2 },
 
-  emptyBox: {
-    backgroundColor: '#111118',
-    borderRadius: 16,
-    padding: 32,
+  // Primary CTA Button
+  ctaWrapper: {
+    paddingHorizontal: 16,
+    marginTop: 2,
+    marginBottom: 14,
+  },
+  ctaMinimalBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#1e1e2e',
+    justifyContent: 'center',
+    gap: 6.5,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: 0.8,
   },
-  emptyIcon: { fontSize: 36, marginBottom: 12 },
-  emptyText: { fontSize: 14, color: '#64748b', fontWeight: '600' },
-  emptyHint: { fontSize: 12, color: '#475569', marginTop: 4 },
+  ctaMinimalText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.25,
+  },
 
-  chapterItem: {
+  // Sections
+  cardSection: {
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  sectionTitleAccent: {
+    width: 3,
+    height: 12,
+    borderRadius: 2,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    color: '#E2E8F0',
+  },
+  countBadge: {
+    paddingHorizontal: 6.5,
+    paddingVertical: 1.5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  countBadgeText: { fontSize: 10, fontWeight: '700', color: '#94A3B8' },
+  toggleAllText: { fontSize: 11.5, fontWeight: '700' },
+
+  // Synopsis
+  synopsisText: {
+    fontSize: 13.5,
+    color: '#94A3B8',
+    lineHeight: 22,
+    letterSpacing: 0.15,
+  },
+  expandBtn: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+  },
+  expandBtnText: { fontSize: 11.5, fontWeight: '700' },
+
+  // Chapter Accordions
+  groupContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 0.8,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(18,22,30,0.65)',
+  },
+  groupHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#111118',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#1e1e2e',
+    paddingHorizontal: 14,
+    paddingVertical: 11.5,
   },
-  chapterLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  chapterDot: { width: 8, height: 8, borderRadius: 4 },
-  chapterPending: { opacity: 0.5 },
-  chapterNum: { fontSize: 12, fontWeight: '700', width: 30 },
-  chapterTitle: { fontSize: 14, color: '#e2e8f0', flex: 1 },
-  chapterWords: { fontSize: 11, color: '#64748b' },
-  chapterStatusPending: { fontSize: 10, color: '#475569', fontWeight: '600' },
-  chapterLastRead: { backgroundColor: 'rgba(34,197,94,0.08)', borderColor: '#22c55e' },
-});
+  groupTitle: { fontSize: 12.5, fontWeight: '700', color: '#E2E8F0' },
+  lastReadTag: {
+    paddingHorizontal: 6.5,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: 'rgba(16,185,129,0.2)',
+    borderWidth: 0.8,
+    borderColor: 'rgba(16,185,129,0.4)',
+  },
+  lastReadTagText: { fontSize: 9.5, fontWeight: '800', color: '#34D399' },
+  groupBody: {
+    borderTopWidth: 0.8,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(10,14,23,0.4)',
+  },
+  chapterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: 0.8,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
+  },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  chapterNumText: { fontSize: 11.5, fontWeight: '700', width: 34 },
+  chapterTitleText: { fontSize: 13, color: '#CBD5E1', flex: 1 },
+  chapterWordText: { fontSize: 10.5, color: '#64748B', fontWeight: '600', marginLeft: 8 },
 
+  emptyBox: {
+    backgroundColor: 'rgba(18,22,30,0.65)',
+    borderRadius: 14,
+    padding: 28,
+    alignItems: 'center',
+    borderWidth: 0.8,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  emptyIcon: { fontSize: 32, marginBottom: 8 },
+  emptyText: { fontSize: 13.5, color: '#94A3B8', fontWeight: '700' },
+  emptyHint: { fontSize: 11.5, color: '#64748B', marginTop: 4 },
+});

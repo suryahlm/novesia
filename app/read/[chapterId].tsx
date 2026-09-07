@@ -20,6 +20,8 @@ import { useLanguage } from '../../lib/i18n';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
 import { useTheme } from '../../lib/ThemeProvider';
 import { cleanChapterTitle } from '../../lib/utils';
+import { CustomDialog } from '../../components/CustomDialog';
+import { requestTranslation } from '../../lib/translationRequestService';
 
 type ThemeMode = 'dark' | 'light' | 'sepia';
 type Language = 'en' | 'id';
@@ -121,6 +123,8 @@ interface ChapterData {
   word_count_original: number;
   word_count_translated: number;
   novel_id: string;
+  novel_slug?: string;
+  novel?: { title: string; cover_url: string | null; nu_slug: string };
 }
 
 interface SiblingChapter {
@@ -142,12 +146,72 @@ export default function ReadChapterScreen() {
   const [loading, setLoading] = useState(true);
 
   // Reading settings
-  const [fontSize, setFontSize] = useState(16);
+  const [fontSize, setFontSize] = useState(18);
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [lineHeight, setLineHeight] = useState(1.8);
   const [showSettings, setShowSettings] = useState(false);
   const [language, setLanguage] = useState<Language>('en');
   const [readProgress, setReadProgress] = useState(0);
+
+  // Dialog State
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    message: string;
+    tone?: 'gold' | 'danger' | 'success' | 'warning' | 'info';
+    confirmText?: string;
+    cancelText?: string;
+    showCancel?: boolean;
+    onConfirm?: () => void;
+  }>({ title: '', message: '' });
+
+  const promptTranslationRequest = () => {
+    if (!chapter) return;
+    setDialogConfig({
+      title: language === 'id' ? 'Terjemahan Belum Tersedia' : 'Translation Not Available',
+      message:
+        language === 'id'
+          ? `Bab #${chapter.chapter_number} belum memiliki terjemahan Bahasa Indonesia. Mau mengajukan request translate agar segera diterjemahkan?`
+          : `Chapter #${chapter.chapter_number} does not have an Indonesian translation yet. Would you like to request a translation?`,
+      tone: 'gold',
+      confirmText: 'Request Translate',
+      cancelText: t.cancel || 'Batal',
+      showCancel: true,
+      onConfirm: async () => {
+        try {
+          await requestTranslation({
+            novelId: chapter.novel_id,
+            novelSlug: chapter.novel_slug || chapter.novel?.nu_slug,
+            novelTitle: novelTitle || chapter.novel?.title || '',
+            novelCover: chapter.novel?.cover_url || null,
+            chapterId: chapter.id,
+            chapterNumber: chapter.chapter_number,
+          });
+          setDialogConfig({
+            title: language === 'id' ? 'Permintaan Terkirim' : 'Request Submitted',
+            message:
+              language === 'id'
+                ? 'Terima kasih! Permintaan terjemahan untuk bab ini telah dicatat dan akan segera diproses oleh admin.'
+                : 'Thank you! Your translation request for this chapter has been submitted and will be processed soon.',
+            tone: 'success',
+            confirmText: 'OK',
+            showCancel: false,
+          });
+          setDialogVisible(true);
+        } catch (e: any) {
+          setDialogConfig({
+            title: 'Gagal Mengirim',
+            message: e?.message || 'Gagal mengirim permintaan terjemahan. Silakan coba lagi.',
+            tone: 'danger',
+            confirmText: 'OK',
+            showCancel: false,
+          });
+          setDialogVisible(true);
+        }
+      },
+    });
+    setDialogVisible(true);
+  };
 
   useEffect(() => {
     loadSettings();
@@ -355,6 +419,10 @@ export default function ReadChapterScreen() {
         <TouchableOpacity
           onPress={() => {
             const nextLang = language === 'en' ? 'id' : 'en';
+            if (nextLang === 'id' && !hasTranslation) {
+              promptTranslationRequest();
+              return;
+            }
             setLanguage(nextLang);
             changeLang(nextLang);
           }}
@@ -441,9 +509,24 @@ export default function ReadChapterScreen() {
       {/* Language Info Banner */}
       {language === 'id' && !hasTranslation && (
         <View style={[styles.langBanner, { backgroundColor: currentTheme.badgeBg, borderBottomColor: currentTheme.goldAccent + '40' }]}>
-          <Text style={[styles.langBannerText, { color: currentTheme.goldAccent }]}>
+          <Text style={[styles.langBannerText, { color: currentTheme.goldAccent, flex: 1 }]}>
             🇮🇩 {language === 'id' ? 'Terjemahan belum tersedia — menampilkan versi original Inggris' : 'Translation not available — showing English'}
           </Text>
+          <TouchableOpacity
+            onPress={promptTranslationRequest}
+            activeOpacity={0.8}
+            style={{
+              backgroundColor: currentTheme.goldAccent,
+              paddingHorizontal: 9,
+              paddingVertical: 4.5,
+              borderRadius: 7,
+              marginLeft: 8,
+            }}
+          >
+            <Text style={{ fontSize: 11, fontWeight: '800', color: '#000' }}>
+              Request
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -552,7 +635,7 @@ export default function ReadChapterScreen() {
             <View style={[styles.modalHeaderRow, { borderBottomColor: currentTheme.headerBorder }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <View style={[styles.modalHeaderIconBadge, { backgroundColor: currentTheme.badgeBg }]}>
-                  <Ionicons name="options-outline" size={17} color={currentTheme.goldAccent} />
+                  <Ionicons name="options-outline" size={15} color={currentTheme.goldAccent} />
                 </View>
                 <Text style={[styles.modalTitle, { color: currentTheme.text }]}>
                   {t.reading_preferences || 'Reading Preferences'}
@@ -563,15 +646,17 @@ export default function ReadChapterScreen() {
                 hitSlop={8}
                 style={[styles.modalCloseCircle, { backgroundColor: currentTheme.closeCircleBg }]}
               >
-                <Ionicons name="close" size={18} color={currentTheme.textMuted} />
+                <Ionicons name="close" size={16} color={currentTheme.textMuted} />
               </TouchableOpacity>
             </View>
 
             {/* 1. Language Preference */}
             <View style={styles.settingSection}>
               <View style={styles.settingLabelRow}>
-                <Ionicons name="language-outline" size={15} color={currentTheme.goldAccent} />
-                <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.language || 'Bahasa Teks'}</Text>
+                <View style={styles.settingLabelLeft}>
+                  <Ionicons name="language-outline" size={14} color={currentTheme.goldAccent} />
+                  <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.language || 'Bahasa Teks'}</Text>
+                </View>
               </View>
               <View style={styles.langGridRow}>
                 <TouchableOpacity
@@ -582,6 +667,7 @@ export default function ReadChapterScreen() {
                       backgroundColor: language === 'en' ? currentTheme.cardBgActive : currentTheme.cardBg,
                       borderColor: language === 'en' ? currentTheme.goldAccent : currentTheme.cardBorder,
                     },
+                    language === 'en' && styles.langCardActive,
                   ]}
                   onPress={() => {
                     setLanguage('en');
@@ -601,7 +687,7 @@ export default function ReadChapterScreen() {
                     <Text style={[styles.langCardSubtitle, { color: currentTheme.textMuted }]}>Original Text</Text>
                   </View>
                   {language === 'en' ? (
-                    <Ionicons name="checkmark-circle" size={18} color={currentTheme.goldAccent} />
+                    <Ionicons name="checkmark-circle" size={17} color={currentTheme.goldAccent} />
                   ) : (
                     <View style={[styles.radioUnchecked, { borderColor: currentTheme.textMuted }]} />
                   )}
@@ -615,8 +701,16 @@ export default function ReadChapterScreen() {
                       backgroundColor: language === 'id' ? currentTheme.cardBgActive : currentTheme.cardBg,
                       borderColor: language === 'id' ? currentTheme.goldAccent : currentTheme.cardBorder,
                     },
+                    language === 'id' && styles.langCardActive,
                   ]}
                   onPress={() => {
+                    if (!hasTranslation) {
+                      setShowSettings(false);
+                      setTimeout(() => {
+                        promptTranslationRequest();
+                      }, 250);
+                      return;
+                    }
                     setLanguage('id');
                     changeLang('id');
                   }}
@@ -634,7 +728,7 @@ export default function ReadChapterScreen() {
                     <Text style={[styles.langCardSubtitle, { color: currentTheme.textMuted }]}>Terjemahan</Text>
                   </View>
                   {language === 'id' ? (
-                    <Ionicons name="checkmark-circle" size={18} color={currentTheme.goldAccent} />
+                    <Ionicons name="checkmark-circle" size={17} color={currentTheme.goldAccent} />
                   ) : (
                     <View style={[styles.radioUnchecked, { borderColor: currentTheme.textMuted }]} />
                   )}
@@ -645,11 +739,11 @@ export default function ReadChapterScreen() {
             {/* 2. Font Size */}
             <View style={styles.settingSection}>
               <View style={styles.settingLabelRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="text-outline" size={15} color={currentTheme.goldAccent} />
+                <View style={styles.settingLabelLeft}>
+                  <Ionicons name="text-outline" size={14} color={currentTheme.goldAccent} />
                   <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.font_size || 'Ukuran Teks'}</Text>
                 </View>
-                <View style={[styles.badgePill, { backgroundColor: currentTheme.badgeBg, borderColor: currentTheme.goldAccent + '40' }]}>
+                <View style={[styles.badgePill, { backgroundColor: currentTheme.badgeBg, borderColor: currentTheme.goldAccent + '30' }]}>
                   <Text style={[styles.badgePillText, { color: currentTheme.goldAccent }]}>{fontSize}px</Text>
                 </View>
               </View>
@@ -693,8 +787,10 @@ export default function ReadChapterScreen() {
             {/* 3. Theme Mode */}
             <View style={styles.settingSection}>
               <View style={styles.settingLabelRow}>
-                <Ionicons name="color-palette-outline" size={15} color={currentTheme.goldAccent} />
-                <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.theme || 'Tema Latar'}</Text>
+                <View style={styles.settingLabelLeft}>
+                  <Ionicons name="color-palette-outline" size={14} color={currentTheme.goldAccent} />
+                  <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.theme || 'Tema Latar'}</Text>
+                </View>
               </View>
               <View style={styles.themeGridRow}>
                 <TouchableOpacity
@@ -703,17 +799,17 @@ export default function ReadChapterScreen() {
                     styles.themeCard,
                     {
                       backgroundColor: '#0A0D10',
-                      borderColor: theme === 'dark' ? currentTheme.goldAccent : 'rgba(255,255,255,0.1)',
+                      borderColor: theme === 'dark' ? currentTheme.goldAccent : 'rgba(255,255,255,0.08)',
                     },
+                    theme === 'dark' && styles.themeCardActive,
                   ]}
                   onPress={() => {
                     setTheme('dark');
                     saveSettings(fontSize, 'dark', lineHeight);
                   }}
                 >
-                  <Ionicons name="moon" size={18} color={theme === 'dark' ? currentTheme.goldAccent : '#d4d4d8'} />
-                  <Text style={[styles.themeCardText, { color: '#E2E8F0' }]}>Dark</Text>
-                  {theme === 'dark' && <View style={[styles.themeCheckDot, { backgroundColor: currentTheme.goldAccent }]} />}
+                  <Ionicons name="moon" size={15} color={theme === 'dark' ? currentTheme.goldAccent : '#94a3b8'} />
+                  <Text style={[styles.themeCardText, { color: '#E2E8F0', fontWeight: theme === 'dark' ? '700' : '500' }]}>Dark</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -724,15 +820,15 @@ export default function ReadChapterScreen() {
                       backgroundColor: '#FFFFFF',
                       borderColor: theme === 'light' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
                     },
+                    theme === 'light' && styles.themeCardActive,
                   ]}
                   onPress={() => {
                     setTheme('light');
                     saveSettings(fontSize, 'light', lineHeight);
                   }}
                 >
-                  <Ionicons name="sunny" size={18} color={theme === 'light' ? currentTheme.goldAccent : '#f59e0b'} />
-                  <Text style={[styles.themeCardText, { color: '#1A1A2E' }]}>Light</Text>
-                  {theme === 'light' && <View style={[styles.themeCheckDot, { backgroundColor: currentTheme.goldAccent }]} />}
+                  <Ionicons name="sunny" size={15} color={theme === 'light' ? currentTheme.goldAccent : '#f59e0b'} />
+                  <Text style={[styles.themeCardText, { color: '#1A1A2E', fontWeight: theme === 'light' ? '700' : '500' }]}>Light</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -743,15 +839,15 @@ export default function ReadChapterScreen() {
                       backgroundColor: '#F5F0E8',
                       borderColor: theme === 'sepia' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
                     },
+                    theme === 'sepia' && styles.themeCardActive,
                   ]}
                   onPress={() => {
                     setTheme('sepia');
                     saveSettings(fontSize, 'sepia', lineHeight);
                   }}
                 >
-                  <Ionicons name="book" size={18} color={theme === 'sepia' ? currentTheme.goldAccent : '#b45309'} />
-                  <Text style={[styles.themeCardText, { color: '#3D3225' }]}>Sepia</Text>
-                  {theme === 'sepia' && <View style={[styles.themeCheckDot, { backgroundColor: currentTheme.goldAccent }]} />}
+                  <Ionicons name="book" size={15} color={theme === 'sepia' ? currentTheme.goldAccent : '#b45309'} />
+                  <Text style={[styles.themeCardText, { color: '#3D3225', fontWeight: theme === 'sepia' ? '700' : '500' }]}>Sepia</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -759,8 +855,10 @@ export default function ReadChapterScreen() {
             {/* 4. Line Spacing */}
             <View style={styles.settingSection}>
               <View style={styles.settingLabelRow}>
-                <Ionicons name="reorder-three-outline" size={15} color={currentTheme.goldAccent} />
-                <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.line_spacing || 'Spasi Baris'}</Text>
+                <View style={styles.settingLabelLeft}>
+                  <Ionicons name="reorder-three-outline" size={14} color={currentTheme.goldAccent} />
+                  <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.line_spacing || 'Spasi Baris'}</Text>
+                </View>
               </View>
               <View style={styles.lineSpacingRow}>
                 {[1.5, 1.8, 2.2].map((val) => {
@@ -775,6 +873,7 @@ export default function ReadChapterScreen() {
                           backgroundColor: active ? currentTheme.chipBgActive : currentTheme.chipBg,
                           borderColor: active ? currentTheme.goldAccent : currentTheme.cardBorder,
                         },
+                        active && styles.lineSpacingChipActive,
                       ]}
                       onPress={() => {
                         setLineHeight(val);
@@ -786,7 +885,7 @@ export default function ReadChapterScreen() {
                           styles.lineSpacingChipText,
                           {
                             color: active ? currentTheme.goldAccent : currentTheme.textMuted,
-                            fontWeight: active ? '800' : '600',
+                            fontWeight: active ? '700' : '500',
                           },
                         ]}
                       >
@@ -798,24 +897,38 @@ export default function ReadChapterScreen() {
               </View>
             </View>
 
-            {/* Done / Close Button */}
+            {/* Close Button - Minimalist & Luxury */}
             <TouchableOpacity
-              activeOpacity={0.85}
-              style={[styles.doneBtn, { shadowColor: currentTheme.goldAccent }]}
+              activeOpacity={0.8}
+              style={[
+                styles.doneBtn,
+                {
+                  backgroundColor: currentTheme.cardBgActive,
+                  borderColor: currentTheme.goldAccent + '4D',
+                },
+              ]}
               onPress={() => setShowSettings(false)}
             >
-              <LinearGradient
-                colors={[colors.gradientLight, colors.gradientDark]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.doneBtnGradient}
-              >
-                <Text style={[styles.doneBtnText, { color: colors.textOnPrimary }]}>{t.close || 'Tutup & Simpan'}</Text>
-              </LinearGradient>
+              <Text style={[styles.doneBtnText, { color: currentTheme.goldAccent }]}>
+                {t.close || 'Tutup'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
+      {/* Request Translate Dialog */}
+      <CustomDialog
+        visible={dialogVisible}
+        onClose={() => setDialogVisible(false)}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        tone={dialogConfig.tone}
+        confirmText={dialogConfig.confirmText}
+        cancelText={dialogConfig.cancelText}
+        showCancel={dialogConfig.showCancel ?? false}
+        onConfirm={dialogConfig.onConfirm}
+      />
     </View>
   );
 }
@@ -944,28 +1057,26 @@ const styles = StyleSheet.create({
   },
 
   // ══════════════════════════════════════════════════════════════
-  // LUXURY READING PREFERENCES MODAL STYLES
+  // LUXURY READING PREFERENCES MODAL STYLES (MINIMALIST)
   // ══════════════════════════════════════════════════════════════
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.72)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
   },
   modalContent: {
-    backgroundColor: '#12161A',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.22)',
+    borderBottomWidth: 0,
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 36,
+    paddingBottom: 28,
   },
   sheetHandle: {
-    width: 38,
+    width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     alignSelf: 'center',
     marginBottom: 14,
   },
@@ -975,60 +1086,58 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
     marginBottom: 16,
   },
   modalHeaderIconBadge: {
     width: 28,
     height: 28,
-    borderRadius: 7,
-    backgroundColor: 'rgba(212,168,67,0.12)',
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalTitle: {
-    fontSize: 16.5,
-    fontWeight: '800',
-    color: '#F8FAFC',
+    fontSize: 15,
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   modalCloseCircle: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#1A2026',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   settingSection: {
-    marginBottom: 18,
+    marginBottom: 16,
   },
   settingLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
-    gap: 6,
+    marginBottom: 9,
+  },
+  settingLabelLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
   },
   settingLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#E2E8F0',
-    flex: 1,
+    fontSize: 12.5,
+    fontWeight: '600',
+    letterSpacing: 0.1,
   },
   badgePill: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
-    backgroundColor: 'rgba(212,168,67,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   badgePillText: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    color: '#d4a843',
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   // Language Cards
@@ -1040,73 +1149,60 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    borderRadius: 12,
-    backgroundColor: '#161B20',
+    paddingVertical: 9,
+    paddingHorizontal: 11,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     gap: 8,
   },
   langCardActive: {
-    backgroundColor: '#1B222A',
-    borderColor: '#d4a843',
+    borderWidth: 1.2,
   },
   langCardFlag: {
-    fontSize: 20,
+    fontSize: 18,
   },
   langCardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#CBD5E1',
-  },
-  langCardTitleActive: {
-    color: '#F8FAFC',
+    fontSize: 12.5,
+    fontWeight: '600',
   },
   langCardSubtitle: {
-    fontSize: 10,
-    color: '#64748B',
+    fontSize: 9.5,
     marginTop: 1,
   },
   radioUnchecked: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 15,
+    height: 15,
+    borderRadius: 7.5,
     borderWidth: 1.5,
-    borderColor: '#475569',
   },
 
   // Stepper & Slider
   stepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   stepperBtn: {
-    width: 42,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: '#181E24',
+    width: 36,
+    height: 32,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepperBtnText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#d4a843',
+    fontSize: 13,
+    fontWeight: '700',
   },
   sliderTrack: {
     flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#1E242B',
+    height: 4,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   sliderProgress: {
     height: '100%',
-    backgroundColor: '#d4a843',
-    borderRadius: 3,
+    borderRadius: 2,
   },
 
   // Theme Cards
@@ -1116,27 +1212,19 @@ const styles = StyleSheet.create({
   },
   themeCard: {
     flex: 1,
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    height: 38,
+    borderRadius: 10,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    position: 'relative',
+  },
+  themeCardActive: {
+    borderWidth: 1.5,
   },
   themeCardText: {
-    fontSize: 12.5,
-    fontWeight: '700',
-  },
-  themeCheckDot: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#d4a843',
+    fontSize: 12,
   },
 
   // Line Spacing Chips
@@ -1146,48 +1234,31 @@ const styles = StyleSheet.create({
   },
   lineSpacingChip: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#161B20',
+    height: 34,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   lineSpacingChipActive: {
-    backgroundColor: '#1E252D',
-    borderColor: '#d4a843',
+    borderWidth: 1.2,
   },
   lineSpacingChipText: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: '#94A3B8',
-  },
-  lineSpacingChipTextActive: {
-    color: '#d4a843',
-    fontWeight: '800',
+    fontSize: 12,
   },
 
   // Done Button
   doneBtn: {
-    marginTop: 6,
-    borderRadius: 13,
-    overflow: 'hidden',
-    shadowColor: '#d4a843',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  doneBtnGradient: {
-    paddingVertical: 13,
+    marginTop: 4,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   doneBtnText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0D1012',
+    fontSize: 13,
+    fontWeight: '700',
     letterSpacing: 0.3,
   },
 });
