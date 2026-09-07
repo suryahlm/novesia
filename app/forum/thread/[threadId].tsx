@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -33,7 +34,8 @@ import {
 import { useAuthStore } from '../../../lib/useAuthStore';
 
 export default function ThreadDetailScreen() {
-  const { threadId } = useLocalSearchParams<{ threadId: string }>();
+  const { threadId: rawThreadId } = useLocalSearchParams<{ threadId: string }>();
+  const threadId = Array.isArray(rawThreadId) ? rawThreadId[0] : rawThreadId;
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -194,6 +196,7 @@ export default function ThreadDetailScreen() {
       thread_id: thread.id,
       content: contentToSend,
       user_name: userName,
+      user_avatar: authUser?.avatarUrl || null,
       user_id: authUser?.id || null,
       user_role: (authUser?.role as 'USER' | 'VIP' | 'ADMIN') || 'USER',
     });
@@ -209,7 +212,9 @@ export default function ThreadDetailScreen() {
         return [...prev, post];
       });
       setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
+        try {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        } catch {}
       }, 60);
     } else {
       // Restore input text on error
@@ -344,13 +349,22 @@ export default function ThreadDetailScreen() {
                           justifyContent: 'center',
                           borderWidth: 1,
                           borderColor: isThreadVip ? colors.primary : colors.border,
+                          overflow: 'hidden',
                         }}
                       >
-                        <Ionicons
-                          name="person"
-                          size={18}
-                          color={isThreadVip ? colors.primary : colors.textMuted}
-                        />
+                        {thread.user_avatar ? (
+                          <Image
+                            source={{ uri: thread.user_avatar }}
+                            style={{ width: 36, height: 36 }}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <Ionicons
+                            name="person"
+                            size={18}
+                            color={isThreadVip ? colors.primary : colors.textMuted}
+                          />
+                        )}
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -468,13 +482,22 @@ export default function ThreadDetailScreen() {
                           justifyContent: 'center',
                           borderWidth: 1,
                           borderColor: isReplyVip ? colors.primary : colors.border,
+                          overflow: 'hidden',
                         }}
                       >
-                        <Ionicons
-                          name="person"
-                          size={13}
-                          color={isReplyVip ? colors.primary : colors.textMuted}
-                        />
+                        {item.user_avatar ? (
+                          <Image
+                            source={{ uri: item.user_avatar }}
+                            style={{ width: 26, height: 26 }}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <Ionicons
+                            name="person"
+                            size={13}
+                            color={isReplyVip ? colors.primary : colors.textMuted}
+                          />
+                        )}
                       </View>
                       <Text
                         style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}

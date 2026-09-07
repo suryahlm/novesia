@@ -163,6 +163,10 @@ export default function AkunScreen() {
 
   // Upload Foto Profil
   const handleChangeAvatar = async () => {
+    if (!user) {
+      setAuthModalVisible(true);
+      return;
+    }
     if (uploadingRef.current) return;
     uploadingRef.current = true;
     setUploadingAvatar(true);
@@ -233,6 +237,10 @@ export default function AkunScreen() {
 
   // Ganti Nama
   const openEditName = () => {
+    if (!user) {
+      setAuthModalVisible(true);
+      return;
+    }
     setNameDraft(user?.name ?? '');
     setEditingName(true);
   };

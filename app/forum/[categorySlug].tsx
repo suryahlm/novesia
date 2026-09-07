@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -75,9 +76,18 @@ function ThreadCard({ thread, onPress }: { thread: ForumThread; onPress: () => v
             justifyContent: 'center',
             borderWidth: 1,
             borderColor: isVip ? colors.primary : colors.border,
+            overflow: 'hidden',
           }}
         >
-          <Ionicons name="person" size={13} color={isVip ? colors.primary : colors.textMuted} />
+          {thread.user_avatar ? (
+            <Image
+              source={{ uri: thread.user_avatar }}
+              style={{ width: 26, height: 26 }}
+              contentFit="cover"
+            />
+          ) : (
+            <Ionicons name="person" size={13} color={isVip ? colors.primary : colors.textMuted} />
+          )}
         </View>
 
         <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, flex: 1 }}>
@@ -164,7 +174,8 @@ function ThreadCard({ thread, onPress }: { thread: ForumThread; onPress: () => v
 }
 
 export default function CategoryThreadsScreen() {
-  const { categorySlug } = useLocalSearchParams<{ categorySlug: string }>();
+  const { categorySlug: rawSlug } = useLocalSearchParams<{ categorySlug: string }>();
+  const categorySlug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -249,6 +260,7 @@ export default function CategoryThreadsScreen() {
       title: newTitle,
       content: newContent,
       user_name: userName,
+      user_avatar: authUser?.avatarUrl || null,
       user_id: authUser?.id || null,
       user_role: (authUser?.role as 'USER' | 'VIP' | 'ADMIN') || 'USER',
     });
