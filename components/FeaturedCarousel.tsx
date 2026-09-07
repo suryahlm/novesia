@@ -16,12 +16,12 @@ import { useReducedMotion } from 'react-native-reanimated';
 import { useTheme } from '../lib/ThemeProvider';
 import { useLanguage } from '../lib/i18n';
 
-const BANNER_MARGIN = 14;
+const BANNER_MARGIN = 8;
 const BANNER_RADIUS = 18;
 const AUTO_SLIDE_INTERVAL_MS = 4500;
-const COVER_WIDTH = 98;
-const COVER_HEIGHT = 148; // 2:3 aspect ratio
-const CARD_HEIGHT = 176;
+const COVER_WIDTH = 106;
+const COVER_HEIGHT = 159; // 2:3 aspect ratio
+const CARD_HEIGHT = 194;
 
 function clampIndex(index: number, length: number): number {
   return Math.min(Math.max(index, 0), length - 1);
@@ -79,8 +79,8 @@ const CarouselSlide = React.memo(function CarouselSlide({
 }: CarouselSlideProps) {
   const { colors, isDark } = useTheme();
   const { lang } = useLanguage();
-  const coverUri = novel.cover_url || novel.cover_landscape_url;
-  const bgArtworkUri = novel.cover_landscape_url || novel.cover_url;
+  const coverUri = novel.cover_url;
+  const bgArtworkUri = novel.cover_url;
   const ratingText = novel.rating ? novel.rating.toFixed(1) : '9.8';
   const completed = isNovelCompleted(novel);
 
