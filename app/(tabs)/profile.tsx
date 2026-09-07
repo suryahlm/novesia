@@ -485,7 +485,6 @@ export default function ProfileScreen() {
                   ? `${gamification.currentStreak} ${t.days}`
                   : `0 ${t.days}`
               }
-              onPress={() => router.push('/rewards' as any)}
             />
           </View>
 
