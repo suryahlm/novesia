@@ -25,6 +25,7 @@ import { ErrorState } from '../../components/ErrorState';
 import { requestTranslation } from '../../lib/translationRequestService';
 import { useChapterDetail } from '../../lib/useNovelsQuery';
 import { AuthModal } from '../../components/AuthModal';
+import { useAuthStore } from '../../lib/useAuthStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ThemeMode = 'dark' | 'light' | 'sepia';
@@ -183,6 +184,24 @@ export default function ReadChapterScreen() {
 
   const promptTranslationRequest = () => {
     if (!chapter) return;
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      setDialogConfig({
+        title: language === 'id' ? 'Butuh Login' : 'Login Required',
+        message:
+          language === 'id'
+            ? 'Silakan masuk (login) terlebih dahulu untuk mengajukan permintaan terjemahan.'
+            : 'Please sign in to your account before requesting a translation.',
+        tone: 'gold',
+        confirmText: language === 'id' ? 'Masuk Sekarang' : 'Sign In',
+        cancelText: t.cancel || 'Batal',
+        showCancel: true,
+        onConfirm: () => setAuthModalVisible(true),
+      });
+      setDialogVisible(true);
+      return;
+    }
+
     setDialogConfig({
       title: language === 'id' ? 'Terjemahan Belum Tersedia' : 'Translation Not Available',
       message:
@@ -593,7 +612,7 @@ export default function ReadChapterScreen() {
                 },
               ]}
             >
-              {/* Luminous Lock Glow Badge */}
+              {/* Luminous Login Glow Badge */}
               <View style={styles.lockedIconWrapper}>
                 <View
                   style={[
@@ -604,7 +623,7 @@ export default function ReadChapterScreen() {
                     },
                   ]}
                 >
-                  <Ionicons name="lock-closed" size={32} color={currentTheme.goldAccent} />
+                  <Ionicons name="log-in-outline" size={32} color={currentTheme.goldAccent} />
                 </View>
                 <View style={[styles.lockedSparkleBadge, { backgroundColor: currentTheme.goldAccent }]}>
                   <Ionicons name="sparkles" size={11} color="#0D1117" />
@@ -629,9 +648,9 @@ export default function ReadChapterScreen() {
                   },
                 ]}
               >
-                <Ionicons name="star" size={11} color={currentTheme.goldAccent} />
+                <Ionicons name="log-in-outline" size={12} color={currentTheme.goldAccent} />
                 <Text style={[styles.lockedPillText, { color: currentTheme.goldAccent }]}>
-                  {globalLang === 'en' ? 'MEMBER EXCLUSIVE ACCESS' : 'AKSES KHUSUS MEMBER'}
+                  {globalLang === 'en' ? 'LOGIN REQUIRED' : 'BUTUH LOGIN'}
                 </Text>
               </View>
 
@@ -639,8 +658,8 @@ export default function ReadChapterScreen() {
               <Text style={[styles.lockedDescription, { color: currentTheme.textMuted }]}>
                 {(chapter as any).lock_message ||
                   (globalLang === 'en'
-                    ? 'As a guest, you can read the first 2 and latest 2 chapters of each novel for free. Sign in to unlock all chapters 100% free!'
-                    : 'Sebagai tamu, Anda dapat membaca 2 bab awal dan 2 bab terbaru gratis. Masuk untuk membuka seluruh bab novel ini 100% gratis tanpa batas!')}
+                    ? 'Login is required to read this chapter. Sign in to your account to read all chapters 100% free!'
+                    : 'Butuh login untuk membaca bab ini. Silakan masuk (login) dengan akun Anda untuk membaca seluruh bab 100% gratis!')}
               </Text>
 
               {/* VIP Perks Card */}

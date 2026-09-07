@@ -25,6 +25,8 @@ import { trackBookmarkAdded } from '../../lib/gamification';
 import { useFonts, Poppins_400Regular } from '@expo-google-fonts/poppins';
 import { requestTranslation } from '../../lib/translationRequestService';
 import { useNovelDetail, useNovelChapters } from '../../lib/useNovelsQuery';
+import { AuthModal } from '../../components/AuthModal';
+import { useAuthStore } from '../../lib/useAuthStore';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -99,6 +101,7 @@ export default function NovelDetailScreen() {
   const [titleExpanded, setTitleExpanded] = useState(false);
   const [isTitleTruncated, setIsTitleTruncated] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
     message: string;
@@ -151,6 +154,24 @@ export default function NovelDetailScreen() {
     if (!novel) return;
     const nextLang = lang === 'id' ? 'en' : 'id';
     if (nextLang === 'id' && !hasIndonesianTranslation) {
+      const currentUser = useAuthStore.getState().user;
+      if (!currentUser) {
+        setDialogConfig({
+          title: lang === 'id' ? 'Butuh Login' : 'Login Required',
+          message:
+            lang === 'id'
+              ? 'Silakan masuk (login) terlebih dahulu untuk mengajukan permintaan terjemahan.'
+              : 'Please sign in to your account before requesting a translation.',
+          tone: 'gold',
+          confirmText: lang === 'id' ? 'Masuk Sekarang' : 'Sign In',
+          cancelText: t.cancel || 'Batal',
+          showCancel: true,
+          onConfirm: () => setAuthModalVisible(true),
+        });
+        setDialogVisible(true);
+        return;
+      }
+
       setDialogConfig({
         title: lang === 'id' ? 'Terjemahan Belum Tersedia' : 'Translation Not Available',
         message:
@@ -201,6 +222,24 @@ export default function NovelDetailScreen() {
 
   const toggleSave = async () => {
     if (!novel) return;
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      setDialogConfig({
+        title: lang === 'id' ? 'Butuh Login' : 'Login Required',
+        message:
+          lang === 'id'
+            ? 'Silakan masuk (login) terlebih dahulu untuk menyimpan novel ke perpustakaan Anda.'
+            : 'Please sign in to your account to save this novel to your library.',
+        tone: 'gold',
+        confirmText: lang === 'id' ? 'Masuk Sekarang' : 'Sign In',
+        cancelText: t.cancel || 'Batal',
+        showCancel: true,
+        onConfirm: () => setAuthModalVisible(true),
+      });
+      setDialogVisible(true);
+      return;
+    }
+
     try {
       const lib = await AsyncStorage.getItem(LIBRARY_KEY);
       let saved: string[] = lib ? JSON.parse(lib) : [];
@@ -712,9 +751,9 @@ export default function NovelDetailScreen() {
                               </View>
                               {isLocked ? (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(212,168,67,0.12)', paddingHorizontal: 6, paddingVertical: 2.5, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(212,168,67,0.3)' }}>
-                                  <Ionicons name="lock-closed" size={10} color="#D4A843" />
+                                  <Ionicons name="log-in-outline" size={10} color="#D4A843" />
                                   <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#D4A843' }}>
-                                    {lang === 'id' ? 'KUNCI' : 'LOCK'}
+                                    {lang === 'id' ? 'BUTUH LOGIN' : 'LOGIN'}
                                   </Text>
                                 </View>
                               ) : (
@@ -747,6 +786,12 @@ export default function NovelDetailScreen() {
         cancelText={dialogConfig.cancelText}
         showCancel={dialogConfig.showCancel ?? false}
         onConfirm={dialogConfig.onConfirm}
+      />
+
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
+        onSuccess={() => setAuthModalVisible(false)}
       />
     </View>
   );
