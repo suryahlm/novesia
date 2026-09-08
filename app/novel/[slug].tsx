@@ -85,6 +85,10 @@ export default function NovelDetailScreen() {
   } = useNovelChapters(slug);
 
   const chapters: Chapter[] = (chaptersData as any) || [];
+  const firstChapterNumber =
+    (novel as any)?.first_chapter_number ||
+    (novel as any)?.firstChapterNumber ||
+    (chapters.length > 0 ? (chapters[0]?.chapter_number ?? 1) : 1);
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -542,6 +546,18 @@ export default function NovelDetailScreen() {
                     {isCompleted ? (lang === 'id' ? 'Tamat' : 'Complete') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
                   </Text>
                 </View>
+
+                {firstChapterNumber > 1 && (
+                  <View style={[styles.metaPill, {
+                    backgroundColor: isDark ? 'rgba(217, 119, 6, 0.15)' : 'rgba(217, 119, 6, 0.12)',
+                    borderColor: isDark ? 'rgba(217, 119, 6, 0.45)' : 'rgba(217, 119, 6, 0.35)',
+                  }]}>
+                    <Ionicons name="information-circle-outline" size={11} color={isDark ? '#FBBF24' : '#D97706'} />
+                    <Text style={[styles.metaPillText, { color: isDark ? '#FBBF24' : '#D97706' }]}>
+                      {lang === 'id' ? `Mulai Bab ${firstChapterNumber}` : `Starts at Ch. ${firstChapterNumber}`}
+                    </Text>
+                  </View>
+                )}
               </View>
 
               {/* Action Toolbar */}
@@ -758,12 +774,32 @@ export default function NovelDetailScreen() {
             </View>
           ) : (
             <View style={{ gap: 8 }}>
+              {firstChapterNumber > 1 && (
+                <View
+                  style={[
+                    styles.startingNoticeCard,
+                    {
+                      backgroundColor: isDark ? 'rgba(217,119,6,0.12)' : 'rgba(254,243,199,0.7)',
+                      borderColor: isDark ? 'rgba(217,119,6,0.28)' : '#FDE68A',
+                    },
+                  ]}
+                >
+                  <Ionicons name="information-circle" size={17} color={isDark ? '#FBBF24' : '#D97706'} style={{ marginTop: 1 }} />
+                  <Text style={[styles.startingNoticeText, { color: isDark ? '#FDE68A' : '#92400E' }]}>
+                    {lang === 'id'
+                      ? `Pemberitahuan: Novel ini di Novesia dimulai dari Bab ${firstChapterNumber}. Bab-bab sebelumnya diterjemahkan oleh grup translator lain atau merupakan bagian rilis terdahulu.`
+                      : `Notice: This novel on Novesia begins at Chapter ${firstChapterNumber}. Earlier chapters were translated by other groups or are part of prior releases.`}
+                  </Text>
+                </View>
+              )}
               {Array.from({ length: Math.ceil(chapters.length / 20) }, (_, gi) => {
                 const start = gi * 20;
                 const end = Math.min(start + 20, chapters.length);
                 const group = chapters.slice(start, end);
                 const isOpen = expandedGroups.has(gi);
-                const hasLastRead = lastReadChapter != null && lastReadChapter >= (start + 1) && lastReadChapter <= end;
+                const groupFirst = group[0]?.chapter_number ?? (start + 1);
+                const groupLast = group[group.length - 1]?.chapter_number ?? end;
+                const hasLastRead = lastReadChapter != null && lastReadChapter >= groupFirst && lastReadChapter <= groupLast;
                 return (
                   <View
                     key={gi}
@@ -809,7 +845,7 @@ export default function NovelDetailScreen() {
                           color={isOpen ? colors.primary : colors.textMuted} 
                         />
                         <Text style={[styles.groupTitle, { color: isOpen ? colors.primary : colors.textPrimary }]}>
-                          {lang === 'id' ? 'Bab' : 'Chapter'} {start + 1} – {end}
+                          {lang === 'id' ? 'Bab' : 'Chapter'} {groupFirst} – {groupLast}
                         </Text>
                         {hasLastRead && (
                           <View style={styles.lastReadTag}>
@@ -1078,6 +1114,23 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   expandBtnText: { fontSize: 11.5, fontWeight: '700' },
+
+  startingNoticeCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 9,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    borderRadius: 12,
+    borderWidth: 0.8,
+    marginBottom: 4,
+  },
+  startingNoticeText: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '500',
+    flex: 1,
+  },
 
   // Chapter Accordions
   groupContainer: {
