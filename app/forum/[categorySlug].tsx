@@ -452,7 +452,7 @@ export default function CategoryThreadsScreen() {
 
 
       {/* New Thread Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide">
+      <Modal visible={modalVisible} transparent animationType="slide" statusBarTranslucent>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}
@@ -465,6 +465,7 @@ export default function CategoryThreadsScreen() {
               borderWidth: 1,
               borderColor: colors.border,
               padding: 20,
+              paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 44 : 16) + 20,
               maxHeight: '90%',
             }}
           >

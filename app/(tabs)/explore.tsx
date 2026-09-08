@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,7 +15,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GradientBackground } from '../../components/GradientBackground';
 import { PopularGridCard } from '../../components/PopularGridCard';
@@ -50,9 +51,13 @@ const PAGE_SIZE = 18;
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const { colors } = useTheme();
   const { lang, t } = useLanguage();
+
+  // Safe bottom padding for modals to prevent overlap with Android 3-button or gesture navigation bar
+  const sheetBottomPadding = Math.max(insets.bottom, Platform.OS === 'android' ? 44 : 16) + 20;
 
   const statusOptions = useMemo(
     () => [
@@ -591,6 +596,7 @@ export default function ExploreScreen() {
         transparent
         animationType="fade"
         onRequestClose={() => setStatusModalVisible(false)}
+        statusBarTranslucent
       >
         <View style={styles.modalOverlay}>
           <Pressable
@@ -603,6 +609,7 @@ export default function ExploreScreen() {
               {
                 backgroundColor: colors.surfaceElevated || '#12161A',
                 borderColor: colors.primary + '30',
+                paddingBottom: sheetBottomPadding,
               },
             ]}
           >
@@ -715,6 +722,7 @@ export default function ExploreScreen() {
         transparent
         animationType="fade"
         onRequestClose={() => setSortModalVisible(false)}
+        statusBarTranslucent
       >
         <View style={styles.modalOverlay}>
           <Pressable
@@ -727,6 +735,7 @@ export default function ExploreScreen() {
               {
                 backgroundColor: colors.surfaceElevated || '#12161A',
                 borderColor: colors.primary + '30',
+                paddingBottom: sheetBottomPadding,
               },
             ]}
           >

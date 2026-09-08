@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
+  Platform,
   PanResponder,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -899,6 +900,7 @@ export default function ReadChapterScreen() {
         transparent
         animationType="fade"
         onRequestClose={() => setShowSettings(false)}
+        statusBarTranslucent
       >
         <View style={styles.modalOverlay}>
           <TouchableOpacity
@@ -907,7 +909,16 @@ export default function ReadChapterScreen() {
             onPress={() => setShowSettings(false)}
           />
 
-          <View style={[styles.modalContent, { backgroundColor: currentTheme.sheetBg, borderColor: currentTheme.surfaceBorder }]}>
+          <View
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: currentTheme.sheetBg,
+                borderColor: currentTheme.surfaceBorder,
+                paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 44 : 16) + 20,
+              },
+            ]}
+          >
             {/* Sheet Handle */}
             <View
               style={[
