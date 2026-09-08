@@ -188,7 +188,7 @@ export function FirstLaunchDisclaimer() {
                 : 'If you are a legitimate rights holder requesting the removal of specific indexed links from our directory, our team handles takedown requests promptly via email:'}
             </Text>
             <Text style={[styles.emailText, { color: colors.primary }]}>
-              support@novesia.com
+              support@novesia.cc
             </Text>
           </DisclaimerCard>
 
