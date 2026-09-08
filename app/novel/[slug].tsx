@@ -67,7 +67,7 @@ export default function NovelDetailScreen() {
     Poppins: Poppins_400Regular,
   });
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const {
     data: novelData,
     isLoading: loadingNovel,
@@ -394,14 +394,14 @@ export default function NovelDetailScreen() {
                 uri: novel.cover_url,
                 headers: { 'User-Agent': 'NovesiaApp/1.0' }
               }} 
-              style={styles.heroBg} 
+              style={[styles.heroBg, { opacity: isDark ? 0.85 : 0.3 }]} 
               blurRadius={36} 
             />
           )}
           <LinearGradient
             colors={[
-              'rgba(8,11,18,0.45)',
-              'rgba(8,11,18,0.88)',
+              isDark ? 'rgba(8,11,18,0.45)' : 'rgba(250,247,242,0.6)',
+              isDark ? 'rgba(8,11,18,0.88)' : 'rgba(250,247,242,0.92)',
               colors.background,
             ]}
             style={StyleSheet.absoluteFill}
@@ -409,7 +409,16 @@ export default function NovelDetailScreen() {
 
           <View style={[styles.heroContent, { paddingTop: Math.max(16, insets.top + 8) }]}>
             {/* 3D Elevated Book Cover */}
-            <View style={styles.coverWrapper}>
+            <View
+              style={[
+                styles.coverWrapper,
+                {
+                  borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.08)',
+                  backgroundColor: isDark ? '#111622' : colors.surfaceElevated,
+                  shadowOpacity: isDark ? 0.55 : 0.12,
+                },
+              ]}
+            >
               {novel.cover_url ? (
                 <Image 
                   source={{ 
@@ -438,7 +447,7 @@ export default function NovelDetailScreen() {
             {/* Novel Info */}
             <View style={styles.heroInfo}>
               <Text 
-                style={styles.novelTitle} 
+                style={[styles.novelTitle, { color: colors.textPrimary }]} 
                 numberOfLines={titleExpanded ? undefined : 3}
                 onTextLayout={(e) => {
                   if (e.nativeEvent.lines.length > 3) {
@@ -474,7 +483,7 @@ export default function NovelDetailScreen() {
               {/* Meta Badges Row */}
               <View style={styles.metaRow}>
                 {novel.rating && (
-                  <View style={[styles.metaPill, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '50' }]}>
+                  <View style={[styles.metaPill, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + (isDark ? '50' : '35') }]}>
                     <Ionicons name="star" size={10} color={colors.primary} />
                     <Text style={[styles.metaPillText, { color: colors.primary }]}>
                       {typeof novel.rating === 'number' ? novel.rating.toFixed(1) : novel.rating}
@@ -482,28 +491,54 @@ export default function NovelDetailScreen() {
                   </View>
                 )}
 
-                <View style={styles.metaPill}>
-                  <Text style={styles.metaPillText}>{novel.total_chapters} ch</Text>
+                <View
+                  style={[
+                    styles.metaPill,
+                    {
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                      borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.metaPillText, { color: colors.textSecondary }]}>{novel.total_chapters} ch</Text>
                 </View>
 
                 {novel.total_views !== undefined && (
-                  <View style={styles.metaPill}>
-                    <Ionicons name="eye-outline" size={11} color="#94A3B8" />
-                    <Text style={styles.metaPillText}>{formatViews(novel.total_views)}</Text>
+                  <View
+                    style={[
+                      styles.metaPill,
+                      {
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                      },
+                    ]}
+                  >
+                    <Ionicons name="eye-outline" size={11} color={colors.textMuted} />
+                    <Text style={[styles.metaPillText, { color: colors.textSecondary }]}>{formatViews(novel.total_views)}</Text>
                   </View>
                 )}
 
                 <View style={[styles.metaPill, {
-                  backgroundColor: isCompleted ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
-                  borderColor: isCompleted ? 'rgba(16,185,129,0.45)' : 'rgba(245,158,11,0.45)',
+                  backgroundColor: isCompleted 
+                    ? (isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.12)') 
+                    : (isDark ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.12)'),
+                  borderColor: isCompleted 
+                    ? (isDark ? 'rgba(16,185,129,0.45)' : 'rgba(16,185,129,0.35)') 
+                    : (isDark ? 'rgba(245,158,11,0.45)' : 'rgba(245,158,11,0.35)'),
                 }]}>
                   <View style={{
                     width: 5,
                     height: 5,
                     borderRadius: 2.5,
-                    backgroundColor: isCompleted ? '#34D399' : '#FBBF24',
+                    backgroundColor: isCompleted 
+                      ? (isDark ? '#34D399' : '#059669') 
+                      : (isDark ? '#FBBF24' : '#D97706'),
                   }} />
-                  <Text style={[styles.metaPillText, { color: isCompleted ? '#34D399' : '#FBBF24' }]}>
+                  <Text style={[styles.metaPillText, { 
+                    color: isCompleted 
+                      ? (isDark ? '#34D399' : '#059669') 
+                      : (isDark ? '#FBBF24' : '#D97706') 
+                  }]}>
                     {isCompleted ? (lang === 'id' ? 'Tamat' : 'Complete') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
                   </Text>
                 </View>
@@ -515,7 +550,10 @@ export default function NovelDetailScreen() {
                 <TouchableOpacity
                   style={[
                     styles.actionBtn,
-                    { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '55' }
+                    {
+                      backgroundColor: colors.primaryMuted,
+                      borderColor: colors.primary + (isDark ? '55' : '40'),
+                    },
                   ]}
                   onPress={handleLanguageToggle}
                   activeOpacity={0.7}
@@ -530,7 +568,14 @@ export default function NovelDetailScreen() {
                 <TouchableOpacity
                   style={[
                     styles.actionBtn,
-                    isSaved && { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '65' }
+                    {
+                      backgroundColor: isSaved
+                        ? colors.primaryMuted
+                        : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
+                      borderColor: isSaved
+                        ? (colors.primary + (isDark ? '65' : '50'))
+                        : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'),
+                    },
                   ]}
                   onPress={toggleSave}
                   activeOpacity={0.7}
@@ -538,26 +583,32 @@ export default function NovelDetailScreen() {
                   <Ionicons 
                     name={isSaved ? 'bookmark' : 'bookmark-outline'} 
                     size={13.5} 
-                    color={isSaved ? colors.primary : '#94A3B8'} 
+                    color={isSaved ? colors.primary : colors.textSecondary} 
                   />
-                  <Text style={[styles.actionBtnText, { color: isSaved ? colors.primary : '#94A3B8' }]}>
+                  <Text style={[styles.actionBtnText, { color: isSaved ? colors.primary : colors.textSecondary }]}>
                     {isSaved ? (lang === 'id' ? 'Tersimpan' : 'Saved') : (lang === 'id' ? 'Simpan' : 'Save')}
                   </Text>
                 </TouchableOpacity>
 
                 {/* Share Button */}
                 <TouchableOpacity
-                  style={styles.actionBtnIconOnly}
+                  style={[
+                    styles.actionBtnIconOnly,
+                    {
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                      borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                    },
+                  ]}
                   onPress={handleShare}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="share-social-outline" size={14} color="#94A3B8" />
+                  <Ionicons name="share-social-outline" size={14} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
               {/* Genres Inline */}
               {realGenres.length > 0 && (
-                <Text style={styles.genreText} numberOfLines={1}>
+                <Text style={[styles.genreText, { color: colors.textMuted }]} numberOfLines={1}>
                   {realGenres.join('  •  ')}
                 </Text>
               )}
@@ -573,8 +624,8 @@ export default function NovelDetailScreen() {
               style={[
                 styles.ctaMinimalBtn,
                 {
-                  borderColor: colors.primary + '55',
-                  backgroundColor: colors.primaryMuted || 'rgba(255,255,255,0.04)',
+                  borderColor: colors.primary + (isDark ? '55' : '40'),
+                  backgroundColor: colors.primaryMuted || (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
                 },
               ]}
               onPress={() => {
@@ -602,11 +653,11 @@ export default function NovelDetailScreen() {
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
                 <View style={[styles.sectionTitleAccent, { backgroundColor: colors.primary }]} />
-                <Text style={styles.sectionLabel}>{t.synopsis?.toUpperCase() || 'SINOPSIS'}</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>{t.synopsis?.toUpperCase() || 'SINOPSIS'}</Text>
               </View>
             </View>
             <Text 
-              style={styles.synopsisText} 
+              style={[styles.synopsisText, { color: colors.textSecondary }]} 
               numberOfLines={synopsisExpanded ? undefined : 4}
             >
               {cleanedSynopsis}
@@ -632,9 +683,9 @@ export default function NovelDetailScreen() {
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
               <View style={[styles.sectionTitleAccent, { backgroundColor: colors.primary }]} />
-              <Text style={styles.sectionLabel}>{t.chapter_list?.toUpperCase() || 'DAFTAR BAB'}</Text>
-              <View style={styles.countBadge}>
-                <Text style={styles.countBadgeText}>{chapters.length}</Text>
+              <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>{t.chapter_list?.toUpperCase() || 'DAFTAR BAB'}</Text>
+              <View style={[styles.countBadge, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                <Text style={[styles.countBadgeText, { color: colors.textMuted }]}>{chapters.length}</Text>
               </View>
             </View>
 
@@ -687,10 +738,23 @@ export default function NovelDetailScreen() {
               </TouchableOpacity>
             </View>
           ) : chapters.length === 0 ? (
-            <View style={styles.emptyBox}>
+            <View
+              style={[
+                styles.emptyBox,
+                {
+                  backgroundColor: isDark ? 'rgba(18,22,30,0.65)' : colors.surface,
+                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : colors.border,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: isDark ? 0 : 0.04,
+                  shadowRadius: 3,
+                  elevation: isDark ? 0 : 1,
+                },
+              ]}
+            >
               <Text style={styles.emptyIcon}>📝</Text>
-              <Text style={styles.emptyText}>{t.no_chapters}</Text>
-              <Text style={styles.emptyHint}>{t.translate_admin}</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t.no_chapters}</Text>
+              <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{t.translate_admin}</Text>
             </View>
           ) : (
             <View style={{ gap: 8 }}>
@@ -701,12 +765,32 @@ export default function NovelDetailScreen() {
                 const isOpen = expandedGroups.has(gi);
                 const hasLastRead = lastReadChapter != null && lastReadChapter >= (start + 1) && lastReadChapter <= end;
                 return (
-                  <View key={gi} style={styles.groupContainer}>
+                  <View
+                    key={gi}
+                    style={[
+                      styles.groupContainer,
+                      {
+                        backgroundColor: isDark ? 'rgba(18,22,30,0.65)' : colors.surface,
+                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : colors.border,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: isDark ? 0 : 0.05,
+                        shadowRadius: 3,
+                        elevation: isDark ? 0 : 1,
+                      },
+                    ]}
+                  >
                     <TouchableOpacity
                       style={[
                         styles.groupHeader,
-                        isOpen && { borderColor: colors.primary + '45', backgroundColor: 'rgba(255,255,255,0.035)' },
-                        hasLastRead && !isOpen && { borderColor: '#10B98160', backgroundColor: 'rgba(16,185,129,0.06)' },
+                        isOpen && {
+                          borderColor: colors.primary + (isDark ? '45' : '35'),
+                          backgroundColor: isDark ? 'rgba(255,255,255,0.035)' : (colors.primaryMuted || 'rgba(0,0,0,0.02)'),
+                        },
+                        hasLastRead && !isOpen && {
+                          borderColor: '#10B98160',
+                          backgroundColor: isDark ? 'rgba(16,185,129,0.06)' : 'rgba(16,185,129,0.08)',
+                        },
                       ]}
                       onPress={() => {
                         setExpandedGroups(prev => {
@@ -722,9 +806,9 @@ export default function NovelDetailScreen() {
                         <Ionicons 
                           name={isOpen ? "folder-open-outline" : "folder-outline"} 
                           size={15} 
-                          color={isOpen ? colors.primary : '#94A3B8'} 
+                          color={isOpen ? colors.primary : colors.textMuted} 
                         />
-                        <Text style={[styles.groupTitle, isOpen && { color: colors.primary }]}>
+                        <Text style={[styles.groupTitle, { color: isOpen ? colors.primary : colors.textPrimary }]}>
                           {lang === 'id' ? 'Bab' : 'Chapter'} {start + 1} – {end}
                         </Text>
                         {hasLastRead && (
@@ -738,12 +822,20 @@ export default function NovelDetailScreen() {
                       <Ionicons 
                         name={isOpen ? "chevron-up" : "chevron-down"} 
                         size={15} 
-                        color={isOpen ? colors.primary : '#64748B'} 
+                        color={isOpen ? colors.primary : colors.textMuted} 
                       />
                     </TouchableOpacity>
 
                     {isOpen && (
-                      <View style={styles.groupBody}>
+                      <View
+                        style={[
+                          styles.groupBody,
+                          {
+                            borderTopColor: isDark ? 'rgba(255,255,255,0.06)' : colors.border,
+                            backgroundColor: isDark ? 'rgba(10,14,23,0.4)' : colors.surfaceElevated,
+                          },
+                        ]}
+                      >
                         {group.map((ch, idx) => {
                           const hasContent = (ch.word_count_original || 0) > 0;
                           const wc = ch.word_count_translated || ch.word_count_original || 0;
@@ -753,7 +845,8 @@ export default function NovelDetailScreen() {
                               key={`${ch.id || ch.chapter_number || idx}-${idx}`}
                               style={[
                                 styles.chapterRow,
-                                isLastRead && { backgroundColor: 'rgba(16,185,129,0.08)' },
+                                { borderBottomColor: isDark ? 'rgba(255,255,255,0.04)' : colors.border },
+                                isLastRead && { backgroundColor: isDark ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.12)' },
                                 !hasContent && { opacity: 0.45 },
                                 idx === group.length - 1 && { borderBottomWidth: 0 },
                               ]}
@@ -761,15 +854,22 @@ export default function NovelDetailScreen() {
                               activeOpacity={hasContent ? 0.65 : 1}
                             >
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                                <View style={[styles.statusDot, { backgroundColor: hasContent ? (isLastRead ? '#10B981' : colors.primary) : '#475569' }]} />
+                                <View style={[styles.statusDot, { backgroundColor: hasContent ? (isLastRead ? '#10B981' : colors.primary) : '#94A3B8' }]} />
                                 <Text style={[styles.chapterNumText, { color: isLastRead ? '#10B981' : colors.primary }]}>
                                   #{ch.chapter_number}
                                 </Text>
-                                <Text style={[styles.chapterTitleText, isLastRead && { color: '#F8FAFC', fontWeight: '700' }]} numberOfLines={1}>
+                                <Text
+                                  style={[
+                                    styles.chapterTitleText,
+                                    { color: isLastRead ? (isDark ? '#F8FAFC' : colors.textPrimary) : colors.textPrimary },
+                                    isLastRead && { fontWeight: '700' },
+                                  ]}
+                                  numberOfLines={1}
+                                >
                                   {cleanChapterTitle(ch.chapter_title, ch.chapter_number)}
                                 </Text>
                               </View>
-                              <Text style={styles.chapterWordText}>
+                              <Text style={[styles.chapterWordText, { color: colors.textMuted }]}>
                                 {hasContent ? `${wc} ${lang === 'id' ? 'kata' : 'w'}` : (lang === 'id' ? 'Segera' : 'Pending')}
                               </Text>
                             </TouchableOpacity>
@@ -848,7 +948,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: 15.5, 
     fontWeight: '400', 
-    color: '#F8FAFC', 
     lineHeight: 23,
     letterSpacing: 0.1,
   },
@@ -882,10 +981,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2.5,
     borderRadius: 999,
     borderWidth: 0.8,
-    borderColor: 'rgba(255,255,255,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  metaPillText: { fontSize: 10.5, fontWeight: '700', color: '#cbd5e1' },
+  metaPillText: { fontSize: 10.5, fontWeight: '700' },
 
   // Action Toolbar
   actionToolbar: {
@@ -902,8 +999,6 @@ const styles = StyleSheet.create({
     paddingVertical: 5.5,
     borderRadius: 10,
     borderWidth: 0.8,
-    borderColor: 'rgba(255,255,255,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   actionBtnIconOnly: {
     width: 31,
@@ -912,11 +1007,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 10,
     borderWidth: 0.8,
-    borderColor: 'rgba(255,255,255,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   actionBtnText: { fontSize: 11, fontWeight: '700' },
-  genreText: { fontSize: 11, color: '#94A3B8', marginTop: 2, letterSpacing: 0.2 },
+  genreText: { fontSize: 11, marginTop: 2, letterSpacing: 0.2 },
 
   // Primary CTA Button
   ctaWrapper: {
@@ -965,21 +1058,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.8,
-    color: '#E2E8F0',
   },
   countBadge: {
     paddingHorizontal: 6.5,
     paddingVertical: 1.5,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  countBadgeText: { fontSize: 10, fontWeight: '700', color: '#94A3B8' },
+  countBadgeText: { fontSize: 10, fontWeight: '700' },
   toggleAllText: { fontSize: 11.5, fontWeight: '700' },
 
   // Synopsis
   synopsisText: {
     fontSize: 13.5,
-    color: '#94A3B8',
     lineHeight: 22,
     letterSpacing: 0.15,
   },
@@ -994,8 +1084,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 0.8,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(18,22,30,0.65)',
   },
   groupHeader: {
     flexDirection: 'row',
@@ -1004,7 +1092,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11.5,
   },
-  groupTitle: { fontSize: 12.5, fontWeight: '700', color: '#E2E8F0' },
+  groupTitle: { fontSize: 12.5, fontWeight: '700' },
   lastReadTag: {
     paddingHorizontal: 6.5,
     paddingVertical: 2,
@@ -1016,8 +1104,6 @@ const styles = StyleSheet.create({
   lastReadTagText: { fontSize: 9.5, fontWeight: '800', color: '#34D399' },
   groupBody: {
     borderTopWidth: 0.8,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: 'rgba(10,14,23,0.4)',
   },
   chapterRow: {
     flexDirection: 'row',
@@ -1026,22 +1112,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderBottomWidth: 0.8,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
   },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   chapterNumText: { fontSize: 11.5, fontWeight: '700', width: 34 },
-  chapterTitleText: { fontSize: 13, color: '#CBD5E1', flex: 1 },
+  chapterTitleText: { fontSize: 13, flex: 1 },
   chapterWordText: { fontSize: 10.5, color: '#64748B', fontWeight: '600', marginLeft: 8 },
 
   emptyBox: {
-    backgroundColor: 'rgba(18,22,30,0.65)',
     borderRadius: 14,
     padding: 28,
     alignItems: 'center',
     borderWidth: 0.8,
-    borderColor: 'rgba(255,255,255,0.08)',
   },
   emptyIcon: { fontSize: 32, marginBottom: 8 },
-  emptyText: { fontSize: 13.5, color: '#94A3B8', fontWeight: '700' },
-  emptyHint: { fontSize: 11.5, color: '#64748B', marginTop: 4 },
+  emptyText: { fontSize: 13.5, fontWeight: '700' },
+  emptyHint: { fontSize: 11.5, marginTop: 4 },
 });

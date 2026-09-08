@@ -47,7 +47,7 @@ type LanguageFilterKey = typeof LANGUAGE_FILTERS[number]['key'];
 export default function HomeScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { lang, t } = useLanguage();
   const queryClient = useQueryClient();
 
@@ -262,15 +262,15 @@ export default function HomeScreen() {
                     borderRadius: 999,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: 'rgba(13,16,18,0.75)',
+                    backgroundColor: isDark ? 'rgba(13,16,18,0.75)' : 'rgba(255,255,255,0.92)',
                     borderWidth: 1,
-                    borderColor: colors.primary + '80',
+                    borderColor: colors.primary + (isDark ? '80' : '45'),
                     opacity: pressed ? 0.7 : 1,
                     shadowColor: colors.primary,
-                    shadowOpacity: 0.4,
+                    shadowOpacity: isDark ? 0.4 : 0.15,
                     shadowRadius: 5,
-                    shadowOffset: { width: 0, height: 0 },
-                    elevation: 5,
+                    shadowOffset: { width: 0, height: 1 },
+                    elevation: isDark ? 5 : 2,
                   })}
                 >
                   <Ionicons name="search" size={14.5} color={colors.primary} />
@@ -286,11 +286,11 @@ export default function HomeScreen() {
               flexDirection: 'row',
               alignItems: 'center',
               width: 276,
-              backgroundColor: 'rgba(18, 22, 30, 0.65)',
+              backgroundColor: isDark ? 'rgba(18, 22, 30, 0.65)' : 'rgba(0, 0, 0, 0.05)',
               borderRadius: 999,
               padding: 2.5,
               borderWidth: 0.8,
-              borderColor: 'rgba(255, 255, 255, 0.08)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
               marginTop: 0,
               marginBottom: 14,
             }}
@@ -311,10 +311,15 @@ export default function HomeScreen() {
                     justifyContent: 'center',
                     borderRadius: 999,
                     backgroundColor: active
-                      ? (colors.primaryMuted || colors.primary + '22')
+                      ? (isDark ? (colors.primaryMuted || colors.primary + '22') : '#FFFFFF')
                       : 'transparent',
                     borderWidth: 0.8,
-                    borderColor: active ? (colors.primary + '55') : 'transparent',
+                    borderColor: active ? (colors.primary + (isDark ? '55' : '40')) : 'transparent',
+                    shadowColor: isDark ? 'transparent' : '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: isDark ? 0 : (active ? 0.08 : 0),
+                    shadowRadius: 2,
+                    elevation: isDark ? 0 : (active ? 1.5 : 0),
                     opacity: pressed ? 0.75 : 1,
                   })}
                 >
@@ -323,7 +328,7 @@ export default function HomeScreen() {
                       fontSize: 11,
                       lineHeight: 14,
                       fontWeight: active ? '700' : '500',
-                      color: active ? colors.primary : '#94a3b8',
+                      color: active ? colors.primary : colors.textMuted,
                       letterSpacing: 0.2,
                       textAlign: 'center',
                       textAlignVertical: 'center',

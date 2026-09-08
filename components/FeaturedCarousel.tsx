@@ -106,13 +106,13 @@ const CarouselSlide = React.memo(function CarouselSlide({
             borderRadius: BANNER_RADIUS,
             overflow: 'hidden',
             borderWidth: 1.2,
-            borderColor: colors.primary + '55',
+            borderColor: isDark ? (colors.primary + '55') : (colors.primary + '35'),
             backgroundColor: isDark ? '#0A0E17' : colors.surface,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.45,
+            shadowColor: isDark ? '#000' : colors.primary,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: isDark ? 0.45 : 0.08,
             shadowRadius: 14,
-            elevation: 7,
+            elevation: isDark ? 7 : 3,
             opacity: pressed ? 0.95 : 1,
             transform: [{ scale: pressed ? 0.99 : 1 }],
           },
@@ -126,22 +126,30 @@ const CarouselSlide = React.memo(function CarouselSlide({
                 uri: bgArtworkUri,
                 headers: { 'User-Agent': 'NovesiaApp/1.0' },
               }}
-              style={StyleSheet.absoluteFill}
+              style={[StyleSheet.absoluteFill, { opacity: isDark ? 0.85 : 0.35 }]}
               contentFit="cover"
               blurRadius={16}
               cachePolicy="memory-disk"
               transition={200}
             />
           ) : null}
-          {/* Gradients for high text contrast */}
+          {/* Gradients for high text contrast in both dark and light mode */}
           <LinearGradient
-            colors={['rgba(10,14,23,0.96)', 'rgba(10,14,23,0.85)', 'rgba(10,14,23,0.72)']}
+            colors={
+              isDark
+                ? ['rgba(10,14,23,0.96)', 'rgba(10,14,23,0.85)', 'rgba(10,14,23,0.72)']
+                : ['rgba(255,255,255,0.97)', 'rgba(255,255,255,0.88)', 'rgba(255,255,255,0.75)']
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={StyleSheet.absoluteFill}
           />
           <LinearGradient
-            colors={['rgba(0,0,0,0.35)', 'rgba(10,14,23,0.25)', 'rgba(10,14,23,0.92)']}
+            colors={
+              isDark
+                ? ['rgba(0,0,0,0.35)', 'rgba(10,14,23,0.25)', 'rgba(10,14,23,0.92)']
+                : ['rgba(255,255,255,0.25)', 'rgba(255,255,255,0.35)', 'rgba(255,255,255,0.95)']
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={StyleSheet.absoluteFill}
@@ -166,13 +174,13 @@ const CarouselSlide = React.memo(function CarouselSlide({
               borderRadius: 12,
               overflow: 'hidden',
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.22)',
-              backgroundColor: '#141E2C',
+              borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.08)',
+              backgroundColor: isDark ? '#141E2C' : colors.surfaceElevated,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.5,
+              shadowOpacity: isDark ? 0.5 : 0.12,
               shadowRadius: 8,
-              elevation: 5,
+              elevation: isDark ? 5 : 2,
               position: 'relative',
             }}
           >
@@ -221,15 +229,15 @@ const CarouselSlide = React.memo(function CarouselSlide({
                 paddingHorizontal: 5.5,
                 paddingVertical: 1.5,
                 borderRadius: 999,
-                backgroundColor: 'rgba(13,27,47,0.88)',
+                backgroundColor: isDark ? 'rgba(13,27,47,0.88)' : 'rgba(255,255,255,0.95)',
                 borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.18)',
+                borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.08)',
               }}
             >
               <Ionicons name="star" size={9.5} color={colors.primary} />
               <Text
                 style={{
-                  color: '#FAF5EE',
+                  color: isDark ? '#FAF5EE' : colors.textPrimary,
                   fontSize: 10,
                   fontWeight: '700',
                 }}
@@ -286,14 +294,20 @@ const CarouselSlide = React.memo(function CarouselSlide({
                   paddingHorizontal: 7,
                   paddingVertical: 2,
                   borderRadius: 999,
-                  backgroundColor: completed ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)',
+                  backgroundColor: completed
+                    ? (isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.12)')
+                    : (isDark ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.12)'),
                   borderWidth: 1,
-                  borderColor: completed ? 'rgba(16,185,129,0.42)' : 'rgba(245,158,11,0.42)',
+                  borderColor: completed
+                    ? (isDark ? 'rgba(16,185,129,0.42)' : 'rgba(16,185,129,0.35)')
+                    : (isDark ? 'rgba(245,158,11,0.42)' : 'rgba(245,158,11,0.35)'),
                 }}
               >
                 <Text
                   style={{
-                    color: completed ? '#34D399' : '#FBBF24',
+                    color: completed
+                      ? (isDark ? '#34D399' : '#059669')
+                      : (isDark ? '#FBBF24' : '#D97706'),
                     fontSize: 9,
                     fontWeight: '700',
                     textTransform: 'uppercase',
@@ -316,13 +330,13 @@ const CarouselSlide = React.memo(function CarouselSlide({
               <Text
                 numberOfLines={2}
                 style={{
-                  color: '#FAF5EE',
+                  color: isDark ? '#FAF5EE' : colors.textPrimary,
                   fontSize: 14.5,
                   lineHeight: 19,
                   fontWeight: '700',
-                  textShadowColor: 'rgba(0,0,0,0.85)',
+                  textShadowColor: isDark ? 'rgba(0,0,0,0.85)' : 'transparent',
                   textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 4,
+                  textShadowRadius: isDark ? 4 : 0,
                 }}
               >
                 {novel.title}
@@ -330,7 +344,7 @@ const CarouselSlide = React.memo(function CarouselSlide({
               <Text
                 numberOfLines={2}
                 style={{
-                  color: '#D4C9BD',
+                  color: isDark ? '#D4C9BD' : colors.textSecondary,
                   fontSize: 10.5,
                   lineHeight: 14.5,
                   opacity: 0.9,
@@ -388,7 +402,7 @@ export interface FeaturedCarouselProps {
 }
 
 export function FeaturedCarousel({ novels, onPressNovel, headerOverlay }: FeaturedCarouselProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
 
@@ -526,7 +540,7 @@ export function FeaturedCarousel({ novels, onPressNovel, headerOverlay }: Featur
                   width: isActive ? 22 : 5,
                   height: 5,
                   borderRadius: 999,
-                  backgroundColor: isActive ? colors.primary : 'rgba(255,255,255,0.22)',
+                  backgroundColor: isActive ? colors.primary : (isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.15)'),
                   shadowColor: isActive ? colors.primary : 'transparent',
                   shadowOffset: { width: 0, height: 0 },
                   shadowOpacity: isActive ? 0.7 : 0,
