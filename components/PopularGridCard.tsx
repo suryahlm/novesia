@@ -55,20 +55,32 @@ function PopularGridCardBase({ novel, width, onPress, onLongPress, rank }: Popul
     if (novel?.nu_slug) onPress(novel.nu_slug);
   }, [onPress, novel?.nu_slug]);
 
+  const isComingSoon =
+    novel.status === 'draft' ||
+    novel.status === 'coming_soon' ||
+    novel.status === 'segera_hadir' ||
+    novel.total_chapters === 0 ||
+    (novel as any).totalChapters === 0;
+
   const isHot = rank !== undefined && rank < HOT_RANK_THRESHOLD;
   const isCompleted =
-    novel.status === 'completed' || novel.status === 'complete' || novel.status === 'tamat';
-  const statusTone: GlossyBadgeTone = isCompleted
+    !isComingSoon &&
+    (novel.status === 'completed' || novel.status === 'complete' || novel.status === 'tamat');
+  const statusTone: GlossyBadgeTone = isComingSoon
+    ? 'coming_soon'
+    : isCompleted
     ? 'completed'
     : novel.status === 'hiatus'
     ? 'hiatus'
     : 'ongoing';
 
-  const defaultStatusLabel = isCompleted
+  const defaultStatusLabel = isComingSoon
+    ? (lang === 'id' ? 'Segera Hadir' : 'Coming Soon')
+    : isCompleted
     ? (lang === 'id' ? 'Tamat' : 'Completed')
     : (lang === 'id' ? 'Berjalan' : 'Ongoing');
 
-  const badge = isHot
+  const badge = (isHot && !isComingSoon)
     ? { label: 'Hot', tone: 'hot' as GlossyBadgeTone }
     : { label: defaultStatusLabel, tone: statusTone };
 
@@ -160,7 +172,9 @@ function PopularGridCardBase({ novel, width, onPress, onLongPress, rank }: Popul
               lineHeight: 14,
             }}
           >
-            {novel.total_chapters} Ch · {novel.genres && novel.genres.length > 0 ? novel.genres[0] : 'Novel'}
+            {isComingSoon
+              ? (lang === 'id' ? 'Segera Hadir' : 'Coming Soon')
+              : `${novel.total_chapters} Ch`} · {novel.genres && novel.genres.length > 0 ? novel.genres[0] : 'Novel'}
           </Text>
         </View>
       </View>

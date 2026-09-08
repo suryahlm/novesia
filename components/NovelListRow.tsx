@@ -32,13 +32,29 @@ function NovelListRowBase({ novel, onPress, onLongPress }: NovelListRowProps) {
   const { lang } = useLanguage();
   const handlePress = useCallback(() => onPress(novel.nu_slug), [onPress, novel.nu_slug]);
 
+  const isComingSoon =
+    novel.status === 'draft' ||
+    novel.status === 'coming_soon' ||
+    novel.status === 'segera_hadir' ||
+    novel.total_chapters === 0 ||
+    (novel as any).totalChapters === 0;
+
   const isCompleted =
-    novel.status === 'completed' || novel.status === 'complete' || novel.status === 'tamat';
-  const statusTone: GlossyBadgeTone = isCompleted
+    !isComingSoon &&
+    (novel.status === 'completed' || novel.status === 'complete' || novel.status === 'tamat');
+  const statusTone: GlossyBadgeTone = isComingSoon
+    ? 'coming_soon'
+    : isCompleted
     ? 'completed'
     : novel.status === 'hiatus'
     ? 'hiatus'
     : 'ongoing';
+
+  const statusLabel = isComingSoon
+    ? (lang === 'id' ? 'Segera Hadir' : 'Coming Soon')
+    : isCompleted
+    ? (lang === 'id' ? 'Tamat' : 'Completed')
+    : (lang === 'id' ? 'Berjalan' : 'Ongoing');
 
   return (
     <Pressable
@@ -80,7 +96,7 @@ function NovelListRowBase({ novel, onPress, onLongPress }: NovelListRowProps) {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <GlossyBadge
-            label={isCompleted ? (lang === 'id' ? 'Tamat' : 'Completed') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
+            label={statusLabel}
             tone={statusTone}
             size="sm"
           />
@@ -111,7 +127,9 @@ function NovelListRowBase({ novel, onPress, onLongPress }: NovelListRowProps) {
           </View>
           <Text style={{ fontSize: 11, color: colors.textMuted }}>·</Text>
           <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '600' }}>
-            {novel.total_chapters} Chapters
+            {isComingSoon
+              ? (lang === 'id' ? 'Segera Hadir' : 'Coming Soon')
+              : `${novel.total_chapters} Chapters`}
           </Text>
         </View>
 

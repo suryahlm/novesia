@@ -76,6 +76,11 @@ export default function ExploreScreen() {
         label: lang === 'en' ? 'Completed' : 'Tamat',
         sub: lang === 'en' ? 'Full story completed' : 'Cerita sudah selesai sepenuhnya',
       },
+      {
+        key: 'COMING_SOON' as const,
+        label: lang === 'en' ? 'Coming Soon' : 'Segera Hadir',
+        sub: lang === 'en' ? 'Novels in translation preparation' : 'Dalam persiapan rilis bab perdana',
+      },
     ],
     [lang]
   );
@@ -113,7 +118,7 @@ export default function ExploreScreen() {
   const [novels, setNovels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeStatus, setActiveStatus] = useState<'ALL' | 'ONGOING' | 'COMPLETED'>('ALL');
+  const [activeStatus, setActiveStatus] = useState<'ALL' | 'ONGOING' | 'COMPLETED' | 'COMING_SOON'>('ALL');
   const [activeSort, setActiveSort] = useState<'POPULAR' | 'LATEST' | 'RATING' | 'CHAPTERS'>('POPULAR');
   const [activeGenre, setActiveGenre] = useState('Semua');
   const [viewMode, setViewMode] = useState<GridViewMode>(3);
@@ -172,9 +177,11 @@ export default function ExploreScreen() {
       };
       if (activeStatus === 'ONGOING') params['status'] = 'active,ongoing,published';
       else if (activeStatus === 'COMPLETED') params['status'] = 'completed';
+      else if (activeStatus === 'COMING_SOON') params['status'] = 'coming_soon';
       if (activeGenre !== 'Semua') params['genre'] = activeGenre;
 
-      const res = await apiGet<{ novels?: any[]; data?: any[] }>('/api/novels', params);
+      const endpoint = activeStatus === 'COMING_SOON' ? '/api/novels/coming-soon' : '/api/novels';
+      const res = await apiGet<{ novels?: any[]; data?: any[] }>(endpoint, params);
       const data = res.novels || res.data || (Array.isArray(res) ? res : []);
 
       if (data) {
@@ -676,7 +683,9 @@ export default function ExploreScreen() {
                             ? 'grid-outline'
                             : opt.key === 'ONGOING'
                             ? 'flash-outline'
-                            : 'checkmark-done-circle-outline'
+                            : opt.key === 'COMPLETED'
+                            ? 'checkmark-done-circle-outline'
+                            : 'time-outline'
                         }
                         size={17}
                         color={active ? colors.primary : colors.textMuted}

@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export type GlossyBadgeTone = 'hot' | 'ongoing' | 'completed' | 'hiatus';
+export type GlossyBadgeTone = 'hot' | 'ongoing' | 'completed' | 'hiatus' | 'coming_soon';
 
 const TONE_GRADIENT: Record<GlossyBadgeTone, [string, string]> = {
   hot: ['#DC2626', '#8B1124'],      // merah ruby mewah (vibrant yet deep ruby red)
   ongoing: ['#F59E0B', '#D97706'],  // amber (sama dengan warna ongoing di banner)
   completed: ['#10B981', '#059669'],// emerald hijau (sama dengan warna completed di banner)
   hiatus: ['#8B93A6', '#636B7E'],   // abu kebiruan netral
+  coming_soon: ['#B99762', '#8C6D37'], // gold hangat mewah khas Novesia
 };
 
 export interface GlossyBadgeProps {

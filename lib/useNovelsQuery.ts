@@ -143,12 +143,11 @@ function shuffleSample<T>(array: T[], size: number): T[] {
 }
 
 /**
- * Fetch Hero Banner Novel (Pola Komiku: Smart Random 10 dari Top 20 Rating & Cover Valid)
+ * Fetch Hero Banner Novel (Smart Random 10 dari pool novel berating tinggi & cover valid)
  */
 export async function fetchFeaturedBanner(lang: string = 'all', signal?: AbortSignal): Promise<NovelItem[]> {
   const params: Record<string, string | number> = {
-    sort: 'rating',
-    limit: 20, // Ringan: hanya minta 20 item untuk pool random banner
+    limit: 20,
   };
   if (lang === 'id') {
     params['translation_status'] = 'id_translated';
@@ -158,16 +157,7 @@ export async function fetchFeaturedBanner(lang: string = 'all', signal?: AbortSi
   const data = extractNovels(res);
 
   if (!data || data.length === 0) return [];
-
-  // Prioritaskan novel dengan cover landscape (Pola Komiku)
-  const withLandscape = data.filter((n) => Boolean(n.cover_landscape_url));
-  const withoutLandscape = data.filter((n) => !n.cover_landscape_url);
-
-  const shuffledLandscape = shuffleSample(withLandscape, withLandscape.length);
-  const needed = 10 - shuffledLandscape.length;
-  const shuffledOthers = needed > 0 ? shuffleSample(withoutLandscape, needed) : [];
-
-  return [...shuffledLandscape, ...shuffledOthers].slice(0, 10);
+  return shuffleSample(data, Math.min(data.length, 10));
 }
 
 export async function fetchPopularNovelsPage(
@@ -212,7 +202,7 @@ export function useFeaturedBanner(lang: string = 'all') {
   return useQuery({
     queryKey: ['novels', 'featured-banner', lang],
     queryFn: ({ signal }) => fetchFeaturedBanner(lang, signal),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });
 }

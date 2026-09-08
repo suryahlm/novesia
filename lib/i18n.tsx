@@ -226,7 +226,7 @@ const translations = {
     see_all: 'Lihat Semua',
     ongoing: 'Berjalan',
     completed: 'Tamat',
-    coming_soon: 'Segera',
+    coming_soon: 'Segera Hadir',
     novels_count: 'novel',
     your_library: 'Pustaka Kamu',
     library_desc: 'Novel yang ditandai dan riwayat baca akan muncul di sini.',

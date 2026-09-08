@@ -373,11 +373,18 @@ export default function NovelDetailScreen() {
     cleanedSynopsis = lines.slice(0, cutIdx).join('\n').trim();
   }
 
+  const isComingSoon =
+    novel.status === 'draft' ||
+    novel.status === 'coming_soon' ||
+    novel.status === 'segera_hadir' ||
+    novel.total_chapters === 0;
+
   const isCompleted =
-    novel.status === 'completed' ||
+    !isComingSoon &&
+    (novel.status === 'completed' ||
     novel.status === 'complete' ||
     novel.status === 'tamat' ||
-    ['completed', 'complete', 'finished', 'tamat'].includes((novel.original_status || '').toLowerCase().trim());
+    ['completed', 'complete', 'finished', 'tamat'].includes((novel.original_status || '').toLowerCase().trim()));
 
   const realGenres = (novel.genres || []).filter((g: string) => g.toLowerCase() !== 'general');
 
@@ -523,10 +530,14 @@ export default function NovelDetailScreen() {
                 )}
 
                 <View style={[styles.metaPill, {
-                  backgroundColor: isCompleted 
+                  backgroundColor: isComingSoon
+                    ? (isDark ? 'rgba(185,151,98,0.18)' : 'rgba(185,151,98,0.14)')
+                    : isCompleted 
                     ? (isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.12)') 
                     : (isDark ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.12)'),
-                  borderColor: isCompleted 
+                  borderColor: isComingSoon
+                    ? (isDark ? 'rgba(185,151,98,0.5)' : 'rgba(185,151,98,0.4)')
+                    : isCompleted 
                     ? (isDark ? 'rgba(16,185,129,0.45)' : 'rgba(16,185,129,0.35)') 
                     : (isDark ? 'rgba(245,158,11,0.45)' : 'rgba(245,158,11,0.35)'),
                 }]}>
@@ -534,16 +545,22 @@ export default function NovelDetailScreen() {
                     width: 5,
                     height: 5,
                     borderRadius: 2.5,
-                    backgroundColor: isCompleted 
+                    backgroundColor: isComingSoon
+                      ? '#B99762'
+                      : isCompleted 
                       ? (isDark ? '#34D399' : '#059669') 
                       : (isDark ? '#FBBF24' : '#D97706'),
                   }} />
                   <Text style={[styles.metaPillText, { 
-                    color: isCompleted 
+                    color: isComingSoon
+                      ? (isDark ? '#F5D79E' : '#996515')
+                      : isCompleted 
                       ? (isDark ? '#34D399' : '#059669') 
                       : (isDark ? '#FBBF24' : '#D97706') 
                   }]}>
-                    {isCompleted ? (lang === 'id' ? 'Tamat' : 'Complete') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
+                    {isComingSoon
+                      ? (lang === 'id' ? 'Segera Hadir' : 'Coming Soon')
+                      : isCompleted ? (lang === 'id' ? 'Tamat' : 'Complete') : (lang === 'id' ? 'Berjalan' : 'Ongoing')}
                   </Text>
                 </View>
 
@@ -633,7 +650,24 @@ export default function NovelDetailScreen() {
         </View>
 
         {/* ═══ 2. MINIMALIST READING ACTION BUTTON ═══ */}
-        {chapters.length > 0 && (
+        {isComingSoon ? (
+          <View style={styles.ctaWrapper}>
+            <View
+              style={[
+                styles.ctaMinimalBtn,
+                {
+                  borderColor: isDark ? 'rgba(185,151,98,0.4)' : 'rgba(185,151,98,0.3)',
+                  backgroundColor: isDark ? 'rgba(185,151,98,0.1)' : 'rgba(185,151,98,0.08)',
+                },
+              ]}
+            >
+              <Ionicons name="time-outline" size={13} color="#B99762" />
+              <Text style={[styles.ctaMinimalText, { color: isDark ? '#F5D79E' : '#996515' }]}>
+                {lang === 'id' ? 'Segera Hadir di Novesia' : 'Coming Soon on Novesia'}
+              </Text>
+            </View>
+          </View>
+        ) : chapters.length > 0 ? (
           <View style={styles.ctaWrapper}>
             <TouchableOpacity
               activeOpacity={0.75}
@@ -661,7 +695,7 @@ export default function NovelDetailScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-        )}
+        ) : null}
 
         {/* ═══ 3. SINOPSIS SECTION ═══ */}
         {cleanedSynopsis ? (
@@ -759,7 +793,9 @@ export default function NovelDetailScreen() {
                 styles.emptyBox,
                 {
                   backgroundColor: isDark ? 'rgba(18,22,30,0.65)' : colors.surface,
-                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : colors.border,
+                  borderColor: isComingSoon
+                    ? (isDark ? 'rgba(185,151,98,0.35)' : 'rgba(185,151,98,0.3)')
+                    : (isDark ? 'rgba(255,255,255,0.08)' : colors.border),
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: isDark ? 0 : 0.04,
@@ -768,9 +804,19 @@ export default function NovelDetailScreen() {
                 },
               ]}
             >
-              <Text style={styles.emptyIcon}>📝</Text>
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t.no_chapters}</Text>
-              <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{t.translate_admin}</Text>
+              <Text style={styles.emptyIcon}>{isComingSoon ? '⏳' : '📝'}</Text>
+              <Text style={[styles.emptyText, { color: isComingSoon ? (isDark ? '#F5D79E' : '#996515') : colors.textSecondary, fontWeight: '700' }]}>
+                {isComingSoon
+                  ? (lang === 'id' ? 'Segera Hadir di Novesia' : 'Coming Soon on Novesia')
+                  : t.no_chapters}
+              </Text>
+              <Text style={[styles.emptyHint, { color: colors.textMuted, textAlign: 'center', lineHeight: 18, marginTop: 4 }]}>
+                {isComingSoon
+                  ? (lang === 'id'
+                      ? 'Bab pertama novel ini sedang dalam tahap persiapan terjemahan dan kurasi redaksi. Bab akan otomatis tersedia saat resmi dirilis.'
+                      : 'The first chapter of this novel is currently undergoing editorial preparation and translation curation. Chapters will become available upon official release.')
+                  : t.translate_admin}
+              </Text>
             </View>
           ) : (
             <View style={{ gap: 8 }}>
