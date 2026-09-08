@@ -11,7 +11,7 @@ export interface StatCardProps {
 }
 
 export function StatCard({ icon, label, value, onPress }: StatCardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   const content = (
     <>
@@ -38,6 +38,11 @@ export function StatCard({ icon, label, value, onPress }: StatCardProps) {
     backgroundColor: pressed ? colors.surfaceElevated : colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    shadowColor: isDark ? 'transparent' : '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0 : 0.04,
+    shadowRadius: 3,
+    elevation: isDark ? 0 : 1,
   });
 
   if (onPress) {

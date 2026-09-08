@@ -30,6 +30,7 @@ import { useAuthStore } from '../../lib/useAuthStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ThemeMode = 'dark' | 'light' | 'sepia';
+type ThemeChoice = 'auto' | 'dark' | 'light' | 'sepia';
 type Language = 'en' | 'id';
 
 export interface ReaderThemeConfig {
@@ -77,25 +78,25 @@ const THEMES: Record<ThemeMode, ReaderThemeConfig> = {
     badgeBg: 'rgba(212,168,67,0.12)',
   },
   light: {
-    bg: '#fafafa',
-    text: '#1a1a2e',
-    textMuted: '#64748b',
-    cardBg: '#F1F5F9',
-    cardBgActive: '#FFFBEB',
-    cardBorder: 'rgba(0,0,0,0.08)',
+    bg: '#FAF7F2',
+    text: '#211D17',
+    textMuted: '#716B61',
+    cardBg: '#FFFFFF',
+    cardBgActive: '#F3EEE5',
+    cardBorder: 'rgba(23,19,13,0.08)',
     surfaceBorder: 'rgba(212,168,67,0.3)',
     sheetBg: '#FFFFFF',
-    headerBorder: 'rgba(0,0,0,0.06)',
-    stepperBg: '#F1F5F9',
-    stepperBorder: 'rgba(0,0,0,0.08)',
-    sliderTrack: '#E2E8F0',
+    headerBorder: 'rgba(23,19,13,0.08)',
+    stepperBg: '#F3EEE5',
+    stepperBorder: 'rgba(23,19,13,0.1)',
+    sliderTrack: '#E6E0D5',
     goldAccent: '#d4a843',
-    closeCircleBg: '#F1F5F9',
-    chipBg: '#F1F5F9',
+    closeCircleBg: '#F3EEE5',
+    chipBg: '#F3EEE5',
     chipBgActive: '#FEF3C7',
     navBtnBg: '#FFFFFF',
-    navBtnBorder: 'rgba(0,0,0,0.1)',
-    badgeBg: 'rgba(212,168,67,0.15)',
+    navBtnBorder: 'rgba(23,19,13,0.12)',
+    badgeBg: 'rgba(212,168,67,0.12)',
   },
   sepia: {
     bg: '#f5f0e8',
@@ -144,7 +145,7 @@ export default function ReadChapterScreen() {
   const { chapterId: rawChapterId } = useLocalSearchParams<{ chapterId: string }>();
   const chapterId = (Array.isArray(rawChapterId) ? rawChapterId[0] : rawChapterId) || '';
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { lang: globalLang, t, changeLang } = useLanguage();
   const { showForChapter, noticeVisible: adNoticeVisible } = useChapterInterstitialAd();
@@ -165,7 +166,16 @@ export default function ReadChapterScreen() {
 
   // Reading settings
   const [fontSize, setFontSize] = useState(18);
-  const [theme, setTheme] = useState<ThemeMode>('dark');
+  const [themeChoice, setThemeChoice] = useState<ThemeChoice>('auto');
+
+  // Automatically follows app theme (Light / Dark) when set to 'auto', or uses explicit preference
+  const theme: ThemeMode = useMemo(() => {
+    if (themeChoice === 'auto') {
+      return isDark ? 'dark' : 'light';
+    }
+    return themeChoice;
+  }, [themeChoice, isDark]);
+
   const [lineHeight, setLineHeight] = useState(1.8);
   const [showSettings, setShowSettings] = useState(false);
   const [language, setLanguage] = useState<Language>('en');
@@ -257,19 +267,29 @@ export default function ReadChapterScreen() {
       if (stored) {
         const s = JSON.parse(stored);
         if (s.fontSize) setFontSize(s.fontSize);
-        if (s.theme) setTheme(s.theme);
         if (s.lineHeight) setLineHeight(s.lineHeight);
+        if (s.themeChoice) {
+          setThemeChoice(s.themeChoice);
+        } else if (s.manualThemeSelected && (s.theme === 'dark' || s.theme === 'light' || s.theme === 'sepia')) {
+          setThemeChoice(s.theme);
+        } else {
+          // Default to 'auto' so it automatically adapts to light or dark mode!
+          setThemeChoice('auto');
+        }
       }
     } catch {}
   };
 
-  const saveSettings = useCallback(async (fs: number, th: ThemeMode, lh: number) => {
+  const saveSettings = useCallback(async (fs: number, th: ThemeChoice, lh: number, manual: boolean = false) => {
     try {
-      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify({ fontSize: fs, theme: th, lineHeight: lh }));
+      await AsyncStorage.setItem(
+        SETTINGS_KEY,
+        JSON.stringify({ fontSize: fs, theme: th, themeChoice: th, manualThemeSelected: manual, lineHeight: lh })
+      );
     } catch {}
   }, []);
 
-  const handleSelectTheme = (th: ThemeMode) => {
+  const handleSelectTheme = (th: ThemeChoice) => {
     const currentUser = useAuthStore.getState().user;
     if (!currentUser) {
       setShowSettings(false);
@@ -277,8 +297,8 @@ export default function ReadChapterScreen() {
         title: globalLang === 'en' ? 'Login Required' : 'Butuh Login',
         message:
           globalLang === 'en'
-            ? 'Please sign in to change the reading theme (Dark, Light, Sepia).'
-            : 'Silakan masuk (login) terlebih dahulu untuk mengubah tema tampilan membaca (Dark, Light, Sepia).',
+            ? 'Please sign in to change the reading theme (Auto, Dark, Light, Sepia).'
+            : 'Silakan masuk (login) terlebih dahulu untuk mengubah tema tampilan membaca (Auto, Dark, Light, Sepia).',
         tone: 'gold',
         confirmText: globalLang === 'en' ? 'Sign In' : 'Masuk Sekarang',
         cancelText: t.cancel || 'Batal',
@@ -288,8 +308,8 @@ export default function ReadChapterScreen() {
       setDialogVisible(true);
       return;
     }
-    setTheme(th);
-    saveSettings(fontSize, th, lineHeight);
+    setThemeChoice(th);
+    saveSettings(fontSize, th, lineHeight, th !== 'auto');
   };
 
   useEffect(() => {
@@ -516,24 +536,36 @@ export default function ReadChapterScreen() {
           onPress={() => {
             const v = Math.max(12, fontSize - 1);
             setFontSize(v);
-            saveSettings(v, theme, lineHeight);
+            saveSettings(v, themeChoice, lineHeight, themeChoice !== 'auto');
           }}
           activeOpacity={0.7}
-          style={[styles.topSizeBtn, { borderColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }]}
+          style={[
+            styles.topSizeBtn,
+            {
+              backgroundColor: currentTheme.cardBg,
+              borderColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+            },
+          ]}
         >
-          <Text style={[styles.topSizeBtnText, { color: theme === 'dark' ? '#d4d4d8' : '#334155' }]}>A-</Text>
+          <Text style={[styles.topSizeBtnText, { color: currentTheme.text }]}>A-</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => {
             const v = Math.min(28, fontSize + 1);
             setFontSize(v);
-            saveSettings(v, theme, lineHeight);
+            saveSettings(v, themeChoice, lineHeight, themeChoice !== 'auto');
           }}
           activeOpacity={0.7}
-          style={[styles.topSizeBtn, { borderColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }]}
+          style={[
+            styles.topSizeBtn,
+            {
+              backgroundColor: currentTheme.cardBg,
+              borderColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+            },
+          ]}
         >
-          <Text style={[styles.topSizeBtnText, { color: theme === 'dark' ? '#d4d4d8' : '#334155' }]}>A+</Text>
+          <Text style={[styles.topSizeBtnText, { color: currentTheme.text }]}>A+</Text>
         </TouchableOpacity>
 
         {/* Settings button */}
@@ -557,7 +589,7 @@ export default function ReadChapterScreen() {
       </View>
 
       {/* Reading Progress Bar */}
-      <View style={styles.progressBarBg}>
+      <View style={[styles.progressBarBg, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }]}>
         <View
           style={[
             styles.progressBarFill,
@@ -843,7 +875,7 @@ export default function ReadChapterScreen() {
             scrollEventThrottle={16}
           >
             {/* Estimated reading time */}
-            <Text style={[styles.readingTime, { color: theme === 'dark' ? '#64748b' : '#94a3b8' }]}>
+            <Text style={[styles.readingTime, { color: currentTheme.textMuted }]}>
               ⏱️ ~{Math.max(1, Math.round(displayWordCount / 200))} min read
             </Text>
             <Text style={[styles.chapterHeading, { color: currentTheme.text }]}>
@@ -861,7 +893,7 @@ export default function ReadChapterScreen() {
               {displayContent}
             </Text>
 
-            <Text style={styles.wordCount}>
+            <Text style={[styles.wordCount, { color: currentTheme.textMuted }]}>
               {displayWordCount} {language === 'id' ? 'kata' : 'words'}
             </Text>
 
@@ -1050,7 +1082,7 @@ export default function ReadChapterScreen() {
                   onPress={() => {
                     const v = Math.max(12, fontSize - 1);
                     setFontSize(v);
-                    saveSettings(v, theme, lineHeight);
+                    saveSettings(v, themeChoice, lineHeight, themeChoice !== 'auto');
                   }}
                 >
                   <Text style={[styles.stepperBtnText, { color: currentTheme.goldAccent }]}>A-</Text>
@@ -1072,7 +1104,7 @@ export default function ReadChapterScreen() {
                   onPress={() => {
                     const v = Math.min(28, fontSize + 1);
                     setFontSize(v);
-                    saveSettings(v, theme, lineHeight);
+                    saveSettings(v, themeChoice, lineHeight, themeChoice !== 'auto');
                   }}
                 >
                   <Text style={[styles.stepperBtnText, { color: currentTheme.goldAccent }]}>A+</Text>
@@ -1087,54 +1119,109 @@ export default function ReadChapterScreen() {
                   <Ionicons name="color-palette-outline" size={14} color={currentTheme.goldAccent} />
                   <Text style={[styles.settingLabel, { color: currentTheme.text }]}>{t.theme || 'Tema Latar'}</Text>
                 </View>
+                <View
+                  style={[
+                    styles.badgePill,
+                    {
+                      backgroundColor: currentTheme.badgeBg,
+                      borderColor: currentTheme.goldAccent + '40',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.badgePillText, { color: currentTheme.goldAccent }]}>
+                    {themeChoice === 'auto'
+                      ? (isDark ? 'Auto (Dark)' : 'Auto (Light)')
+                      : themeChoice.toUpperCase()}
+                  </Text>
+                </View>
               </View>
               <View style={styles.themeGridRow}>
+                {/* 1. Auto */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
+                    styles.themeCard,
+                    {
+                      backgroundColor: themeChoice === 'auto'
+                        ? (isDark ? '#161B20' : '#FFFFFF')
+                        : (isDark ? '#0A0D10' : '#F1F5F9'),
+                      borderColor: themeChoice === 'auto'
+                        ? currentTheme.goldAccent
+                        : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'),
+                    },
+                    themeChoice === 'auto' && styles.themeCardActive,
+                  ]}
+                  onPress={() => handleSelectTheme('auto')}
+                >
+                  <Ionicons
+                    name="contrast-outline"
+                    size={14}
+                    color={themeChoice === 'auto' ? currentTheme.goldAccent : (isDark ? '#94A3B8' : '#64748B')}
+                  />
+                  <Text
+                    style={[
+                      styles.themeCardText,
+                      {
+                        color: themeChoice === 'auto'
+                          ? currentTheme.goldAccent
+                          : (isDark ? '#E2E8F0' : '#334155'),
+                        fontWeight: themeChoice === 'auto' ? '700' : '500',
+                      },
+                    ]}
+                  >
+                    Auto
+                  </Text>
+                </TouchableOpacity>
+
+                {/* 2. Dark */}
                 <TouchableOpacity
                   activeOpacity={0.8}
                   style={[
                     styles.themeCard,
                     {
                       backgroundColor: '#0A0D10',
-                      borderColor: theme === 'dark' ? currentTheme.goldAccent : 'rgba(255,255,255,0.08)',
+                      borderColor: themeChoice === 'dark' ? currentTheme.goldAccent : 'rgba(255,255,255,0.08)',
                     },
-                    theme === 'dark' && styles.themeCardActive,
+                    themeChoice === 'dark' && styles.themeCardActive,
                   ]}
                   onPress={() => handleSelectTheme('dark')}
                 >
-                  <Ionicons name="moon" size={15} color={theme === 'dark' ? currentTheme.goldAccent : '#94a3b8'} />
-                  <Text style={[styles.themeCardText, { color: '#E2E8F0', fontWeight: theme === 'dark' ? '700' : '500' }]}>Dark</Text>
+                  <Ionicons name="moon" size={14} color={themeChoice === 'dark' ? currentTheme.goldAccent : '#94a3b8'} />
+                  <Text style={[styles.themeCardText, { color: '#E2E8F0', fontWeight: themeChoice === 'dark' ? '700' : '500' }]}>Dark</Text>
                 </TouchableOpacity>
 
+                {/* 3. Light */}
                 <TouchableOpacity
                   activeOpacity={0.8}
                   style={[
                     styles.themeCard,
                     {
                       backgroundColor: '#FFFFFF',
-                      borderColor: theme === 'light' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
+                      borderColor: themeChoice === 'light' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
                     },
-                    theme === 'light' && styles.themeCardActive,
+                    themeChoice === 'light' && styles.themeCardActive,
                   ]}
                   onPress={() => handleSelectTheme('light')}
                 >
-                  <Ionicons name="sunny" size={15} color={theme === 'light' ? currentTheme.goldAccent : '#f59e0b'} />
-                  <Text style={[styles.themeCardText, { color: '#1A1A2E', fontWeight: theme === 'light' ? '700' : '500' }]}>Light</Text>
+                  <Ionicons name="sunny" size={14} color={themeChoice === 'light' ? currentTheme.goldAccent : '#f59e0b'} />
+                  <Text style={[styles.themeCardText, { color: '#1A1A2E', fontWeight: themeChoice === 'light' ? '700' : '500' }]}>Light</Text>
                 </TouchableOpacity>
 
+                {/* 4. Sepia */}
                 <TouchableOpacity
                   activeOpacity={0.8}
                   style={[
                     styles.themeCard,
                     {
                       backgroundColor: '#F5F0E8',
-                      borderColor: theme === 'sepia' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
+                      borderColor: themeChoice === 'sepia' ? currentTheme.goldAccent : 'rgba(0,0,0,0.1)',
                     },
-                    theme === 'sepia' && styles.themeCardActive,
+                    themeChoice === 'sepia' && styles.themeCardActive,
                   ]}
                   onPress={() => handleSelectTheme('sepia')}
                 >
-                  <Ionicons name="book" size={15} color={theme === 'sepia' ? currentTheme.goldAccent : '#b45309'} />
-                  <Text style={[styles.themeCardText, { color: '#3D3225', fontWeight: theme === 'sepia' ? '700' : '500' }]}>Sepia</Text>
+                  <Ionicons name="book" size={14} color={themeChoice === 'sepia' ? currentTheme.goldAccent : '#b45309'} />
+                  <Text style={[styles.themeCardText, { color: '#3D3225', fontWeight: themeChoice === 'sepia' ? '700' : '500' }]}>Sepia</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1164,7 +1251,7 @@ export default function ReadChapterScreen() {
                       ]}
                       onPress={() => {
                         setLineHeight(val);
-                        saveSettings(fontSize, theme, val);
+                        saveSettings(fontSize, themeChoice, val, themeChoice !== 'auto');
                       }}
                     >
                       <Text
@@ -1504,7 +1591,7 @@ const styles = StyleSheet.create({
   // Theme Cards
   themeGridRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 6,
   },
   themeCard: {
     flex: 1,
@@ -1514,13 +1601,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 4,
+    paddingHorizontal: 2,
   },
   themeCardActive: {
     borderWidth: 1.5,
   },
   themeCardText: {
-    fontSize: 12,
+    fontSize: 11.5,
   },
 
   // Line Spacing Chips

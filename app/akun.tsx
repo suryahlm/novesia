@@ -14,7 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { GradientBackground } from '../components/GradientBackground';
@@ -100,7 +100,8 @@ function InfoRow({
 
 export default function AkunScreen() {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t, lang } = useLanguage();
   const user = useAuthStore((s) => s.user);
 
@@ -318,7 +319,11 @@ export default function AkunScreen() {
       />
       {/* Ambient shimmer bottom-right */}
       <LinearGradient
-        colors={['rgba(13,16,18,0)', colors.primary + '0D', colors.primary + '1F']}
+        colors={[
+          isDark ? 'rgba(13,16,18,0)' : 'rgba(255,255,255,0)',
+          colors.primary + (isDark ? '0D' : '08'),
+          colors.primary + (isDark ? '1F' : '12'),
+        ]}
         locations={[0, 0.5, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -326,7 +331,7 @@ export default function AkunScreen() {
         pointerEvents="none"
       />
 
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
         {/* Top App Header */}
         <View
           style={{
@@ -347,7 +352,7 @@ export default function AkunScreen() {
           </Text>
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 95 }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: Math.max(36, insets.bottom + 28) }} showsVerticalScrollIndicator={false}>
           {/* Avatar & User Details */}
           <View style={{ alignItems: 'center', gap: 10, marginBottom: 24, marginTop: 8 }}>
             <View style={{ position: 'relative' }}>
@@ -360,8 +365,13 @@ export default function AkunScreen() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderWidth: 2,
-                  borderColor: colors.primary,
+                  borderColor: isDark ? colors.primary : colors.primary + '80',
                   overflow: 'hidden',
+                  shadowColor: isDark ? 'transparent' : '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isDark ? 0 : 0.06,
+                  shadowRadius: 6,
+                  elevation: isDark ? 0 : 2,
                 }}
               >
                 {user?.avatarUrl ? (
@@ -392,6 +402,11 @@ export default function AkunScreen() {
                   borderWidth: 2,
                   borderColor: colors.background,
                   opacity: uploadingAvatar ? 0.6 : 1,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 2,
+                  elevation: 2,
                 }}
               >
                 {uploadingAvatar ? (
@@ -415,7 +430,7 @@ export default function AkunScreen() {
               </Text>
               {user && (
                 <Pressable onPress={openEditName} hitSlop={10}>
-                  <Ionicons name="pencil" size={16} color={colors.textMuted} />
+                  <Ionicons name="pencil" size={16} color={isDark ? colors.textMuted : colors.textSecondary} />
                 </Pressable>
               )}
             </View>
@@ -426,24 +441,24 @@ export default function AkunScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 5,
-                paddingHorizontal: 10,
-                paddingVertical: 3,
+                paddingHorizontal: 11,
+                paddingVertical: 3.5,
                 borderRadius: 999,
                 borderWidth: 1,
-                borderColor: isVip ? colors.primary + '59' : colors.border,
-                backgroundColor: isVip ? colors.primaryMuted : 'transparent',
+                borderColor: isVip ? colors.primary + '59' : (isDark ? colors.border : 'rgba(0,0,0,0.08)'),
+                backgroundColor: isVip ? colors.primaryMuted : (isDark ? 'rgba(255,255,255,0.04)' : colors.surfaceElevated),
               }}
             >
               <Ionicons
                 name={user ? (isVip ? 'ribbon' : 'checkmark-circle') : 'person-outline'}
                 size={13}
-                color={isVip ? colors.primary : colors.textMuted}
+                color={isVip ? colors.primary : (isDark ? colors.textMuted : colors.textSecondary)}
               />
               <Text
                 style={{
                   fontSize: 11,
                   fontWeight: '700',
-                  color: isVip ? colors.primary : colors.textMuted,
+                  color: isVip ? colors.primary : (isDark ? colors.textMuted : colors.textSecondary),
                 }}
               >
                 {user ? (isVip ? t.member_vip : user.email) : t.member_guest}
@@ -478,6 +493,11 @@ export default function AkunScreen() {
               padding: 16,
               marginBottom: 20,
               gap: 10,
+              shadowColor: isDark ? 'transparent' : '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: isDark ? 0 : 0.04,
+              shadowRadius: 4,
+              elevation: isDark ? 0 : 1,
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -499,7 +519,7 @@ export default function AkunScreen() {
                 </View>
 
                 {/* Progress Bar */}
-                <View style={{ height: 6, borderRadius: 999, backgroundColor: colors.border, overflow: 'hidden' }}>
+                <View style={{ height: 6, borderRadius: 999, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                   <View
                     style={{
                       height: '100%',
@@ -539,7 +559,7 @@ export default function AkunScreen() {
             style={{
               flexDirection: 'row',
               borderRadius: 14,
-              backgroundColor: colors.surface,
+              backgroundColor: isDark ? colors.surface : colors.surfaceElevated,
               borderWidth: 1,
               borderColor: colors.border,
               padding: 4,
@@ -558,22 +578,48 @@ export default function AkunScreen() {
                   style={{ flex: 1, borderRadius: 10, overflow: 'hidden' }}
                 >
                   {active ? (
-                    <GoldSurface
-                      shimmer
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                        paddingVertical: 8,
-                        borderRadius: 10,
-                      }}
-                    >
-                      <Ionicons name={icon} size={15} color={colors.textOnPrimary} />
-                      <Text style={{ fontSize: 12.5, fontWeight: '800', color: colors.textOnPrimary }}>
-                        {label}
-                      </Text>
-                    </GoldSurface>
+                    isDark ? (
+                      <GoldSurface
+                        shimmer
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          paddingVertical: 8,
+                          borderRadius: 10,
+                        }}
+                      >
+                        <Ionicons name={icon} size={15} color={colors.textOnPrimary} />
+                        <Text style={{ fontSize: 12.5, fontWeight: '800', color: colors.textOnPrimary }}>
+                          {label}
+                        </Text>
+                      </GoldSurface>
+                    ) : (
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          paddingVertical: 8,
+                          borderRadius: 10,
+                          backgroundColor: '#FFFFFF',
+                          borderWidth: 1,
+                          borderColor: colors.primary + '45',
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 1 },
+                          shadowOpacity: 0.07,
+                          shadowRadius: 3,
+                          elevation: 1.5,
+                        }}
+                      >
+                        <Ionicons name={icon} size={15} color={colors.primary} />
+                        <Text style={{ fontSize: 12.5, fontWeight: '800', color: colors.primary }}>
+                          {label}
+                        </Text>
+                      </View>
+                    )
                   ) : (
                     <View
                       style={{
@@ -607,6 +653,11 @@ export default function AkunScreen() {
                     borderColor: colors.border,
                     paddingHorizontal: 16,
                     paddingVertical: 4,
+                    shadowColor: isDark ? 'transparent' : '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: isDark ? 0 : 0.04,
+                    shadowRadius: 4,
+                    elevation: isDark ? 0 : 1,
                   }}
                 >
                   <InfoRow icon="mail-outline" label={t.info_email} value={user.email} />
@@ -627,7 +678,7 @@ export default function AkunScreen() {
                 </View>
 
                 {/* Hapus Akun Button */}
-                <Pressable onPress={confirmDeleteAccount} style={{ marginTop: 24, marginBottom: 20 }}>
+                <Pressable onPress={confirmDeleteAccount} style={{ marginTop: 24, marginBottom: 16 }}>
                   <View
                     style={{
                       flexDirection: 'row',
@@ -637,8 +688,8 @@ export default function AkunScreen() {
                       paddingVertical: 13,
                       borderRadius: 12,
                       borderWidth: 1,
-                      borderColor: colors.danger + '44',
-                      backgroundColor: 'rgba(216,102,102,0.08)',
+                      borderColor: colors.danger + (isDark ? '44' : '35'),
+                      backgroundColor: isDark ? 'rgba(216,102,102,0.08)' : 'rgba(216,102,102,0.06)',
                     }}
                   >
                     <Ionicons name="trash-outline" size={16} color={colors.danger} />
