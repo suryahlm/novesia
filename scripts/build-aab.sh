@@ -8,8 +8,8 @@ set -e
 
 PROJECT_DIR="/Users/suryahalim/IT Surya/NovelUpdate/novesia-app"
 OUTPUT_DIR="/Users/suryahalim/IT Surya/NovelUpdate/_draft/Build/AAB"
-VERSION_NAME="1.1.0"
-VERSION_CODE="10"
+VERSION_NAME="1.1.1"
+VERSION_CODE="11"
 
 echo "========================================================"
 echo "🚀 MEMULAI BUILD RELEASE AAB NOVESIA (v${VERSION_NAME} - VC ${VERSION_CODE})"
