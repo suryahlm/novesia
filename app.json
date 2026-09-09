@@ -23,6 +23,7 @@
       },
       "package": "cc.novesia.app",
       "versionCode": 12,
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",

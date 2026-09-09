@@ -1,0 +1,8 @@
+<resources>
+  <string name="app_name">Novesia</string>
+  <string name="expo_system_ui_user_interface_style" translatable="false">dark</string>
+  <string name="expo_runtime_version">1.1.2</string>
+  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
+  <!-- Google Sign-In: Web Client ID (server_client_id) -->
+  <string name="server_client_id" translatable="false">49249228915-cg9h4c4gl2ud1g9lvm4c5vp3rs3s0op6.apps.googleusercontent.com</string>
+</resources>
