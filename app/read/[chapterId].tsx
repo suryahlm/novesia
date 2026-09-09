@@ -148,7 +148,7 @@ export default function ReadChapterScreen() {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { lang: globalLang, t, changeLang } = useLanguage();
-  const { showForChapter, noticeVisible: adNoticeVisible } = useChapterInterstitialAd();
+  const { showForChapter, noticeVisible: adNoticeVisible, noticeMessage: adNoticeMessage } = useChapterInterstitialAd();
 
   const {
     data: chapterData,
@@ -618,7 +618,7 @@ export default function ReadChapterScreen() {
           >
             <Ionicons name="megaphone-outline" size={14} color={currentTheme.goldAccent} />
             <Text style={[styles.adNoticeText, { color: currentTheme.text }]}>
-              {AD_NOTICE_MESSAGE}
+              {adNoticeMessage || AD_NOTICE_MESSAGE}
             </Text>
           </View>
         </View>

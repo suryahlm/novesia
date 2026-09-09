@@ -11,6 +11,8 @@ export interface AppConfig {
   referral_bonus: number;
   watch_ad_reward: number;
   ad_interval_chapters: number;
+  ad_cooldown_minutes: number;
+  ad_interstitial_enabled: boolean;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -18,10 +20,12 @@ const DEFAULT_CONFIG: AppConfig = {
   referral_bonus: 50,
   watch_ad_reward: 40,
   ad_interval_chapters: 5,
+  ad_cooldown_minutes: 30,
+  ad_interstitial_enabled: true,
 };
 
 const CACHE_KEY = 'novesia_app_config';
-const CACHE_TTL = 60 * 60 * 1000; // 1 jam
+const CACHE_TTL = 10 * 60 * 1000; // 10 menit (agar perubahan di admin cepat tersinkronkan)
 
 let cachedConfig: AppConfig | null = null;
 

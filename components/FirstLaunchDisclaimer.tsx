@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDisclaimerStore } from '../lib/useDisclaimerStore';
 import { useTheme } from '../lib/ThemeProvider';
-import { useLanguage } from '../lib/i18n';
 import { GradientBackground } from './GradientBackground';
 
 function DisclaimerCard({
@@ -67,8 +66,6 @@ function DisclaimerCard({
  */
 export function FirstLaunchDisclaimer() {
   const { colors } = useTheme();
-  const { lang } = useLanguage();
-  const isId = lang === 'id';
 
   const hasAccepted = useDisclaimerStore((s) => s.hasAcceptedDisclaimer);
   const acceptDisclaimer = useDisclaimerStore((s) => s.acceptDisclaimer);
@@ -111,42 +108,30 @@ export function FirstLaunchDisclaimer() {
             </View>
 
             <Text style={[styles.mainTitle, { color: colors.textPrimary }]}>
-              {isId ? 'Pemberitahuan & Disclaimer' : 'Notice & Disclaimer'}
+              Notice & Disclaimer
             </Text>
 
             <Text style={[styles.mainSubtitle, { color: colors.textMuted }]}>
-              {isId
-                ? 'Ketentuan Penting Sebelum Membaca Novel'
-                : 'Important Terms Before You Begin Reading'}
+              Important Terms Before You Begin Reading
             </Text>
           </View>
 
           {/* Welcoming Text */}
           <Text style={[styles.introText, { color: colors.textSecondary }]}>
-            {isId
-              ? 'Selamat datang di Novesia. Sebelum mulai menikmati ribuan bab novel web terjemahan, mohon luangkan waktu sejenak untuk memahami prinsip layanan, hak cipta, dan ketentuan kami.'
-              : 'Welcome to Novesia. Before you begin exploring thousands of translated web novel chapters, please take a moment to understand our service nature, copyright standards, and terms.'}
+            Welcome to Novesia. Before you begin exploring thousands of translated web novel chapters, please take a moment to understand our service nature, copyright standards, and terms.
           </Text>
 
           {/* Section 1: Agregator */}
           <DisclaimerCard
             icon="server-outline"
             number={1}
-            title={
-              isId
-                ? 'Platform Agregator Sastra Web'
-                : 'Web Fiction Aggregator Platform'
-            }
+            title="Web Fiction Aggregator Platform"
           >
             <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
-              {isId
-                ? 'Novesia beroperasi semata-mata sebagai platform web agregator dan direktori pengindeks sastra fiksi Asia. Kami TIDAK memproduksi konten secara mandiri dan TIDAK menyimpan berkas teks novel secara privat di server kami.'
-                : 'Novesia functions strictly as a web aggregator platform and indexing directory for Asian fiction literature. We do NOT author original content and do NOT store private novel text files on our servers.'}
+              Novesia functions strictly as a web aggregator platform and indexing directory for Asian fiction literature. We do NOT author original content and do NOT store private novel text files on our servers.
             </Text>
             <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
-              {isId
-                ? 'Seluruh novel dan bab yang terindeks dikumpulkan dari berbagai sumber publik di internet untuk kemudahan membaca, edukasi bahasa, dan apresiasi sastra fiksi.'
-                : 'All indexed novels and chapters are gathered from open public sources across the internet for reading convenience, language study, and literary appreciation.'}
+              All indexed novels and chapters are gathered from open public sources across the internet for reading convenience, language study, and literary appreciation.
             </Text>
           </DisclaimerCard>
 
@@ -154,21 +139,13 @@ export function FirstLaunchDisclaimer() {
           <DisclaimerCard
             icon="ribbon-outline"
             number={2}
-            title={
-              isId
-                ? 'Hak Cipta & Penghormatan Karya Asli'
-                : 'Intellectual Property & Creator Rights'
-            }
+            title="Intellectual Property & Creator Rights"
           >
             <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
-              {isId
-                ? 'Seluruh judul novel, penokohan karakter, naskah cerita, dan ilustrasi resmi sepenuhnya merupakan hak kekayaan intelektual milik penulis asli, penerbit resmi, dan pemegang lisensi masing-masing.'
-                : 'All novel titles, fictional characters, story manuscripts, and official illustrations remain the exclusive intellectual property of their original authors, publishers, and licensed rights holders.'}
+              All novel titles, fictional characters, story manuscripts, and official illustrations remain the exclusive intellectual property of their original authors, publishers, and licensed rights holders.
             </Text>
             <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
-              {isId
-                ? 'Novesia tidak mengklaim kepemilikan apapun atas karya-karya tersebut dan sangat mendorong seluruh pembaca untuk terus mendukung kreator asli melalui pembelian buku dan platform resmi berlisensi.'
-                : 'Novesia claims no ownership over these works and wholeheartedly urges readers to support original creators through official licensed publications.'}
+              Novesia claims no ownership over these works and wholeheartedly urges readers to support original creators through official licensed publications.
             </Text>
           </DisclaimerCard>
 
@@ -176,16 +153,10 @@ export function FirstLaunchDisclaimer() {
           <DisclaimerCard
             icon="scale-outline"
             number={3}
-            title={
-              isId
-                ? 'Prosedur Takedown & Hubungi Kami'
-                : 'Takedown Inquiries & Contact'
-            }
+            title="Takedown Inquiries & Contact"
           >
             <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
-              {isId
-                ? 'Jika Anda adalah pemegang hak cipta sah dan berkeberatan atas keberadaan tautan indeks tertentu di platform kami, tim kami siap memproses permohonan penghapusan (takedown) secara cepat melalui email:'
-                : 'If you are a legitimate rights holder requesting the removal of specific indexed links from our directory, our team handles takedown requests promptly via email:'}
+              If you are a legitimate rights holder requesting the removal of specific indexed links from our directory, our team handles takedown requests promptly via email:
             </Text>
             <Text style={[styles.emailText, { color: colors.primary }]}>
               support@novesia.cc
@@ -196,9 +167,7 @@ export function FirstLaunchDisclaimer() {
           <View style={styles.footnoteContainer}>
             <Ionicons name="information-circle-outline" size={15} color={colors.textMuted} style={{ marginTop: 1 }} />
             <Text style={[styles.footnoteText, { color: colors.textMuted }]}>
-              {isId
-                ? 'Dengan menekan tombol di bawah, Anda menyatakan telah membaca, memahami, dan menyetujui pemberitahuan ini serta Syarat & Ketentuan lengkap Novesia.'
-                : 'By tapping the button below, you confirm that you have read, understood, and agreed to this notice and Novesia’s complete Terms of Service.'}
+              By tapping the button below, you confirm that you have read, understood, and agreed to this notice and Novesia’s complete Terms of Service.
             </Text>
           </View>
         </ScrollView>
@@ -223,11 +192,11 @@ export function FirstLaunchDisclaimer() {
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel={isId ? 'Saya Mengerti dan Menyetujui' : 'I Understand and Agree'}
+            accessibilityLabel="I Understand and Agree"
           >
             <Ionicons name="checkmark-circle" size={17} color={colors.textOnPrimary} />
             <Text style={[styles.agreeBtnText, { color: colors.textOnPrimary }]}>
-              {isId ? 'Saya Mengerti dan Menyetujui' : 'I Understand and Agree'}
+              I Understand and Agree
             </Text>
           </Pressable>
         </View>

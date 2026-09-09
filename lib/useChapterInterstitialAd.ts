@@ -2,18 +2,24 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 import { useAdStore } from './useAdStore';
-import { AD_COOLDOWN_MS, AD_NOTICE_DURATION_MS, CHAPTER_INTERSTITIAL_AD_UNIT_ID } from './ads';
+import {
+  AD_NOTICE_DURATION_MS,
+  CHAPTER_INTERSTITIAL_AD_UNIT_ID,
+  DEFAULT_AD_COOLDOWN_MINUTES,
+  getAdNoticeMessage,
+} from './ads';
+import { getAppConfig } from './appConfig';
 
 // react-native-google-mobile-ads memanggil native module langsung saat di-import (bukan saat
 // dipanggil) — import statis di top-level bisa crash di Expo Go karena modul nativenya tidak ada di situ.
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 /**
- * Iklan interstitial sebelum baca chapter — MAX sekali per AD_COOLDOWN_MS per device (bukan per novel/chapter).
- * Mengikuti pola Komiku:
- * 1. Cek due (30 menit sejak iklan terakhir).
+ * Iklan interstitial sebelum baca chapter — MAX sekali per cooldown interval per device.
+ * Konfigurasi interval dan status aktif dapat diatur langsung dari Admin Panel secara dinamis.
+ * 1. Cek due (default 30 menit atau sesuai pengaturan admin).
  * 2. Tandai lastShownAt SEGERA (komitmen slot, gagal load tidak membuat iklan terus mencoba tiap chapter).
- * 3. Tampilkan notice banner singkat (1.8s) "Iklan berikutnya tampil 30 menit lagi".
+ * 3. Tampilkan notice banner singkat (1.8s) "Next ad will appear in X minutes".
  * 4. Load & tampilkan iklan AdMob interstitial setelah notice selesai.
  * 5. Non-blocking: pembaca tidak ditahan loading spinner, pembaca tetap bisa langsung mulai membaca.
  */
@@ -21,6 +27,9 @@ export function useChapterInterstitialAd() {
   const lastShownAt = useAdStore((s) => s.lastShownAt);
   const markShown = useAdStore((s) => s.markShown);
   const [noticeVisible, setNoticeVisible] = useState(false);
+  const [noticeMessage, setNoticeMessage] = useState<string>(
+    getAdNoticeMessage(DEFAULT_AD_COOLDOWN_MINUTES)
+  );
 
   const processedChapterRef = useRef<string | null>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -39,13 +48,29 @@ export function useChapterInterstitialAd() {
   );
 
   const showForChapter = useCallback(
-    (chapterId: string) => {
+    async (chapterId: string) => {
       if (isExpoGo) return; // Tidak ada iklan di Expo Go, lewati dengan aman
       if (processedChapterRef.current === chapterId) return;
       processedChapterRef.current = chapterId;
 
-      const due = !lastShownAt || Date.now() - lastShownAt >= AD_COOLDOWN_MS;
+      // Ambil konfigurasi dinamis yang diatur admin di Admin Panel
+      const config = await getAppConfig().catch(() => null);
+      if (cancelledRef.current) return;
+
+      const isEnabled = config?.ad_interstitial_enabled ?? true;
+      if (!isEnabled) return;
+
+      const cooldownMinutes =
+        typeof config?.ad_cooldown_minutes === 'number' && config.ad_cooldown_minutes > 0
+          ? config.ad_cooldown_minutes
+          : DEFAULT_AD_COOLDOWN_MINUTES;
+
+      const cooldownMs = cooldownMinutes * 60 * 1000;
+      const due = !lastShownAt || Date.now() - lastShownAt >= cooldownMs;
       if (!due) return;
+
+      const message = getAdNoticeMessage(cooldownMinutes);
+      setNoticeMessage(message);
 
       markShown();
       setNoticeVisible(true);
@@ -86,5 +111,5 @@ export function useChapterInterstitialAd() {
     [lastShownAt, markShown]
   );
 
-  return { showForChapter, noticeVisible };
+  return { showForChapter, noticeVisible, noticeMessage };
 }
