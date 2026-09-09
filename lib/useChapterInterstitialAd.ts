@@ -24,7 +24,6 @@ const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreCl
  * 5. Non-blocking: pembaca tidak ditahan loading spinner, pembaca tetap bisa langsung mulai membaca.
  */
 export function useChapterInterstitialAd() {
-  const lastShownAt = useAdStore((s) => s.lastShownAt);
   const markShown = useAdStore((s) => s.markShown);
   const [noticeVisible, setNoticeVisible] = useState(false);
   const [noticeMessage, setNoticeMessage] = useState<string>(
@@ -66,6 +65,7 @@ export function useChapterInterstitialAd() {
           : DEFAULT_AD_COOLDOWN_MINUTES;
 
       const cooldownMs = cooldownMinutes * 60 * 1000;
+      const lastShownAt = useAdStore.getState().lastShownAt;
       const due = !lastShownAt || Date.now() - lastShownAt >= cooldownMs;
       if (!due) return;
 
@@ -108,7 +108,7 @@ export function useChapterInterstitialAd() {
           });
       }, AD_NOTICE_DURATION_MS);
     },
-    [lastShownAt, markShown]
+    [markShown]
   );
 
   return { showForChapter, noticeVisible, noticeMessage };
