@@ -44,17 +44,26 @@ function getBaseHeaders(): Record<string, string> {
 function isAbortError(err: unknown, didTimeout: boolean, signal?: AbortSignal): boolean {
   if (didTimeout) return false;
   if (signal?.aborted) return true;
+  const str = String(err || '').toLowerCase();
   const name = (err as { name?: string })?.name;
   const message = String((err as { message?: string })?.message || '').toLowerCase();
   const code = (err as { code?: string | number })?.code;
+  const cause = (err as { cause?: any })?.cause;
+  const causeStr = String(cause?.message || cause || '').toLowerCase();
 
   return (
     name === 'AbortError' ||
     name === 'CanceledError' ||
+    cause?.name === 'AbortError' ||
+    cause?.name === 'CanceledError' ||
     code === 'ERR_CANCELED' ||
     code === 20 ||
     message.includes('cancel') ||
-    message.includes('abort')
+    message.includes('abort') ||
+    str.includes('cancel') ||
+    str.includes('abort') ||
+    causeStr.includes('cancel') ||
+    causeStr.includes('abort')
   );
 }
 
@@ -102,7 +111,7 @@ export async function apiGet<T>(
 
     return (await res.json()) as Promise<T>;
   } catch (err: any) {
-    const isAbort = isAbortError(err, didTimeout(), options?.signal);
+    const isAbort = isAbortError(err, didTimeout(), combinedSignal);
     if (!isAbort) {
       console.warn(`[apiClient] GET ${url} error:`, err?.message || err);
     }

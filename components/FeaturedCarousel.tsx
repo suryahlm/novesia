@@ -3,6 +3,7 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -472,6 +473,28 @@ export function FeaturedCarousel({ novels, onPressNovel, headerOverlay }: Featur
     [itemStride, novels.length, startAutoSlide]
   );
 
+  const getItemLayout = useCallback(
+    (_: any, index: number) => ({
+      length: itemStride,
+      offset: itemStride * index,
+      index,
+    }),
+    [itemStride]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: FeaturedNovel }) => (
+      <CarouselSlide
+        novel={item}
+        slotWidth={slotWidth}
+        cardWidth={cardWidth}
+        cardHeight={cardHeight}
+        onPress={onPressNovel}
+      />
+    ),
+    [slotWidth, cardWidth, cardHeight, onPressNovel]
+  );
+
   if (novels.length === 0) return null;
 
   return (
@@ -486,17 +509,14 @@ export function FeaturedCarousel({ novels, onPressNovel, headerOverlay }: Featur
           decelerationRate="fast"
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item.id}
+          getItemLayout={getItemLayout}
+          initialNumToRender={2}
+          maxToRenderPerBatch={2}
+          windowSize={3}
+          removeClippedSubviews={Platform.OS === 'android'}
           onScrollBeginDrag={handleScrollBeginDrag}
           onMomentumScrollEnd={handleMomentumScrollEnd}
-          renderItem={({ item }) => (
-            <CarouselSlide
-              novel={item}
-              slotWidth={slotWidth}
-              cardWidth={cardWidth}
-              cardHeight={cardHeight}
-              onPress={onPressNovel}
-            />
-          )}
+          renderItem={renderItem}
         />
 
         {/* Pinned Search Icon Overlay aligned with badges row */}

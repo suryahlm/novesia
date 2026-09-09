@@ -377,6 +377,9 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.id}
+              initialNumToRender={4}
+              maxToRenderPerBatch={4}
+              windowSize={3}
               contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
               renderItem={({ item, index }) => (
                 <TrendingRankCard
@@ -416,6 +419,9 @@ export default function HomeScreen() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(item) => item.novel_id}
+                initialNumToRender={4}
+                maxToRenderPerBatch={4}
+                windowSize={3}
                 contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
                 renderItem={({ item }) => {
                   const match = novels.find((n) => n.id === item.novel_id);
@@ -469,6 +475,9 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.id + '_weekly'}
+              initialNumToRender={4}
+              maxToRenderPerBatch={4}
+              windowSize={3}
               contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
               renderItem={({ item, index }) => (
                 <PopularGridCard
