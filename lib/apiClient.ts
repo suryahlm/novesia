@@ -38,6 +38,27 @@ function getBaseHeaders(): Record<string, string> {
 }
 
 /**
+ * Periksa apakah error disebabkan oleh pembatalan sengaja (unmount komponen, Fast Refresh, navigasi).
+ * Di React Native Android, fetch polyfill melempar TypeError: "Fetch request has been canceled" atau AbortError.
+ */
+function isAbortError(err: unknown, didTimeout: boolean, signal?: AbortSignal): boolean {
+  if (didTimeout) return false;
+  if (signal?.aborted) return true;
+  const name = (err as { name?: string })?.name;
+  const message = String((err as { message?: string })?.message || '').toLowerCase();
+  const code = (err as { code?: string | number })?.code;
+
+  return (
+    name === 'AbortError' ||
+    name === 'CanceledError' ||
+    code === 'ERR_CANCELED' ||
+    code === 20 ||
+    message.includes('cancel') ||
+    message.includes('abort')
+  );
+}
+
+/**
  * Helper generik: fetch JSON dari novesia-api dengan proteksi timeout & error parsing
  */
 export async function apiGet<T>(
@@ -81,7 +102,7 @@ export async function apiGet<T>(
 
     return (await res.json()) as Promise<T>;
   } catch (err: any) {
-    const isAbort = (err as { name?: string })?.name === 'AbortError' && !didTimeout();
+    const isAbort = isAbortError(err, didTimeout(), options?.signal);
     if (!isAbort) {
       console.warn(`[apiClient] GET ${url} error:`, err?.message || err);
     }
