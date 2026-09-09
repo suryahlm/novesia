@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -9,6 +10,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +30,7 @@ export interface AuthModalProps {
 
 export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' }: AuthModalProps) {
   const { colors } = useTheme();
+  const { height: screenHeight } = useWindowDimensions();
   const { signIn: signInGoogle, loading: googleLoading } = useGoogleSignIn();
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [name, setName] = useState('');
@@ -37,12 +40,71 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  const scrollViewRef = useRef<ScrollView>(null);
+  const emailInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates?.height ?? 0);
+      setIsKeyboardVisible(true);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!visible) {
+      setIsKeyboardVisible(false);
+      setKeyboardHeight(0);
+      setErrorMsg(null);
+    }
+  }, [visible]);
+
+  const topOffset = Platform.OS === 'android' ? 24 : 44;
+  const effectiveKbHeight = keyboardHeight > 0 ? keyboardHeight : 280;
+  const maxContainerHeight = isKeyboardVisible
+    ? Math.max(260, screenHeight - effectiveKbHeight - topOffset - 24)
+    : Math.min(screenHeight * 0.88, 620);
+
+  const handleClose = () => {
+    Keyboard.dismiss();
+    onClose();
+  };
+
+  const handleBackdropPress = () => {
+    if (isKeyboardVisible) {
+      Keyboard.dismiss();
+    } else {
+      handleClose();
+    }
+  };
+
+  const switchMode = (newMode: 'signin' | 'signup') => {
+    setMode(newMode);
+    setErrorMsg(null);
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
   const handleGoogleSignIn = async () => {
     setErrorMsg(null);
     const res = await signInGoogle();
     if (res.success) {
       if (onSuccess) onSuccess();
-      onClose();
+      handleClose();
     } else if (res.error) {
       setErrorMsg(res.error);
     }
@@ -80,7 +142,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
         setEmail('');
         setPassword('');
         if (onSuccess) onSuccess();
-        onClose();
+        handleClose();
       }
     } else {
       setLoading(true);
@@ -94,18 +156,25 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
         setEmail('');
         setPassword('');
         if (onSuccess) onSuccess();
-        onClose();
+        handleClose();
       }
     }
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.overlay}
+        style={[
+          styles.overlay,
+          isKeyboardVisible && {
+            justifyContent: 'flex-start',
+            paddingTop: topOffset,
+            paddingBottom: 8,
+          },
+        ]}
       >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleBackdropPress} />
 
         <View
           style={[
@@ -113,6 +182,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
+              maxHeight: maxContainerHeight,
             },
           ]}
         >
@@ -130,7 +200,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
           />
 
           {/* Header */}
-          <View style={styles.header}>
+          <View style={[styles.header, isKeyboardVisible && { marginBottom: 10, paddingTop: 0 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View
                 style={{
@@ -149,7 +219,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
               </Text>
             </View>
 
-            <Pressable onPress={onClose} hitSlop={8}>
+            <Pressable onPress={handleClose} hitSlop={8}>
               <Ionicons name="close" size={22} color={colors.textMuted} />
             </Pressable>
           </View>
@@ -162,13 +232,11 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
                 backgroundColor: colors.surfaceElevated,
                 borderColor: colors.border,
               },
+              isKeyboardVisible && { marginBottom: 10 },
             ]}
           >
             <Pressable
-              onPress={() => {
-                setMode('signin');
-                setErrorMsg(null);
-              }}
+              onPress={() => switchMode('signin')}
               style={[
                 styles.tabBtn,
                 mode === 'signin' && { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
@@ -185,10 +253,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
             </Pressable>
 
             <Pressable
-              onPress={() => {
-                setMode('signup');
-                setErrorMsg(null);
-              }}
+              onPress={() => switchMode('signup')}
               style={[
                 styles.tabBtn,
                 mode === 'signup' && { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
@@ -214,7 +279,14 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
             </View>
           )}
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 6 }}>
+          <ScrollView
+            ref={scrollViewRef}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+            contentContainerStyle={{ gap: 12, paddingBottom: 6 }}
+            style={{ flexShrink: 1 }}
+          >
             {/* Tombol Lanjutkan dengan Google */}
             <Pressable
               onPress={handleGoogleSignIn}
@@ -266,6 +338,8 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
                   value={name}
                   onChangeText={setName}
                   maxLength={15}
+                  returnKeyType="next"
+                  onSubmitEditing={() => emailInputRef.current?.focus()}
                 />
                 <Text style={{ fontSize: 10.5, color: colors.textMuted, marginTop: 3 }}>
                   {name.trim().length}/15 karakter
@@ -276,6 +350,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
             <View>
               <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Email</Text>
               <TextInput
+                ref={emailInputRef}
                 style={[
                   styles.input,
                   {
@@ -290,6 +365,8 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                returnKeyType="next"
+                onSubmitEditing={() => passwordInputRef.current?.focus()}
               />
             </View>
 
@@ -305,6 +382,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
                 ]}
               >
                 <TextInput
+                  ref={passwordInputRef}
                   style={[styles.passwordInput, { color: colors.textPrimary }]}
                   placeholder={mode === 'signup' ? 'Minimal 6 karakter' : 'Masukkan password'}
                   placeholderTextColor={colors.textMuted}
@@ -312,6 +390,13 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 150);
+                  }}
                 />
                 <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8} style={{ paddingRight: 10 }}>
                   <Ionicons
@@ -326,7 +411,7 @@ export function AuthModal({ visible, onClose, onSuccess, initialMode = 'signin' 
             <Pressable
               onPress={handleSubmit}
               disabled={loading}
-              style={{ marginTop: 8, borderRadius: 14, overflow: 'hidden' }}
+              style={{ marginTop: isKeyboardVisible ? 4 : 8, borderRadius: 14, overflow: 'hidden' }}
             >
               <GoldSurface
                 shimmer
@@ -362,7 +447,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.72)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   container: {
     width: '100%',
@@ -376,6 +462,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 20,
+    flexShrink: 1,
   },
   header: {
     flexDirection: 'row',
@@ -473,3 +560,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
