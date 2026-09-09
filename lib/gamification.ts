@@ -1,13 +1,17 @@
 /**
  * gamification.ts — XP, Level, Rank, Streak tracking untuk novesia-app
- * Data lokal di AsyncStorage. Sync ke novesia-api /api/me/history jika user login.
- * Tidak ada Supabase dependency.
+ * Tersimpan per-akun di AsyncStorage dan tersinkronisasi 2 arah ke PostgreSQL via novesia-api.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from './useAuthStore';
 import { apiPost } from './apiClient';
 
-const GAMIFICATION_KEY = 'novesia_gamification_v1';
+const LEGACY_GAMIFICATION_KEY = 'novesia_gamification_v1';
+
+export function getGamificationStorageKey(userId?: string | null): string {
+  const currentUserId = userId !== undefined ? userId : useAuthStore.getState().user?.id;
+  return currentUserId ? `novesia_gamification_${currentUserId}` : 'novesia_gamification_guest';
+}
 
 export interface UserGamificationStats {
   totalXp: number;
@@ -115,9 +119,10 @@ export function computeLevelStats(totalXp: number) {
   };
 }
 
-export async function getRawGamificationData(): Promise<StoredGamificationData> {
+export async function getRawGamificationData(userId?: string | null): Promise<StoredGamificationData> {
+  const key = getGamificationStorageKey(userId);
   try {
-    const raw = await AsyncStorage.getItem(GAMIFICATION_KEY);
+    const raw = await AsyncStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
@@ -127,6 +132,24 @@ export async function getRawGamificationData(): Promise<StoredGamificationData> 
         readChapters: parsed.readChapters || {},
         bookmarkedNovels: parsed.bookmarkedNovels || [],
       };
+    }
+
+    // Migrasi data legacy lokal versi awal (jika belum ada data untuk akun ini)
+    if (key !== 'novesia_gamification_guest') {
+      const legacyRaw = await AsyncStorage.getItem(LEGACY_GAMIFICATION_KEY);
+      if (legacyRaw) {
+        const legacyParsed = JSON.parse(legacyRaw);
+        const migrated: StoredGamificationData = {
+          totalXp: legacyParsed.totalXp || 0,
+          currentStreak: legacyParsed.currentStreak || 0,
+          lastActiveDate: legacyParsed.lastActiveDate || null,
+          readChapters: legacyParsed.readChapters || {},
+          bookmarkedNovels: legacyParsed.bookmarkedNovels || [],
+        };
+        await AsyncStorage.setItem(key, JSON.stringify(migrated));
+        await AsyncStorage.removeItem(LEGACY_GAMIFICATION_KEY).catch(() => {});
+        return migrated;
+      }
     }
   } catch (e) {
     console.error('getRawGamificationData error:', e);
@@ -141,29 +164,62 @@ export async function getRawGamificationData(): Promise<StoredGamificationData> 
   };
 }
 
-export async function saveRawGamificationData(data: StoredGamificationData): Promise<void> {
+export async function saveRawGamificationData(
+  data: StoredGamificationData,
+  userId?: string | null
+): Promise<void> {
+  const key = getGamificationStorageKey(userId);
   try {
-    await AsyncStorage.setItem(GAMIFICATION_KEY, JSON.stringify(data));
+    await AsyncStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
     console.error('saveRawGamificationData error:', e);
   }
 }
 
-export async function getUserGamificationStats(): Promise<UserGamificationStats> {
-  const raw = await getRawGamificationData();
-  const computed = computeLevelStats(raw.totalXp);
+/**
+ * Mengambil statistik gamifikasi user saat ini.
+ * Jika login, mengutamakan nilai XP tertinggi antara memori lokal dan data akun di server.
+ */
+export async function getUserGamificationStats(userId?: string | null): Promise<UserGamificationStats> {
+  const currentUserId = userId !== undefined ? userId : useAuthStore.getState().user?.id;
+  const raw = await getRawGamificationData(currentUserId);
+  const currentUser = useAuthStore.getState().user;
+
+  // Jika akun memiliki XP di server yang lebih tinggi (misal dari perangkat lain), sinkronkan
+  let effectiveTotalXp = raw.totalXp;
+  let effectiveStreak = raw.currentStreak;
+  let effectiveLastActiveDate = raw.lastActiveDate;
+
+  if (currentUserId && currentUser && currentUser.id === currentUserId) {
+    if (typeof currentUser.xp === 'number' && currentUser.xp > effectiveTotalXp) {
+      effectiveTotalXp = currentUser.xp;
+      raw.totalXp = effectiveTotalXp;
+      saveRawGamificationData(raw, currentUserId).catch(() => {});
+    }
+    if (typeof currentUser.streak === 'number' && currentUser.streak > effectiveStreak) {
+      effectiveStreak = currentUser.streak;
+      raw.currentStreak = effectiveStreak;
+      saveRawGamificationData(raw, currentUserId).catch(() => {});
+    }
+    if (currentUser.lastActiveDate && !effectiveLastActiveDate) {
+      effectiveLastActiveDate = currentUser.lastActiveDate;
+      raw.lastActiveDate = effectiveLastActiveDate;
+    }
+  }
+
+  const computed = computeLevelStats(effectiveTotalXp);
   const chapterIds = Object.keys(raw.readChapters);
 
-  let activeStreak = raw.currentStreak;
+  let activeStreak = effectiveStreak;
   const today = getLocalDateString();
   const yesterday = getYesterdayDateString();
 
-  if (raw.lastActiveDate && raw.lastActiveDate !== today && raw.lastActiveDate !== yesterday) {
+  if (effectiveLastActiveDate && effectiveLastActiveDate !== today && effectiveLastActiveDate !== yesterday) {
     activeStreak = 0;
   }
 
   return {
-    totalXp: raw.totalXp,
+    totalXp: effectiveTotalXp,
     level: computed.level,
     xpIntoLevel: computed.xpIntoLevel,
     xpForCurrentLevel: computed.xpForCurrentLevel,
@@ -174,16 +230,74 @@ export async function getUserGamificationStats(): Promise<UserGamificationStats>
     currentStreak: activeStreak,
     totalChaptersRead: chapterIds.length,
     readChapterIds: chapterIds,
-    lastActiveDate: raw.lastActiveDate,
+    lastActiveDate: effectiveLastActiveDate,
   };
 }
 
+/**
+ * Sinkronisasi dua arah ke API server /api/me/gamification/sync.
+ * Menjamin level dan rank akun di database PostgreSQL selalu ter-update.
+ */
+export async function syncGamificationWithServer(
+  userId?: string | null
+): Promise<UserGamificationStats | null> {
+  const { token, user } = useAuthStore.getState();
+  const currentUserId = userId !== undefined ? userId : user?.id;
+
+  if (!token || !user || !currentUserId || user.id !== currentUserId) {
+    return getUserGamificationStats(currentUserId);
+  }
+
+  try {
+    const raw = await getRawGamificationData(currentUserId);
+
+    const res = await apiPost<{
+      success: boolean;
+      gamification: {
+        totalXp: number;
+        currentStreak: number;
+        lastActiveDate: string | null;
+      };
+      user?: any;
+    }>('/api/me/gamification/sync', {
+      localTotalXp: raw.totalXp,
+      localStreak: raw.currentStreak,
+      localLastActiveDate: raw.lastActiveDate,
+    }, { timeoutMs: 12000 });
+
+    if (res?.success && res.gamification) {
+      const serverGamify = res.gamification;
+      raw.totalXp = serverGamify.totalXp;
+      raw.currentStreak = serverGamify.currentStreak;
+      raw.lastActiveDate = serverGamify.lastActiveDate;
+      await saveRawGamificationData(raw, currentUserId);
+
+      useAuthStore.getState().updateUser({
+        xp: serverGamify.totalXp,
+        streak: serverGamify.currentStreak,
+        lastActiveDate: serverGamify.lastActiveDate,
+      });
+
+      return getUserGamificationStats(currentUserId);
+    }
+  } catch (err) {
+    console.warn('[Gamification] Sync with server failed (using local data):', err);
+  }
+
+  return getUserGamificationStats(currentUserId);
+}
+
+/**
+ * Catat pembacaan bab novel: menambah XP & streak, menyimpan per-akun,
+ * dan mengirim update ke server.
+ */
 export async function trackChapterRead(
   novelId: string,
   chapterId: string,
   chapterNumber: number
 ) {
-  const data = await getRawGamificationData();
+  const currentUserId = useAuthStore.getState().user?.id;
+  const data = await getRawGamificationData(currentUserId);
   const today = getLocalDateString();
   const yesterday = getYesterdayDateString();
 
@@ -213,18 +327,29 @@ export async function trackChapterRead(
   }
 
   data.totalXp += xpGained;
-  await saveRawGamificationData(data);
+  await saveRawGamificationData(data, currentUserId);
 
-  // Non-blocking sync ke server jika user login
+  // Sync ke database server secara aman jika user login
   const { token, user } = useAuthStore.getState();
   if (token && user) {
-    apiPost('/api/me/history', {
+    apiPost<{ success: boolean; gamification?: any; xpGained?: number }>('/api/me/history', {
       novel_id: novelId,
       chapter_id: chapterId,
       chapter_number: chapterNumber,
-    }).catch(() => {
-      // Non-blocking — gagal sync tidak apa-apa
-    });
+      xpAwarded: xpGained,
+    })
+      .then((res) => {
+        if (res?.gamification) {
+          useAuthStore.getState().updateUser({
+            xp: res.gamification.totalXp,
+            streak: res.gamification.streak,
+            lastActiveDate: res.gamification.lastActiveDate,
+          });
+        }
+      })
+      .catch(() => {
+        // Non-blocking
+      });
   }
 
   return {
@@ -235,11 +360,23 @@ export async function trackChapterRead(
 }
 
 export async function trackBookmarkAdded(novelId: string) {
-  const data = await getRawGamificationData();
+  const currentUserId = useAuthStore.getState().user?.id;
+  const data = await getRawGamificationData(currentUserId);
   if (!data.bookmarkedNovels.includes(novelId)) {
     data.bookmarkedNovels.push(novelId);
     data.totalXp += 10;
-    await saveRawGamificationData(data);
+    await saveRawGamificationData(data, currentUserId);
+
+    // Sync non-blocking jika login
+    const { token, user } = useAuthStore.getState();
+    if (token && user) {
+      apiPost('/api/me/gamification/sync', {
+        localTotalXp: data.totalXp,
+        localStreak: data.currentStreak,
+        localLastActiveDate: data.lastActiveDate,
+      }).catch(() => {});
+    }
+
     return { xpGained: 10 };
   }
   return { xpGained: 0 };

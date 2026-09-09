@@ -128,6 +128,9 @@ export function useGoogleSignIn() {
         avatarUrl: data.user.avatar_url,
         role: data.user.role,
         vipUntil: data.user.vip_until ?? null,
+        xp: (data.user as any).xp ?? (data.user as any).totalXp ?? 0,
+        streak: (data.user as any).streak ?? 0,
+        lastActiveDate: (data.user as any).last_active_date ?? (data.user as any).lastActiveDate ?? null,
         createdAt: data.user.created_at,
       };
 

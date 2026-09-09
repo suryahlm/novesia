@@ -9,6 +9,9 @@ export interface AuthUser {
   avatarUrl: string | null;
   role: 'USER' | 'VIP' | 'ADMIN';
   vipUntil?: string | null;
+  xp?: number;
+  streak?: number;
+  lastActiveDate?: string | null;
   createdAt?: string;
 }
 

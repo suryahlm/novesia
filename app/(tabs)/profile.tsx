@@ -26,9 +26,13 @@ import { AuthModal } from '../../components/AuthModal';
 import { useAuthStore } from '../../lib/useAuthStore';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
-import { signOutUser } from '../../lib/authService';
+import { signOutUser, refreshUserProfile } from '../../lib/authService';
 import { getHistory, HistoryItem, clearHistory } from '../../lib/history';
-import { getUserGamificationStats, UserGamificationStats } from '../../lib/gamification';
+import {
+  getUserGamificationStats,
+  syncGamificationWithServer,
+  UserGamificationStats,
+} from '../../lib/gamification';
 
 const LIBRARY_KEY = 'novesia_library';
 const READING_SETTINGS_KEY = 'novesia_reading_settings';
@@ -74,10 +78,11 @@ export default function ProfileScreen() {
   const loadData = async () => {
     setLoading(true);
     try {
+      const currentUserId = useAuthStore.getState().user?.id;
       const [histData, libData, gamifyData, settingsData] = await Promise.all([
         getHistory(),
         AsyncStorage.getItem(LIBRARY_KEY),
-        getUserGamificationStats(),
+        getUserGamificationStats(currentUserId),
         AsyncStorage.getItem(READING_SETTINGS_KEY),
       ]);
       setHistory(histData);
@@ -97,6 +102,16 @@ export default function ProfileScreen() {
           const s = JSON.parse(settingsData);
           if (s.fontSize) setReaderFontSize(s.fontSize);
         } catch {}
+      }
+
+      // Sinkronisasi dua arah ke server secara transparan jika user login
+      if (currentUserId) {
+        syncGamificationWithServer(currentUserId)
+          .then((synced) => {
+            if (synced) setGamification(synced);
+          })
+          .catch(() => {});
+        refreshUserProfile().catch(() => {});
       }
     } catch (e) {
       console.error(e);

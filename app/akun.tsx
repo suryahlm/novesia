@@ -29,7 +29,11 @@ import { useTheme } from '../lib/ThemeProvider';
 import { useLanguage } from '../lib/i18n';
 import { updateUserName, uploadUserAvatar, deleteUserAccount, refreshUserProfile } from '../lib/authService';
 import { getHistory } from '../lib/history';
-import { getUserGamificationStats, UserGamificationStats } from '../lib/gamification';
+import {
+  getUserGamificationStats,
+  syncGamificationWithServer,
+  UserGamificationStats,
+} from '../lib/gamification';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -148,12 +152,20 @@ export default function AkunScreen() {
       const [lib, hist, gamifyData] = await Promise.all([
         AsyncStorage.getItem(LIBRARY_KEY),
         getHistory(),
-        getUserGamificationStats(),
+        getUserGamificationStats(user?.id),
       ]);
       const bookmarks: string[] = lib ? JSON.parse(lib) : [];
       setBookmarkCount(bookmarks.length);
       setHistoryCount(hist.length);
       setGamification(gamifyData);
+
+      if (user?.id) {
+        syncGamificationWithServer(user.id)
+          .then((synced) => {
+            if (synced) setGamification(synced);
+          })
+          .catch(() => {});
+      }
     } catch {
       setBookmarkCount(0);
       setHistoryCount(0);

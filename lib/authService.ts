@@ -19,6 +19,9 @@ interface AuthResponse {
     avatar_url: string | null;
     role: 'USER' | 'VIP' | 'ADMIN';
     vip_until?: string | null;
+    xp?: number;
+    streak?: number;
+    last_active_date?: string | null;
     banned?: boolean;
     frozen?: boolean;
     created_at?: string;
@@ -40,7 +43,8 @@ export async function signUpWithEmail(
       email: trimmedEmail,
       password,
       name: trimmedName,
-      platform: Platform.OS,
+      platform: 'app',
+      os: Platform.OS,
     });
 
     const authUser: AuthUser = {
@@ -49,6 +53,9 @@ export async function signUpWithEmail(
       name: data.user.name,
       avatarUrl: data.user.avatar_url,
       role: data.user.role,
+      xp: data.user.xp ?? 0,
+      streak: data.user.streak ?? 0,
+      lastActiveDate: data.user.last_active_date ?? null,
       createdAt: data.user.created_at,
     };
 
@@ -89,6 +96,9 @@ export async function signInWithEmail(
       avatarUrl: data.user.avatar_url,
       role: data.user.role,
       vipUntil: data.user.vip_until ?? null,
+      xp: data.user.xp ?? 0,
+      streak: data.user.streak ?? 0,
+      lastActiveDate: data.user.last_active_date ?? null,
       createdAt: data.user.created_at,
     };
 
@@ -155,6 +165,9 @@ export async function refreshUserProfile(): Promise<AuthUser | null> {
         avatarUrl: data.user.avatarUrl || data.user.avatar_url || null,
         role: data.user.role,
         vipUntil: data.user.vipUntil ?? data.user.vip_until ?? null,
+        xp: typeof data.user.xp === 'number' ? data.user.xp : data.user.totalXp ?? 0,
+        streak: typeof data.user.streak === 'number' ? data.user.streak : 0,
+        lastActiveDate: data.user.lastActiveDate ?? data.user.last_active_date ?? null,
         createdAt: data.user.createdAt ?? data.user.created_at,
       };
       useAuthStore.getState().updateUser(authUser);
