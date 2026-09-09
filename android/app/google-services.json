@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "49249228915",
+    "project_id": "novesia-507906",
+    "storage_bucket": ""
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:49249228915:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "cc.novesia.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "49249228915-2cbah8llhdhf4sdh6tsvqft8j1q7ioc8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cc.novesia.app",
+            "certificate_hash": "1bf2aad12a6500ede4bcdb14115e956c65e21550"
+          }
+        },
+        {
+          "client_id": "49249228915-phfgpe6nsgn3bk0tfmev97f7cn52mn9t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cc.novesia.app",
+            "certificate_hash": "44f9a7f6d5bdcbd87b970b4c53423bec2ec3d9c3"
+          }
+        },
+        {
+          "client_id": "49249228915-2pqchehhsmhfs9hm09s6j5414nf2gspm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cc.novesia.app",
+            "certificate_hash": "507aa05f5e50190f8ad539adc0570d82d562cdc7"
+          }
+        },
+        {
+          "client_id": "49249228915-cg9h4c4gl2ud1g9lvm4c5vp3rs3s0op6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": ""
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "49249228915-cg9h4c4gl2ud1g9lvm4c5vp3rs3s0op6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

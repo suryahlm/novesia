@@ -8,8 +8,8 @@ set -e
 
 PROJECT_DIR="/Users/suryahalim/IT Surya/NovelUpdate/novesia-app"
 OUTPUT_DIR="/Users/suryahalim/IT Surya/NovelUpdate/_draft/Build/AAB"
-VERSION_NAME="1.1.2"
-VERSION_CODE="12"
+VERSION_NAME="1.1.3"
+VERSION_CODE="13"
 
 echo "========================================================"
 echo "🚀 MEMULAI BUILD RELEASE AAB NOVESIA (v${VERSION_NAME} - VC ${VERSION_CODE})"
@@ -36,6 +36,12 @@ mkdir -p "$OUTPUT_DIR"
 
 # 4. Bersihkan Cache & Build AAB
 cd "$PROJECT_DIR/android"
+
+# Pastikan google-services.json ada di lokasi yang dicari Gradle plugin
+if [ -f "$PROJECT_DIR/google-services.json" ]; then
+  cp -f "$PROJECT_DIR/google-services.json" "$PROJECT_DIR/android/app/google-services.json"
+  echo "📋 google-services.json disalin ke android/app/"
+fi
 
 echo ""
 echo "🧹 Membersihkan cache build native & .cxx..."
