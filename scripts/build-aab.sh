@@ -38,8 +38,8 @@ mkdir -p "$OUTPUT_DIR"
 cd "$PROJECT_DIR/android"
 
 echo ""
-echo "🧹 Membersihkan build lama (gradlew clean)..."
-./gradlew clean
+echo "🧹 Membersihkan cache build native & .cxx..."
+rm -rf app/.cxx app/build build
 
 echo ""
 echo "⚙️ Menjalankan bundleRelease (Google Play App Bundle)..."
