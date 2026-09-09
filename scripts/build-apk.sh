@@ -2,17 +2,17 @@
 set -e
 
 # ==============================================================================
-# Script Build Release Android App Bundle (AAB) — Novesia Mobile
-# Output Target: /Users/suryahalim/IT Surya/NovelUpdate/_draft/Build/AAB
+# Script Build Release Android APK — Novesia Mobile
+# Output Target: /Users/suryahalim/IT Surya/NovelUpdate/_draft/Build/APK
 # ==============================================================================
 
 PROJECT_DIR="/Users/suryahalim/IT Surya/NovelUpdate/novesia-app"
-OUTPUT_DIR="/Users/suryahalim/IT Surya/NovelUpdate/_draft/Build/AAB"
+OUTPUT_DIR="/Users/suryahalim/IT Surya/NovelUpdate/_draft/Build/APK"
 VERSION_NAME="1.1.1"
 VERSION_CODE="11"
 
 echo "========================================================"
-echo "🚀 MEMULAI BUILD RELEASE AAB NOVESIA (v${VERSION_NAME} - VC ${VERSION_CODE})"
+echo "🚀 MEMULAI BUILD RELEASE APK NOVESIA (v${VERSION_NAME} - VC ${VERSION_CODE})"
 echo "========================================================"
 
 # 1. Pastikan Environment SDK & JDK Terpasang
@@ -34,7 +34,7 @@ echo "🔑 Keystore     : Terverifikasi ($KEYSTORE_PATH)"
 # 3. Siapkan Output Directory
 mkdir -p "$OUTPUT_DIR"
 
-# 4. Bersihkan Cache & Build AAB
+# 4. Bersihkan Cache & Build APK
 cd "$PROJECT_DIR/android"
 
 echo ""
@@ -42,24 +42,24 @@ echo "🧹 Membersihkan cache build native & .cxx..."
 rm -rf app/.cxx app/build build
 
 echo ""
-echo "⚙️ Menjalankan bundleRelease (Google Play App Bundle)..."
-./gradlew bundleRelease --no-daemon
+echo "⚙️ Menjalankan assembleRelease (Android APK)..."
+./gradlew assembleRelease --no-daemon
 
-# 5. Salin Hasil AAB ke Direktori Tujuan
-AAB_SRC="$PROJECT_DIR/android/app/build/outputs/bundle/release/app-release.aab"
+# 5. Salin Hasil APK ke Direktori Tujuan (Hanya 1 file versioned, tanpa duplikat)
+APK_SRC="$PROJECT_DIR/android/app/build/outputs/apk/release/app-release.apk"
 
-if [ ! -f "$AAB_SRC" ]; then
-  echo "❌ ERROR: Gagal menemukan file AAB di $AAB_SRC"
+if [ ! -f "$APK_SRC" ]; then
+  echo "❌ ERROR: Gagal menemukan file APK di $APK_SRC"
   exit 1
 fi
 
-DEST_VERSIONED="$OUTPUT_DIR/novesia-v${VERSION_NAME}-vc${VERSION_CODE}-release.aab"
+DEST_VERSIONED="$OUTPUT_DIR/novesia-v${VERSION_NAME}-vc${VERSION_CODE}-release.apk"
 
-cp -f "$AAB_SRC" "$DEST_VERSIONED"
+cp -f "$APK_SRC" "$DEST_VERSIONED"
 
 echo ""
 echo "========================================================"
-echo "✅ BUILD AAB SELESAI & SUKSES 100%!"
+echo "✅ BUILD APK SELESAI & SUKSES 100%!"
 echo "========================================================"
 ls -lh "$DEST_VERSIONED"
 echo ""
