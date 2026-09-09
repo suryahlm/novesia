@@ -71,12 +71,13 @@ function getYesterdayDateString(): string {
 
 // Calculate level and progress from total XP
 export function computeLevelStats(totalXp: number) {
+  const safeXp = typeof totalXp === 'number' && Number.isFinite(totalXp) ? Math.max(0, Math.floor(totalXp)) : 0;
   let level = 1;
   let accumulated = 0;
 
   while (true) {
     const needed = getXpRequiredForLevel(level);
-    if (totalXp >= accumulated + needed) {
+    if (safeXp >= accumulated + needed) {
       accumulated += needed;
       level++;
     } else {
@@ -84,7 +85,7 @@ export function computeLevelStats(totalXp: number) {
     }
   }
 
-  const xpIntoLevel = totalXp - accumulated;
+  const xpIntoLevel = safeXp - accumulated;
   const xpForCurrentLevel = getXpRequiredForLevel(level);
   const progressPercentage = Math.min(
     100,
@@ -96,11 +97,11 @@ export function computeLevelStats(totalXp: number) {
   let xpToNextRank = 0;
 
   for (let i = 0; i < RANK_THRESHOLDS.length; i++) {
-    if (totalXp >= RANK_THRESHOLDS[i].minXp) {
+    if (safeXp >= RANK_THRESHOLDS[i].minXp) {
       currentRank = RANK_THRESHOLDS[i].rank;
       if (i + 1 < RANK_THRESHOLDS.length) {
         nextRank = RANK_THRESHOLDS[i + 1].rank;
-        xpToNextRank = Math.max(0, RANK_THRESHOLDS[i + 1].minXp - totalXp);
+        xpToNextRank = Math.max(0, RANK_THRESHOLDS[i + 1].minXp - safeXp);
       } else {
         nextRank = null;
         xpToNextRank = 0;
@@ -337,6 +338,7 @@ export async function trackChapterRead(
       chapter_id: chapterId,
       chapter_number: chapterNumber,
       xpAwarded: xpGained,
+      activeDate: today,
     })
       .then((res) => {
         if (res?.gamification) {
