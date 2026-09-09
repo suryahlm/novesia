@@ -20,16 +20,16 @@ const LANGUAGE_OPTIONS: {
   subKey: 'lang_id_sub' | 'lang_en_sub';
 }[] = [
   {
-    id: 'id',
-    flag: '🇮🇩',
-    nameKey: 'lang_id_name',
-    subKey: 'lang_id_sub',
-  },
-  {
     id: 'en',
     flag: '🇬🇧',
     nameKey: 'lang_en_name',
     subKey: 'lang_en_sub',
+  },
+  {
+    id: 'id',
+    flag: '🇮🇩',
+    nameKey: 'lang_id_name',
+    subKey: 'lang_id_sub',
   },
 ];
 
@@ -136,7 +136,7 @@ export function LanguageSheet({ visible, onClose, onSelect }: LanguageSheetProps
                               textTransform: 'uppercase',
                             }}
                           >
-                            Aktif
+                            {lang === 'en' ? 'Active' : 'Aktif'}
                           </Text>
                         </GoldSurface>
                       </View>
