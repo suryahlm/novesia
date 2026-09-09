@@ -22,10 +22,7 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 
-import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { AD_TEST_DEVICE_IDS } from '../lib/ads';
-
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+import { AD_TEST_DEVICE_IDS, isAdMobSupported } from '../lib/ads';
 
 // Hindari splash screen menutup mendadak sebelum root layout siap
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -34,7 +31,7 @@ function RootStack() {
   const { colors, isDark } = useTheme();
 
   useEffect(() => {
-    if (isExpoGo) return;
+    if (!isAdMobSupported()) return;
     import('react-native-google-mobile-ads')
       .then(async ({ default: mobileAds }) => {
         try {

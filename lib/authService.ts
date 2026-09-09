@@ -6,6 +6,7 @@
 import { Platform } from 'react-native';
 import { apiGet, apiPost, apiPatch, apiPostForm } from './apiClient';
 import { useAuthStore, AuthUser } from './useAuthStore';
+import { isGoogleSignInSupported } from './useGoogleSignIn';
 
 // ─── Tipe response dari novesia-api ─────────────────────────────────────────
 
@@ -104,12 +105,14 @@ export async function signOutUser(): Promise<void> {
   // Clear token dan session di auth store
   useAuthStore.getState().logout();
 
-  // Reset sesi Google Sign-In agar jika login lagi muncul pilihan akun Google
-  try {
-    const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
-    await GoogleSignin.signOut();
-  } catch {
-    // Abaikan jika bukan login Google atau di lingkungan tanpa Google Play Services
+  // Reset sesi Google Sign-In HANYA jika modul native tersedia di binary saat ini
+  if (isGoogleSignInSupported()) {
+    try {
+      const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
+      await GoogleSignin.signOut();
+    } catch {
+      // Abaikan jika bukan login Google atau di lingkungan tanpa Google Play Services
+    }
   }
 }
 

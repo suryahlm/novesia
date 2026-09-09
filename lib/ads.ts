@@ -1,3 +1,6 @@
+import { NativeModules, Platform, TurboModuleRegistry } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+
 // Ad Unit ID interstitial AdMob Android untuk Novesia.
 // Di-hardcode (bukan import TestIds dari react-native-google-mobile-ads) SENGAJA — package itu
 // adalah native module, sekadar mengimpornya di top level bisa menyebabkan crash di Expo Go
@@ -26,3 +29,32 @@ export function getAdNoticeMessage(minutes: number = DEFAULT_AD_COOLDOWN_MINUTES
 
 // Device ID pengujian AdMob agar interaksi/klik saat testing tidak dianggap invalid traffic oleh Google.
 export const AD_TEST_DEVICE_IDS = ['9a523031-4b33-4dea-b428-10ca1ad1abe1'];
+
+/**
+ * Deteksi apakah native module RNGoogleMobileAdsModule benar-benar terdaftar di binary native.
+ * Menjamin zero crash di Expo Go atau di development client / emulator tanpa native build.
+ */
+export function isAdMobSupported(): boolean {
+  if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
+    return false;
+  }
+  if (
+    (Constants as any)?.appOwnership === 'expo' ||
+    Constants.executionEnvironment === ExecutionEnvironment.StoreClient
+  ) {
+    return false;
+  }
+  try {
+    if (typeof TurboModuleRegistry?.get === 'function') {
+      if (TurboModuleRegistry.get('RNGoogleMobileAdsModule') != null) {
+        return true;
+      }
+    }
+    if ((NativeModules as any)?.RNGoogleMobileAdsModule != null) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Platform } from 'react-native';
+import { Alert, NativeModules, Platform, TurboModuleRegistry } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 import { apiPost } from './apiClient';
@@ -10,9 +10,36 @@ export const GOOGLE_WEB_CLIENT_ID =
   (process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID as string) ||
   '49249228915-cg9h4c4gl2ud1g9lvm4c5vp3rs3s0op6.apps.googleusercontent.com';
 
-// WAJIB: Jangan import modul native @react-native-google-signin di level file (top-level)
-// agar Expo Go tidak crash. Hanya import dinamis saat fungsi dipanggil di luar Expo Go.
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+/**
+ * Deteksi apakah native module RNGoogleSignin benar-benar terdaftar di binary native saat ini.
+ * Mencegah fatal crash "TurboModuleRegistry.getEnforcing: RNGoogleSignin could not be found" di Expo Go
+ * atau di development client / simulator tanpa native build.
+ */
+export function isGoogleSignInSupported(): boolean {
+  if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
+    return false;
+  }
+  // Expo Go tidak memiliki native Google Sign-In binary
+  if (
+    (Constants as any)?.appOwnership === 'expo' ||
+    Constants.executionEnvironment === ExecutionEnvironment.StoreClient
+  ) {
+    return false;
+  }
+  try {
+    if (typeof TurboModuleRegistry?.get === 'function') {
+      if (TurboModuleRegistry.get('RNGoogleSignin') != null) {
+        return true;
+      }
+    }
+    if ((NativeModules as any)?.RNGoogleSignin != null) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
 
 let configured = false;
 
@@ -33,12 +60,13 @@ interface AuthResponse {
 
 export function useGoogleSignIn() {
   const [loading, setLoading] = useState(false);
+  const isSupported = isGoogleSignInSupported();
 
   const signIn = async (): Promise<{ success: boolean; error: string | null }> => {
-    if (isExpoGo) {
+    if (!isGoogleSignInSupported()) {
       Alert.alert(
-        'Mode Pengembangan Expo Go',
-        'Login Google Play Services membutuhkan APK terpasang di perangkat. Di Expo Go, silakan masuk menggunakan email dan kata sandi.'
+        'Mode Pengembangan / Expo Go',
+        'Login Google Play Services membutuhkan file APK resmi Novesia yang terpasang di perangkat. Di Expo Go, silakan masuk menggunakan email dan kata sandi.'
       );
       return {
         success: false,
@@ -108,25 +136,27 @@ export function useGoogleSignIn() {
       return { success: true, error: null };
     } catch (err: any) {
       setLoading(false);
-      try {
-        const { isErrorWithCode, statusCodes } = await import(
-          '@react-native-google-signin/google-signin'
-        );
-        if (isErrorWithCode(err)) {
-          if (err.code === statusCodes.SIGN_IN_CANCELLED) {
-            return { success: false, error: null };
+      if (isGoogleSignInSupported()) {
+        try {
+          const { isErrorWithCode, statusCodes } = await import(
+            '@react-native-google-signin/google-signin'
+          );
+          if (isErrorWithCode(err)) {
+            if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+              return { success: false, error: null };
+            }
+            if (err.code === statusCodes.IN_PROGRESS) {
+              return { success: false, error: 'Proses login sedang berjalan.' };
+            }
+            if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+              const msg = 'Google Play Services tidak tersedia atau perlu diperbarui.';
+              Alert.alert('Gagal Masuk', msg);
+              return { success: false, error: msg };
+            }
           }
-          if (err.code === statusCodes.IN_PROGRESS) {
-            return { success: false, error: 'Proses login sedang berjalan.' };
-          }
-          if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-            const msg = 'Google Play Services tidak tersedia atau perlu diperbarui.';
-            Alert.alert('Gagal Masuk', msg);
-            return { success: false, error: msg };
-          }
+        } catch {
+          // Abaikan jika modul error check gagal
         }
-      } catch {
-        // Abaikan jika modul error check gagal
       }
 
       let message = err?.message || 'Gagal masuk dengan Google. Silakan coba lagi.';
@@ -138,5 +168,5 @@ export function useGoogleSignIn() {
     }
   };
 
-  return { signIn, loading, isExpoGo };
+  return { signIn, loading, isSupported, isExpoGo: !isSupported };
 }

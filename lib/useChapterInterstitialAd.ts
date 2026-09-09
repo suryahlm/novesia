@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 import { useAdStore } from './useAdStore';
 import {
@@ -7,12 +6,9 @@ import {
   CHAPTER_INTERSTITIAL_AD_UNIT_ID,
   DEFAULT_AD_COOLDOWN_MINUTES,
   getAdNoticeMessage,
+  isAdMobSupported,
 } from './ads';
 import { getAppConfig } from './appConfig';
-
-// react-native-google-mobile-ads memanggil native module langsung saat di-import (bukan saat
-// dipanggil) — import statis di top-level bisa crash di Expo Go karena modul nativenya tidak ada di situ.
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 /**
  * Iklan interstitial sebelum baca chapter — MAX sekali per cooldown interval per device.
@@ -48,7 +44,7 @@ export function useChapterInterstitialAd() {
 
   const showForChapter = useCallback(
     async (chapterId: string) => {
-      if (isExpoGo) return; // Tidak ada iklan di Expo Go, lewati dengan aman
+      if (!isAdMobSupported()) return; // Modul native AdMob tidak ada di binary (misal Expo Go), lewati dengan aman
       if (processedChapterRef.current === chapterId) return;
       processedChapterRef.current = chapterId;
 
