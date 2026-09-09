@@ -21,6 +21,7 @@ import { useChapterInterstitialAd } from '../../lib/useChapterInterstitialAd';
 import { AD_NOTICE_MESSAGE } from '../../lib/ads';
 import { useTheme } from '../../lib/ThemeProvider';
 import { cleanChapterTitle } from '../../lib/utils';
+import { cleanChapterText } from '../../lib/chapterCleaner';
 import { CustomDialog } from '../../components/CustomDialog';
 import { ErrorState } from '../../components/ErrorState';
 import { requestTranslation } from '../../lib/translationRequestService';
@@ -388,13 +389,21 @@ export default function ReadChapterScreen() {
   // Determine which content to show
   const getContent = () => {
     if (!chapter) return { text: '', wordCount: 0 };
-    if (language === 'id' && chapter.content_translated) {
-      return { text: chapter.content_translated, wordCount: chapter.word_count_translated };
-    }
-    if (chapter.content_original) {
-      return { text: chapter.content_original, wordCount: chapter.word_count_original };
-    }
-    return { text: '', wordCount: 0 };
+    const rawText =
+      language === 'id' && chapter.content_translated
+        ? chapter.content_translated
+        : (chapter.content_original || '');
+
+    if (!rawText) return { text: '', wordCount: 0 };
+
+    const cleaned = cleanChapterText(rawText, {
+      novelTitle: novelTitle || chapter.novel?.title || null,
+      chapterNumber: chapter.chapter_number,
+      chapterTitle: chapter.chapter_title || null,
+    });
+
+    const wordCount = cleaned.split(/\s+/).filter(Boolean).length;
+    return { text: cleaned, wordCount };
   };
 
   const hasTranslation = chapter?.content_translated != null;
