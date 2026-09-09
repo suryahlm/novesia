@@ -35,6 +35,12 @@ echo "🔑 Keystore     : Terverifikasi ($KEYSTORE_PATH)"
 mkdir -p "$OUTPUT_DIR"
 
 # 4. Bersihkan Cache & Build APK
+# Pastikan google-services.json ada di lokasi yang dicari Gradle plugin
+if [ -f "$PROJECT_DIR/google-services.json" ]; then
+  cp -f "$PROJECT_DIR/google-services.json" "$PROJECT_DIR/android/app/google-services.json"
+  echo "📋 google-services.json disalin ke android/app/"
+fi
+
 cd "$PROJECT_DIR/android"
 
 echo ""
