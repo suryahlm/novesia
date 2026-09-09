@@ -2,12 +2,12 @@
   "project_info": {
     "project_number": "49249228915",
     "project_id": "novesia-507906",
-    "storage_bucket": ""
+    "storage_bucket": "novesia-507906.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:49249228915:android:0000000000000000",
+        "mobilesdk_app_id": "1:49249228915:android:8fe88da4b76d1b8b737206",
         "android_client_info": {
           "package_name": "cc.novesia.app"
         }
@@ -44,7 +44,7 @@
       ],
       "api_key": [
         {
-          "current_key": ""
+          "current_key": "AIzaSyAy3UfK9pK9ubqOkzSEG4JheSS-WnFhjc8"
         }
       ],
       "services": {
