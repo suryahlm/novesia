@@ -86,13 +86,14 @@ export function usePushRegistration() {
       if (cancelled) return;
       subscription = Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data as
-          | { type?: string; slug?: string; chapterId?: string }
+          | { type?: string; slug?: string; novelSlug?: string; chapterId?: string }
           | undefined;
 
+        const targetSlug = data?.slug || data?.novelSlug;
         if (data?.chapterId) {
           router.push(`/read/${data.chapterId}`);
-        } else if (data?.slug) {
-          router.push(`/novel/${data.slug}`);
+        } else if (targetSlug) {
+          router.push(`/novel/${targetSlug}`);
         }
       });
     }).catch(() => {});

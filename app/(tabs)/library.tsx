@@ -98,7 +98,7 @@ export default function LibraryScreen() {
 
       // Jika ada bookmark lokal, sinkronkan ke server secara otomatis
       if (localIds.length > 0) {
-        apiPost('/api/me/bookmarks/sync', { novelIds: localIds }).catch(() => {});
+        await apiPost('/api/me/bookmarks/sync', { novelIds: localIds }).catch(() => {});
       }
 
       // Ambil daftar bookmark resmi dari server
