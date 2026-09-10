@@ -2,12 +2,12 @@
   "expo": {
     "name": "Novesia",
     "slug": "novesia-app",
-    "version": "1.1.5",
+    "version": "1.1.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "novesiaapp",
     "userInterfaceStyle": "dark",
-    "runtimeVersion": "1.1.5",
+    "runtimeVersion": "1.1.6",
     "updates": {
       "url": "https://u.expo.dev/3e5027ea-e732-4ecb-8de0-1635f030649c"
     },
@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/images/adaptive-icon-foreground.png"
       },
       "package": "cc.novesia.app",
-      "versionCode": 15,
+      "versionCode": 16,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "INTERNET",
