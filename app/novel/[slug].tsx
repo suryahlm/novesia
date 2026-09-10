@@ -27,6 +27,7 @@ import { requestTranslation } from '../../lib/translationRequestService';
 import { useNovelDetail, useNovelChapters } from '../../lib/useNovelsQuery';
 import { AuthModal } from '../../components/AuthModal';
 import { useAuthStore } from '../../lib/useAuthStore';
+import { CommentSection } from '../../components/comments/CommentSection';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -967,6 +968,18 @@ export default function NovelDetailScreen() {
             </View>
           )}
         </View>
+
+        {/* ═══ 5. KOMENTAR & ULASAN NOVEL SECTION ═══ */}
+        {novel && (
+          <View style={{ paddingHorizontal: 16 }}>
+            <CommentSection
+              novelId={novel.id}
+              novelSlug={novel.nu_slug}
+              target="NOVEL"
+              onOpenAuthModal={() => setAuthModalVisible(true)}
+            />
+          </View>
+        )}
 
         <View style={{ height: 48 }} />
       </ScrollView>

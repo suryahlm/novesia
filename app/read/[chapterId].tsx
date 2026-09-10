@@ -29,6 +29,7 @@ import { useChapterDetail } from '../../lib/useNovelsQuery';
 import { AuthModal } from '../../components/AuthModal';
 import { useAuthStore } from '../../lib/useAuthStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CommentSection } from '../../components/comments/CommentSection';
 
 type ThemeMode = 'dark' | 'light' | 'sepia';
 type ThemeChoice = 'auto' | 'dark' | 'light' | 'sepia';
@@ -931,6 +932,28 @@ export default function ReadChapterScreen() {
                 <View />
               )}
             </View>
+
+            {/* Chapter Comments & Discussion */}
+            {chapter && chapter.novel_id && (
+              <View style={{ marginTop: 24 }}>
+                <CommentSection
+                  novelId={chapter.novel_id}
+                  novelSlug={chapter.novel_slug || chapter.novel?.nu_slug || ''}
+                  chapterId={chapter.id}
+                  chapterNumber={chapter.chapter_number}
+                  target="CHAPTER"
+                  isInReader={true}
+                  themeOverride={{
+                    cardBg: currentTheme.cardBg,
+                    cardBorder: currentTheme.cardBorder,
+                    text: currentTheme.text,
+                    textMuted: currentTheme.textMuted,
+                    goldAccent: currentTheme.goldAccent,
+                  }}
+                  onOpenAuthModal={() => setAuthModalVisible(true)}
+                />
+              </View>
+            )}
           </ScrollView>
         </>
       )}
