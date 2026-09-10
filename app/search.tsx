@@ -19,6 +19,7 @@ import { PopularGridCard } from '../components/PopularGridCard';
 import { SearchEmptyRing } from '../components/SearchEmptyRing';
 import { SkeletonNovelGrid } from '../components/SkeletonLoader';
 import NovelPreviewSheet from '../components/NovelPreviewSheet';
+import { NovelRequestModal } from '../components/NovelRequestModal';
 import { useTheme } from '../lib/ThemeProvider';
 import { useLanguage } from '../lib/i18n';
 import { apiGet } from '../lib/apiClient';
@@ -75,6 +76,7 @@ export default function SearchScreen() {
   const [isError, setIsError] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [previewNovel, setPreviewNovel] = useState<any | null>(null);
+  const [requestModalVisible, setRequestModalVisible] = useState(false);
 
   const recent = useRecentSearches();
 
@@ -324,9 +326,34 @@ export default function SearchScreen() {
             </Text>
             <Text style={{ fontSize: 12, color: colors.textMuted }}>
               {lang === 'en'
-                ? 'Try using another keyword or check title spelling.'
-                : 'Coba gunakan kata kunci lain atau periksa ejaan judul.'}
+                ? 'Try using another keyword or request this novel.'
+                : 'Coba gunakan kata kunci lain atau ajukan permintaan novel ini.'}
             </Text>
+            <Pressable
+              onPress={() => setRequestModalVisible(true)}
+              style={({ pressed }) => [
+                {
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.primary + '60',
+                  marginTop: 6,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={lang === 'en' ? `Request "${query}"` : `Request "${query}"`}
+            >
+              <Ionicons name="sparkles" size={13} color={colors.primary} />
+              <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.primary }}>
+                {lang === 'en' ? `Request "${query}"` : `Request "${query}"`}
+              </Text>
+            </Pressable>
           </View>
         ) : (
           <FlatList
@@ -369,6 +396,12 @@ export default function SearchScreen() {
         novel={previewNovel}
         onClose={() => setPreviewNovel(null)}
         onRead={(slug) => openNovel(slug)}
+      />
+
+      <NovelRequestModal
+        visible={requestModalVisible}
+        initialTitle={query.trim()}
+        onClose={() => setRequestModalVisible(false)}
       />
     </View>
   );

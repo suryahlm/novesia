@@ -26,6 +26,7 @@ import { ThemeSheet } from '../../components/ThemeSheet';
 import { LanguageSheet } from '../../components/LanguageSheet';
 import { CustomDialog, DialogTone } from '../../components/CustomDialog';
 import { AuthModal } from '../../components/AuthModal';
+import { NovelRequestModal } from '../../components/NovelRequestModal';
 import { useAuthStore } from '../../lib/useAuthStore';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
@@ -56,6 +57,7 @@ export default function ProfileScreen() {
   const [themeSheetVisible, setThemeSheetVisible] = useState(false);
   const [langSheetVisible, setLangSheetVisible] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [requestModalVisible, setRequestModalVisible] = useState(false);
 
   // Notification Settings Store
   const notificationsEnabled = useNotificationSettingsStore((s) => s.enabled);
@@ -758,6 +760,12 @@ export default function ProfileScreen() {
                 onPress: () => (user ? router.push('/akun') : setAuthModalVisible(true)),
               },
               {
+                icon: 'book-outline' as const,
+                label: t.request_novel || (lang === 'en' ? 'Request Novel' : 'Permintaan Novel'),
+                badge: t.request_novel_badge || (lang === 'en' ? 'Send' : 'Kirim'),
+                onPress: () => setRequestModalVisible(true),
+              },
+              {
                 icon: 'cloud-outline' as const,
                 label: t.clear_history_cache,
                 onPress: handleClearCache,
@@ -926,6 +934,11 @@ export default function ProfileScreen() {
       <LanguageSheet
         visible={langSheetVisible}
         onClose={() => setLangSheetVisible(false)}
+      />
+
+      <NovelRequestModal
+        visible={requestModalVisible}
+        onClose={() => setRequestModalVisible(false)}
       />
 
       <CustomDialog

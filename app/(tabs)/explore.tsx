@@ -23,6 +23,7 @@ import { NovelListRow, NovelListRowSkeleton } from '../../components/NovelListRo
 import { SkeletonNovelGrid } from '../../components/SkeletonLoader';
 import { ViewModeToggle, GridViewMode } from '../../components/ViewModeToggle';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
+import { NovelRequestModal } from '../../components/NovelRequestModal';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
 import { apiGet } from '../../lib/apiClient';
@@ -129,6 +130,8 @@ export default function ExploreScreen() {
 
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [requestModalVisible, setRequestModalVisible] = useState(false);
+  const [requestInitialTitle, setRequestInitialTitle] = useState('');
 
   const isFetchingRef = useRef(false);
 
@@ -395,6 +398,29 @@ export default function ExploreScreen() {
             <Ionicons name="chevron-down" size={11} color={colors.textMuted} />
           </Pressable>
 
+          {/* Request Novel Button */}
+          <Pressable
+            onPress={() => {
+              setRequestInitialTitle('');
+              setRequestModalVisible(true);
+            }}
+            style={({ pressed }) => [
+              styles.requestBtn,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={lang === 'en' ? 'Request Novel' : 'Permintaan Novel'}
+          >
+            <Ionicons name="sparkles" size={12} color={colors.primary} />
+            <Text style={[styles.requestBtnText, { color: colors.primary }]}>
+              {lang === 'en' ? 'Request' : 'Request'}
+            </Text>
+          </Pressable>
+
           {/* Reset button if filter is active */}
           {hasActiveFilter && (
             <Pressable
@@ -492,20 +518,37 @@ export default function ExploreScreen() {
                       ? 'Try selecting a different genre or status filter'
                       : 'Coba gunakan genre atau filter status lainnya'}
                   </Text>
-                  {hasActiveFilter && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 }}>
+                    {hasActiveFilter && (
+                      <Pressable
+                        onPress={resetFilters}
+                        style={[
+                          styles.emptyResetBtn,
+                          { backgroundColor: colors.surface, borderColor: colors.primary + '50', marginTop: 0 },
+                        ]}
+                      >
+                        <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+                        <Text style={[styles.emptyResetBtnText, { color: colors.primary }]}>
+                          {lang === 'en' ? 'Reset Filters' : 'Atur Ulang Filter'}
+                        </Text>
+                      </Pressable>
+                    )}
                     <Pressable
-                      onPress={resetFilters}
+                      onPress={() => {
+                        setRequestInitialTitle('');
+                        setRequestModalVisible(true);
+                      }}
                       style={[
                         styles.emptyResetBtn,
-                        { backgroundColor: colors.surface, borderColor: colors.primary + '50' },
+                        { backgroundColor: colors.surface, borderColor: colors.primary, marginTop: 0 },
                       ]}
                     >
-                      <Ionicons name="refresh-outline" size={13} color={colors.primary} />
-                      <Text style={[styles.emptyResetBtnText, { color: colors.primary }]}>
-                        {lang === 'en' ? 'Reset Filters' : 'Atur Ulang Filter'}
+                      <Ionicons name="sparkles" size={13} color={colors.primary} />
+                      <Text style={[styles.emptyResetBtnText, { color: colors.primary, fontWeight: '700' }]}>
+                        {t.explore_empty_request_btn || (lang === 'en' ? 'Request This Novel' : 'Request Novel Ini')}
                       </Text>
                     </Pressable>
-                  )}
+                  </View>
                 </View>
                 )
               ) : null
@@ -575,20 +618,37 @@ export default function ExploreScreen() {
                       ? 'Try selecting a different genre or status filter'
                       : 'Coba gunakan genre atau filter status lainnya'}
                   </Text>
-                  {hasActiveFilter && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 }}>
+                    {hasActiveFilter && (
+                      <Pressable
+                        onPress={resetFilters}
+                        style={[
+                          styles.emptyResetBtn,
+                          { backgroundColor: colors.surface, borderColor: colors.primary + '50', marginTop: 0 },
+                        ]}
+                      >
+                        <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+                        <Text style={[styles.emptyResetBtnText, { color: colors.primary }]}>
+                          {lang === 'en' ? 'Reset Filters' : 'Atur Ulang Filter'}
+                        </Text>
+                      </Pressable>
+                    )}
                     <Pressable
-                      onPress={resetFilters}
+                      onPress={() => {
+                        setRequestInitialTitle('');
+                        setRequestModalVisible(true);
+                      }}
                       style={[
                         styles.emptyResetBtn,
-                        { backgroundColor: colors.surface, borderColor: colors.primary + '50' },
+                        { backgroundColor: colors.surface, borderColor: colors.primary, marginTop: 0 },
                       ]}
                     >
-                      <Ionicons name="refresh-outline" size={13} color={colors.primary} />
-                      <Text style={[styles.emptyResetBtnText, { color: colors.primary }]}>
-                        {lang === 'en' ? 'Reset Filters' : 'Atur Ulang Filter'}
+                      <Ionicons name="sparkles" size={13} color={colors.primary} />
+                      <Text style={[styles.emptyResetBtnText, { color: colors.primary, fontWeight: '700' }]}>
+                        {t.explore_empty_request_btn || (lang === 'en' ? 'Request This Novel' : 'Request Novel Ini')}
                       </Text>
                     </Pressable>
-                  )}
+                  </View>
                 </View>
                 )
               ) : null
@@ -852,6 +912,13 @@ export default function ExploreScreen() {
         onClose={() => setPreviewNovel(null)}
         onRead={(slug) => openNovel(slug)}
       />
+
+      {/* Novel Request Modal */}
+      <NovelRequestModal
+        visible={requestModalVisible}
+        initialTitle={requestInitialTitle}
+        onClose={() => setRequestModalVisible(false)}
+      />
     </View>
   );
 }
@@ -945,6 +1012,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  requestBtn: {
+    height: 35,
+    borderRadius: 9,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 9,
+    gap: 5,
+  },
+  requestBtnText: {
+    fontSize: 11.5,
+    fontWeight: '700',
   },
 
   // Grid
