@@ -359,7 +359,7 @@ export default function SearchScreen() {
               accessibilityRole="button"
               accessibilityLabel={lang === 'en' ? `Request "${query}"` : `Request "${query}"`}
             >
-              <Ionicons name="sparkles" size={13} color={colors.primary} />
+              <Ionicons name="book-outline" size={13} color={colors.primary} />
               <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.primary }}>
                 {lang === 'en' ? `Request "${query}"` : `Request "${query}"`}
               </Text>

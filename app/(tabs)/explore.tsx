@@ -425,7 +425,7 @@ export default function ExploreScreen() {
             accessibilityRole="button"
             accessibilityLabel={lang === 'en' ? 'Request Novel' : 'Permintaan Novel'}
           >
-            <Ionicons name="sparkles" size={12} color={colors.primary} />
+            <Ionicons name="book-outline" size={12} color={colors.primary} />
             <Text style={[styles.requestBtnText, { color: colors.primary }]}>
               {lang === 'en' ? 'Request' : 'Request'}
             </Text>
@@ -550,7 +550,7 @@ export default function ExploreScreen() {
                         { backgroundColor: colors.surface, borderColor: colors.primary, marginTop: 0 },
                       ]}
                     >
-                      <Ionicons name="sparkles" size={13} color={colors.primary} />
+                      <Ionicons name="book-outline" size={13} color={colors.primary} />
                       <Text style={[styles.emptyResetBtnText, { color: colors.primary, fontWeight: '700' }]}>
                         {t.explore_empty_request_btn || (lang === 'en' ? 'Request This Novel' : 'Request Novel Ini')}
                       </Text>
@@ -647,7 +647,7 @@ export default function ExploreScreen() {
                         { backgroundColor: colors.surface, borderColor: colors.primary, marginTop: 0 },
                       ]}
                     >
-                      <Ionicons name="sparkles" size={13} color={colors.primary} />
+                      <Ionicons name="book-outline" size={13} color={colors.primary} />
                       <Text style={[styles.emptyResetBtnText, { color: colors.primary, fontWeight: '700' }]}>
                         {t.explore_empty_request_btn || (lang === 'en' ? 'Request This Novel' : 'Request Novel Ini')}
                       </Text>

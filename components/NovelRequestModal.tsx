@@ -247,7 +247,7 @@ export function NovelRequestModal({
                   },
                 ]}
               >
-                <Ionicons name="sparkles" size={17} color={colors.primary} />
+                <Ionicons name="book-outline" size={17} color={colors.primary} />
               </View>
               <View>
                 <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
