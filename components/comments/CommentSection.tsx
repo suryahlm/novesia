@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '../../lib/useAuthStore';
 import { useLanguage } from '../../lib/i18n';
 import { useTheme } from '../../lib/ThemeProvider';
@@ -87,6 +88,10 @@ export function CommentSection({
 
   const loadData = useCallback(
     async (targetPage = 1, targetSort = sort, append = false) => {
+      if (!novelId && !novelSlug) {
+        setIsLoading(false);
+        return;
+      }
       if (append) setIsLoadingMore(true);
       else setIsLoading(true);
 
@@ -103,12 +108,16 @@ export function CommentSection({
         });
 
         if (append) {
-          setComments((prev) => [...prev, ...res.comments]);
+          setComments((prev) => {
+            const existingIds = new Set(prev.map((c) => c.id));
+            const uniqueNew = (res.comments || []).filter((c) => !existingIds.has(c.id));
+            return [...prev, ...uniqueNew];
+          });
         } else {
-          setComments(res.comments);
+          setComments(res.comments || []);
         }
-        setTotalCount(res.total);
-        setHasMore(res.hasMore);
+        setTotalCount(res.total || 0);
+        setHasMore(Boolean(res.hasMore));
         setPage(targetPage);
       } catch (err) {
         console.warn('Error loading comments:', err);
@@ -126,7 +135,7 @@ export function CommentSection({
 
   // Submit top-level comment
   const handlePostComment = async () => {
-    if (!content.trim()) return;
+    if (!content.trim() || isSubmitting) return;
     if (content.trim().length > 2000) {
       setDialogConfig({
         title: lang === 'en' ? 'Limit Exceeded' : 'Batas Karakter',
@@ -153,6 +162,7 @@ export function CommentSection({
       });
 
       if (newComment) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
         setComments((prev) => [newComment, ...prev]);
         setTotalCount((prev) => prev + 1);
         setContent('');
@@ -171,6 +181,7 @@ export function CommentSection({
 
   // Reply to comment
   const handleReplyComment = async (parentId: string, replyContent: string): Promise<boolean> => {
+    if (!replyContent.trim()) return false;
     try {
       const newReply = await sendComment({
         novelId,
@@ -184,10 +195,13 @@ export function CommentSection({
       });
 
       if (newReply) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
         setComments((prev) =>
           prev.map((c) => {
             if (c.id === parentId) {
               const currentReplies = c.replies || [];
+              const existingIds = new Set(currentReplies.map((r) => r.id));
+              if (existingIds.has(newReply.id)) return c;
               return {
                 ...c,
                 replies_count: (c.replies_count || 0) + 1,

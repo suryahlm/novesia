@@ -21,6 +21,7 @@ export function cleanChapterTitle(raw: string | null | undefined, chNum?: number
 export function timeAgo(dateString: string | null | undefined, lang: 'id' | 'en' = 'id'): string {
   if (!dateString) return lang === 'id' ? 'Baru saja' : 'Just now';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return lang === 'id' ? 'Baru saja' : 'Just now';
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 

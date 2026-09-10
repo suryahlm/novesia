@@ -873,6 +873,7 @@ export default function ReadChapterScreen() {
           <ScrollView
             style={styles.content}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: Math.max(100, insets.bottom + 60) }}
             {...panResponder.panHandlers}
             onScroll={(e) => {

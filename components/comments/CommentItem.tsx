@@ -10,6 +10,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { CommentItemData } from '../../lib/commentService';
 import { timeAgo } from '../../lib/utils';
 import { useLanguage } from '../../lib/i18n';
@@ -55,7 +56,8 @@ export function CommentItem({
 
   const authorName =
     comment.user_name || comment.userName || comment.user?.name || (lang === 'en' ? 'Reader' : 'Pembaca');
-  const authorAvatar = comment.user_avatar || comment.userAvatar || comment.user?.avatarUrl;
+  const authorAvatar =
+    (comment.user_avatar || comment.userAvatar || comment.user?.avatarUrl || '').trim() || null;
   const authorRole = comment.user?.role;
   const isOwner = Boolean(currentUserId && comment.user_id && currentUserId === comment.user_id);
   const canDelete = isOwner || isAdmin;
@@ -63,7 +65,8 @@ export function CommentItem({
   // Inisial avatar fallback
   const initials =
     authorName
-      .split(' ')
+      .trim()
+      .split(/\s+/)
       .slice(0, 2)
       .map((w) => w[0]?.toUpperCase() || '')
       .join('') || 'P';
@@ -79,6 +82,7 @@ export function CommentItem({
 
   const handleLike = async () => {
     if (isLiking || hasLiked) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setIsLiking(true);
     setHasLiked(true);
     setLikes((prev) => prev + 1);
@@ -94,6 +98,7 @@ export function CommentItem({
 
   const handleSendReply = async () => {
     if (!onReply || !replyText.trim() || isSubmittingReply) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setIsSubmittingReply(true);
     try {
       const ok = await onReply(comment.id, replyText.trim());
