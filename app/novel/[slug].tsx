@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Share,
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
@@ -28,6 +27,7 @@ import { useNovelDetail, useNovelChapters } from '../../lib/useNovelsQuery';
 import { AuthModal } from '../../components/AuthModal';
 import { useAuthStore } from '../../lib/useAuthStore';
 import { CommentSection } from '../../components/comments/CommentSection';
+import { shareNovel } from '../../lib/shareNovel';
 
 const LIBRARY_KEY = 'novesia_library';
 
@@ -290,9 +290,7 @@ export default function NovelDetailScreen() {
       return;
     }
 
-    Share.share({
-      message: `📖 ${novel.title}\n\n${lang === 'id' ? 'Baca di Novesia!' : 'Read on Novesia!'}`,
-    });
+    shareNovel(novel, lang as 'id' | 'en');
   };
 
   // Reload last read chapter every time the screen is focused

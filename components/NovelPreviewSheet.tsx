@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   StatusBar,
   Platform,
-  Share,
 } from 'react-native';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +22,7 @@ import { useTheme } from '../lib/ThemeProvider';
 import { useLanguage } from '../lib/i18n';
 import { trackBookmarkAdded } from '../lib/gamification';
 import { CustomDialog, DialogTone } from './CustomDialog';
+import { shareNovel } from '../lib/shareNovel';
 import { AuthModal } from './AuthModal';
 import { useAuthStore } from '../lib/useAuthStore';
 
@@ -146,7 +146,7 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
     setLoadingSynopsis(false);
   };
 
-  const shareNovel = async () => {
+  const handleShare = async () => {
     if (!novel) return;
     const currentUser = useAuthStore.getState().user;
     if (!currentUser) {
@@ -166,13 +166,7 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
       return;
     }
 
-    try {
-      await Share.share({
-        message: `Check out "${novel.title}" on Novesia App!\n\nRead here: novesiaapp://novel/${novel.nu_slug}`,
-      });
-    } catch (error) {
-      console.log('Error sharing:', error);
-    }
+    await shareNovel(novel, lang as 'id' | 'en');
   };
 
   if (!novel) return null;
@@ -289,7 +283,7 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.smallIconBtn}
-                  onPress={shareNovel}
+                  onPress={handleShare}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="share-social-outline" size={18} color="#94a3b8" />
