@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -60,8 +60,13 @@ export default function ProfileScreen() {
   // Notification Settings Store
   const notificationsEnabled = useNotificationSettingsStore((s) => s.enabled);
   const setNotificationsEnabled = useNotificationSettingsStore((s) => s.setEnabled);
+  const lastToggleRef = useRef(0);
 
   const handleToggleNotifications = async (val?: boolean) => {
+    const now = Date.now();
+    if (now - lastToggleRef.current < 400) return;
+    lastToggleRef.current = now;
+
     const nextVal = typeof val === 'boolean' ? val : !notificationsEnabled;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
@@ -93,26 +98,8 @@ export default function ProfileScreen() {
       } catch {}
 
       setNotificationsEnabled(true);
-      showPopup({
-        title: t.notif_enabled_title || 'Notifikasi Diaktifkan',
-        message:
-          t.notif_enabled_msg ||
-          'Anda akan menerima notifikasi saat ada bab baru dan update novel.',
-        icon: 'notifications-outline',
-        tone: 'gold',
-        showCancel: false,
-      });
     } else {
       setNotificationsEnabled(false);
-      showPopup({
-        title: t.notif_disabled_title || 'Notifikasi Dinonaktifkan',
-        message:
-          t.notif_disabled_msg ||
-          'Notifikasi untuk bab baru dan update novel telah dimatikan.',
-        icon: 'notifications-off-outline',
-        tone: 'warning',
-        showCancel: false,
-      });
     }
   };
 
