@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Stack } from 'expo-router';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -13,6 +13,10 @@ import { LanguageProvider } from '../lib/i18n';
 import { ThemeProvider, useTheme } from '../lib/ThemeProvider';
 import { QueryProvider } from '../lib/QueryProvider';
 import { FirstLaunchDisclaimer } from '../components/FirstLaunchDisclaimer';
+import { UpdatePrompt } from '../components/UpdatePrompt';
+import { useInAppUpdate } from '../hooks/useInAppUpdate';
+import { usePushRegistration } from '../hooks/usePushRegistration';
+import { useDisclaimerStore } from '../lib/useDisclaimerStore';
 
 import {
   useFonts,
@@ -29,6 +33,10 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootStack() {
   const { colors, isDark } = useTheme();
+  usePushRegistration();
+  const hasAcceptedDisclaimer = useDisclaimerStore((s) => s.hasAcceptedDisclaimer);
+  const inAppUpdate = useInAppUpdate();
+  const updateVisible = inAppUpdate.update !== null && hasAcceptedDisclaimer;
 
   useEffect(() => {
     if (!isAdMobSupported()) return;
@@ -70,20 +78,29 @@ function RootStack() {
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <Stack screenOptions={screenOptions}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="novel/[slug]" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="read/[chapterId]" options={{ animation: 'fade' }} />
-        <Stack.Screen name="forum" options={{ animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="forum/[categorySlug]" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="forum/thread/[threadId]" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="latest-updates" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="account" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="akun" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="search" options={{ animation: 'fade' }} />
-        <Stack.Screen name="rewards" options={{ animation: 'slide_from_right' }} />
-      </Stack>
+      <View
+        style={{ flex: 1 }}
+        importantForAccessibility={updateVisible ? 'no-hide-descendants' : 'auto'}
+        accessibilityElementsHidden={updateVisible}
+      >
+        <Stack screenOptions={screenOptions}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="novel/[slug]" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="read/[chapterId]" options={{ animation: 'fade' }} />
+          <Stack.Screen name="forum" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="forum/[categorySlug]" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="forum/thread/[threadId]" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="latest-updates" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="account" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="akun" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="search" options={{ animation: 'fade' }} />
+          <Stack.Screen name="rewards" options={{ animation: 'slide_from_right' }} />
+        </Stack>
+      </View>
+
+      {/* Prompt update Play Store — muncul di atas Stack saat ada versi baru */}
+      <UpdatePrompt {...inAppUpdate} visible={updateVisible} />
 
       {/* Disclaimer muncul sekali seumur hidup device pada peluncuran pertama */}
       <FirstLaunchDisclaimer />

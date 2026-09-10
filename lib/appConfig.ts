@@ -13,6 +13,14 @@ export interface AppConfig {
   ad_interval_chapters: number;
   ad_cooldown_minutes: number;
   ad_interstitial_enabled: boolean;
+  telegram_link?: string;
+  support_email?: string;
+  app_version?: string;
+  app_version_code?: number;
+  min_supported_version_code?: number;
+  force_update_enabled?: boolean;
+  play_store_url?: string;
+  update_changelog?: string;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -22,6 +30,15 @@ const DEFAULT_CONFIG: AppConfig = {
   ad_interval_chapters: 5,
   ad_cooldown_minutes: 30,
   ad_interstitial_enabled: true,
+  telegram_link: 'https://t.me/novesiaforum',
+  support_email: 'support@novesia.cc',
+  app_version: '1.1.5',
+  app_version_code: 15,
+  min_supported_version_code: 15,
+  force_update_enabled: false,
+  play_store_url: 'https://play.google.com/store/apps/details?id=cc.novesia.app',
+  update_changelog:
+    'Peningkatan stabilitas aplikasi, performa membaca novel lebih lancar, serta penambahan notifikasi rilis bab terbaru secara realtime.',
 };
 
 const CACHE_KEY = 'novesia_app_config';
@@ -50,6 +67,16 @@ export async function getAppConfig(): Promise<AppConfig> {
 
     const config = { ...DEFAULT_CONFIG };
     for (const row of configs) {
+      if (
+        row.key === 'app_version' ||
+        row.key === 'telegram_link' ||
+        row.key === 'support_email' ||
+        row.key === 'play_store_url' ||
+        row.key === 'update_changelog'
+      ) {
+        (config as any)[row.key] = String(row.value);
+        continue;
+      }
       try {
         (config as any)[row.key] = JSON.parse(row.value);
       } catch {

@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   Switch,
-  Platform,
   StatusBar,
   Linking,
 } from 'react-native';
@@ -14,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 import { useLanguage } from '../lib/i18n';
 import { useTheme } from '../lib/ThemeProvider';
@@ -23,62 +23,28 @@ import { CustomDialog } from '../components/CustomDialog';
 
 const SETTINGS_KEY = 'novesia_reading_settings';
 
-export default function SettingsScreen() {
-  const router = useRouter();
-  const { lang, t } = useLanguage();
-  const { colors, isDark } = useTheme();
+interface SettingRowProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  isSwitch?: boolean;
+  switchValue?: boolean;
+  onSwitchChange?: (val: boolean) => void;
+  colors: ReturnType<typeof useTheme>['colors'];
+}
 
-  const [notifications, setNotifications] = useState(true);
-  const [langSheetVisible, setLangSheetVisible] = useState(false);
-  const [updateDialogVisible, setUpdateDialogVisible] = useState(false);
-  const [textSize, setTextSize] = useState(18);
-
-  useEffect(() => {
-    loadTextSize();
-  }, []);
-
-  const loadTextSize = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(SETTINGS_KEY);
-      if (stored) {
-        const s = JSON.parse(stored);
-        if (s.fontSize) setTextSize(s.fontSize);
-      }
-    } catch {}
-  };
-
-  const updateTextSize = async (newSize: number) => {
-    setTextSize(newSize);
-    try {
-      const stored = await AsyncStorage.getItem(SETTINGS_KEY);
-      const s = stored ? JSON.parse(stored) : {};
-      s.fontSize = newSize;
-      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-    } catch {}
-  };
-
-  const openWebLegal = (path: 'privacy' | 'terms') => {
-    const url = `https://novesia.cc/${path}?lang=${lang}`;
-    Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
-  };
-
-  const SettingRow = ({
-    icon,
-    label,
-    value,
-    onPress,
-    isSwitch,
-    switchValue,
-    onSwitchChange,
-  }: {
-    icon: keyof typeof Ionicons.glyphMap;
-    label: string;
-    value?: string;
-    onPress?: () => void;
-    isSwitch?: boolean;
-    switchValue?: boolean;
-    onSwitchChange?: (val: boolean) => void;
-  }) => (
+function SettingRow({
+  icon,
+  label,
+  value,
+  onPress,
+  isSwitch,
+  switchValue,
+  onSwitchChange,
+  colors,
+}: SettingRowProps) {
+  return (
     <Pressable
       style={({ pressed }) => [
         styles.settingRow,
@@ -125,6 +91,49 @@ export default function SettingsScreen() {
       </View>
     </Pressable>
   );
+}
+
+export default function SettingsScreen() {
+  const router = useRouter();
+  const { lang, t } = useLanguage();
+  const { colors, isDark } = useTheme();
+
+  const [notifications, setNotifications] = useState(true);
+  const [langSheetVisible, setLangSheetVisible] = useState(false);
+  const [updateDialogVisible, setUpdateDialogVisible] = useState(false);
+  const [textSize, setTextSize] = useState(18);
+
+  useEffect(() => {
+    let isMounted = true;
+    AsyncStorage.getItem(SETTINGS_KEY)
+      .then((stored) => {
+        if (isMounted && stored) {
+          try {
+            const s = JSON.parse(stored);
+            if (s.fontSize) setTextSize(s.fontSize);
+          } catch {}
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const updateTextSize = async (newSize: number) => {
+    setTextSize(newSize);
+    try {
+      const stored = await AsyncStorage.getItem(SETTINGS_KEY);
+      const s = stored ? JSON.parse(stored) : {};
+      s.fontSize = newSize;
+      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    } catch {}
+  };
+
+  const openWebLegal = (path: 'privacy' | 'terms') => {
+    const url = `https://novesia.cc/${path}?lang=${lang}`;
+    Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -176,6 +185,7 @@ export default function SettingsScreen() {
               ]}
             >
               <SettingRow
+                colors={colors}
                 icon="language-outline"
                 label={t.language}
                 value={lang === 'en' ? 'English 🇬🇧' : 'Indonesia 🇮🇩'}
@@ -183,6 +193,7 @@ export default function SettingsScreen() {
               />
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <SettingRow
+                colors={colors}
                 icon="notifications-outline"
                 label={t.notifications}
                 isSwitch
@@ -340,19 +351,22 @@ export default function SettingsScreen() {
               ]}
             >
               <SettingRow
+                colors={colors}
                 icon="cloud-download-outline"
                 label={t.check_updates}
-                value="v1.0.26"
+                value={`v${Constants.expoConfig?.version ?? '1.1.5'}`}
                 onPress={() => setUpdateDialogVisible(true)}
               />
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <SettingRow
+                colors={colors}
                 icon="shield-checkmark-outline"
                 label={t.privacy_policy}
                 onPress={() => openWebLegal('privacy')}
               />
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <SettingRow
+                colors={colors}
                 icon="document-text-outline"
                 label={t.terms}
                 onPress={() => openWebLegal('terms')}
@@ -361,7 +375,7 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={[styles.footerText, { color: colors.textMuted }]}>
-            Novesia App v1.0.26 Build 2026
+            {`Novesia App v${Constants.expoConfig?.version ?? '1.1.5'} Build ${Constants.expoConfig?.android?.versionCode ?? 15}`}
           </Text>
           <View style={{ height: 40 }} />
         </ScrollView>
@@ -378,7 +392,7 @@ export default function SettingsScreen() {
         visible={updateDialogVisible}
         onClose={() => setUpdateDialogVisible(false)}
         title={t.check_updates}
-        message={`${t.app_is_up_to_date} (v1.0.26)`}
+        message={`${t.app_is_up_to_date} (v${Constants.expoConfig?.version ?? '1.1.5'})`}
         icon="cloud-done-outline"
         tone="gold"
         showCancel={false}
