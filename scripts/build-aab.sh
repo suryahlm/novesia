@@ -8,8 +8,8 @@ set -e
 
 PROJECT_DIR="/Users/suryahalim/IT Surya/NovelUpdate/novesia-app"
 OUTPUT_DIR="/Users/suryahalim/IT Surya/NovelUpdate/_draft/Build/AAB"
-VERSION_NAME="1.1.6"
-VERSION_CODE="16"
+VERSION_NAME="1.1.7"
+VERSION_CODE="17"
 
 echo "========================================================"
 echo "🚀 MEMULAI BUILD RELEASE AAB NOVESIA (v${VERSION_NAME} - VC ${VERSION_CODE})"
@@ -56,8 +56,10 @@ if [ ! -f "$AAB_SRC" ]; then
 fi
 
 DEST_VERSIONED="$OUTPUT_DIR/novesia-v${VERSION_NAME}-vc${VERSION_CODE}-release.aab"
+DEST_LATEST="$OUTPUT_DIR/novesia-release-latest.aab"
 
 cp -f "$AAB_SRC" "$DEST_VERSIONED"
+cp -f "$AAB_SRC" "$DEST_LATEST"
 
 echo ""
 echo "========================================================"
