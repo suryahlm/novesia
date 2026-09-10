@@ -47,7 +47,7 @@ echo ""
 echo "⚙️ Menjalankan build bundleRelease (Google Play App Bundle)..."
 ./gradlew bundleRelease --no-daemon
 
-# 5. Salin Hasil AAB ke Direktori Tujuan
+# 5. Salin Hasil AAB ke Direktori Tujuan (Hanya 1 file versioned, tanpa duplikat)
 AAB_SRC="$PROJECT_DIR/android/app/build/outputs/bundle/release/app-release.aab"
 
 if [ ! -f "$AAB_SRC" ]; then
@@ -56,10 +56,8 @@ if [ ! -f "$AAB_SRC" ]; then
 fi
 
 DEST_VERSIONED="$OUTPUT_DIR/novesia-v${VERSION_NAME}-vc${VERSION_CODE}-release.aab"
-DEST_LATEST="$OUTPUT_DIR/novesia-release-latest.aab"
 
 cp -f "$AAB_SRC" "$DEST_VERSIONED"
-cp -f "$AAB_SRC" "$DEST_LATEST"
 
 echo ""
 echo "========================================================"
