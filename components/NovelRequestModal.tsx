@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -46,6 +48,7 @@ export function NovelRequestModal({
   const { colors, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const bottomPadding = Math.max(insets.bottom, Platform.OS === 'android' ? 24 : 16) + 16;
 
   const [title, setTitle] = useState('');
@@ -53,6 +56,10 @@ export function NovelRequestModal({
   const [selectedLang, setSelectedLang] = useState('China');
   const [sourceUrl, setSourceUrl] = useState('');
   const [notes, setNotes] = useState('');
+
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -73,6 +80,56 @@ export function NovelRequestModal({
       setNotes('');
     }
   }, [visible, initialTitle]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates?.height ?? 0);
+      setIsKeyboardVisible(true);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!visible) {
+      setIsKeyboardVisible(false);
+      setKeyboardHeight(0);
+    }
+  }, [visible]);
+
+  const topInset = Math.max(insets.top, Platform.OS === 'android' ? 24 : 44);
+  const maxSheetHeight = isKeyboardVisible
+    ? Math.max(260, screenHeight - keyboardHeight - topInset - (Platform.OS === 'android' ? 10 : 0))
+    : Math.min(screenHeight * 0.9, 720);
+
+  const handleInputFocus = (offset: number) => {
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: offset, animated: true });
+    }, 120);
+  };
+
+  const handleClose = () => {
+    Keyboard.dismiss();
+    onClose();
+  };
+
+  const handleBackdropPress = () => {
+    if (isKeyboardVisible) {
+      Keyboard.dismiss();
+    } else {
+      handleClose();
+    }
+  };
 
   const handleSubmit = async () => {
     if (!user) {
@@ -141,7 +198,7 @@ export function NovelRequestModal({
     setDialogVisible(false);
     if (dialogConfig.isSuccess) {
       onSuccess?.();
-      onClose();
+      handleClose();
     }
   };
 
@@ -150,18 +207,21 @@ export function NovelRequestModal({
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
       statusBarTranslucent
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.modalOverlay}
+        style={[
+          styles.modalOverlay,
+          Platform.OS === 'android' && isKeyboardVisible && { paddingBottom: keyboardHeight },
+        ]}
       >
         <View style={styles.backdropPressable}>
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
-            onPress={onClose}
+            onPress={handleBackdropPress}
           />
         </View>
 
@@ -171,6 +231,7 @@ export function NovelRequestModal({
             {
               backgroundColor: isDark ? '#0e1117' : colors.surface,
               borderColor: colors.border,
+              maxHeight: maxSheetHeight,
             },
           ]}
         >
@@ -197,20 +258,37 @@ export function NovelRequestModal({
                 </Text>
               </View>
             </View>
-            <TouchableOpacity
-              onPress={onClose}
-              hitSlop={8}
-              style={[styles.closeBtn, { backgroundColor: colors.surfaceElevated }]}
-            >
-              <Ionicons name="close" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
+            <View style={styles.headerRightActions}>
+              {isKeyboardVisible && (
+                <TouchableOpacity
+                  onPress={() => Keyboard.dismiss()}
+                  hitSlop={8}
+                  style={[styles.dismissKbBtn, { backgroundColor: colors.surfaceElevated }]}
+                  accessibilityLabel="Tutup keyboard"
+                >
+                  <Ionicons name="chevron-down" size={16} color={colors.primary} />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                onPress={handleClose}
+                hitSlop={8}
+                style={[styles.closeBtn, { backgroundColor: colors.surfaceElevated }]}
+              >
+                <Ionicons name="close" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Form Scroll Content */}
           <ScrollView
-            showsVerticalScrollIndicator={false}
+            ref={scrollRef}
+            showsVerticalScrollIndicator={true}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollContent}
+            keyboardDismissMode="on-drag"
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: isKeyboardVisible ? 220 : bottomPadding },
+            ]}
           >
             {/* Description Banner */}
             <View
@@ -237,6 +315,7 @@ export function NovelRequestModal({
               <TextInput
                 value={title}
                 onChangeText={setTitle}
+                onFocus={() => handleInputFocus(0)}
                 placeholder={
                   t.request_novel_title_placeholder ||
                   'Contoh: Shadow Slave, Lord of the Mysteries...'
@@ -262,6 +341,7 @@ export function NovelRequestModal({
               <TextInput
                 value={author}
                 onChangeText={setAuthor}
+                onFocus={() => handleInputFocus(60)}
                 placeholder={t.request_novel_author_placeholder || 'Nama penulis asli'}
                 placeholderTextColor={colors.textMuted}
                 maxLength={100}
@@ -327,6 +407,7 @@ export function NovelRequestModal({
               <TextInput
                 value={sourceUrl}
                 onChangeText={setSourceUrl}
+                onFocus={() => handleInputFocus(180)}
                 placeholder={t.request_novel_source_placeholder || 'https://...'}
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
@@ -351,6 +432,7 @@ export function NovelRequestModal({
               <TextInput
                 value={notes}
                 onChangeText={setNotes}
+                onFocus={() => handleInputFocus(280)}
                 placeholder={
                   t.request_novel_notes_placeholder ||
                   'Ceritakan mengapa kamu ingin membaca novel ini...'
@@ -615,6 +697,20 @@ const styles = StyleSheet.create({
   sheetSub: {
     fontSize: 10.5,
     marginTop: 1,
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dismissKbBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(212,168,67,0.3)',
   },
   closeBtn: {
     width: 32,
