@@ -33,6 +33,7 @@ import { useLanguage } from '../../lib/i18n';
 import { signOutUser, refreshUserProfile } from '../../lib/authService';
 import { getHistory, HistoryItem, clearHistory } from '../../lib/history';
 import { useNotificationSettingsStore } from '../../lib/useNotificationSettingsStore';
+import { isExpoGo } from '../../lib/expoEnv';
 import {
   getUserGamificationStats,
   syncGamificationWithServer,
@@ -73,31 +74,33 @@ export default function ProfileScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
     if (nextVal) {
-      try {
-        const Notifications = await import('expo-notifications');
-        let settings = await Notifications.getPermissionsAsync();
-        if (!settings.granted && settings.canAskAgain) {
-          settings = await Notifications.requestPermissionsAsync();
-        }
+      if (!isExpoGo()) {
+        try {
+          const Notifications = await import('expo-notifications');
+          let settings = await Notifications.getPermissionsAsync();
+          if (!settings.granted && settings.canAskAgain) {
+            settings = await Notifications.requestPermissionsAsync();
+          }
 
-        if (!settings.granted && !settings.canAskAgain) {
-          showPopup({
-            title: t.notif_permission_title || 'Izin Diperlukan',
-            message:
-              t.notif_permission_msg ||
-              'Notifikasi dinonaktifkan pada pengaturan HP Anda. Silakan aktifkan izin notifikasi di Pengaturan HP untuk menerima pemberitahuan.',
-            icon: 'notifications-off-outline',
-            tone: 'warning',
-            confirmText: t.open_settings || 'Buka Pengaturan',
-            cancelText: t.cancel || 'Batal',
-            showCancel: true,
-            onConfirm: () => {
-              Linking.openSettings().catch(() => {});
-            },
-          });
-          return;
-        }
-      } catch {}
+          if (!settings.granted && !settings.canAskAgain) {
+            showPopup({
+              title: t.notif_permission_title || 'Izin Diperlukan',
+              message:
+                t.notif_permission_msg ||
+                'Notifikasi dinonaktifkan pada pengaturan HP Anda. Silakan aktifkan izin notifikasi di Pengaturan HP untuk menerima pemberitahuan.',
+              icon: 'notifications-off-outline',
+              tone: 'warning',
+              confirmText: t.open_settings || 'Buka Pengaturan',
+              cancelText: t.cancel || 'Batal',
+              showCancel: true,
+              onConfirm: () => {
+                Linking.openSettings().catch(() => {});
+              },
+            });
+            return;
+          }
+        } catch {}
+      }
 
       setNotificationsEnabled(true);
     } else {

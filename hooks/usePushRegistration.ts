@@ -1,15 +1,11 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useRouter } from 'expo-router';
 
 import { registerPushToken } from '../lib/pushService';
 import { useAuthStore } from '../lib/useAuthStore';
 import { useNotificationSettingsStore } from '../lib/useNotificationSettingsStore';
-
-// expo-notifications memanggil native module langsung saat di-import.
-// Gunakan dynamic import agar tidak memicu error di Expo Go tanpa native build.
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+import { isExpoGo } from '../lib/expoEnv';
 
 /**
  * Hook untuk meminta izin push notifikasi, mendaftarkan FCM device token ke server,
@@ -20,10 +16,11 @@ export function usePushRegistration() {
   const authToken = useAuthStore((s) => s.token);
   const notificationsEnabled = useNotificationSettingsStore((s) => s.enabled);
   const router = useRouter();
+  const isGo = isExpoGo();
 
-  // 1. Setup handler & notification channel (khusus Android)
+  // 1. Setup handler & notification channel (khusus Android non-Expo Go)
   useEffect(() => {
-    if (Platform.OS !== 'android' || isExpoGo) return;
+    if (Platform.OS !== 'android' || isGo) return;
 
     import('expo-notifications').then((Notifications) => {
       // Izinkan banner notifikasi melayang di atas layar (heads-up)
@@ -48,7 +45,7 @@ export function usePushRegistration() {
   // 2. Minta izin & daftarkan FCM device token ke server
   // Dijalankan ulang setiap kali authToken atau status notifikasi berubah
   useEffect(() => {
-    if (Platform.OS !== 'android' || isExpoGo || !notificationsEnabled) return;
+    if (Platform.OS !== 'android' || isGo || !notificationsEnabled) return;
     const controller = new AbortController();
 
     (async () => {
@@ -61,7 +58,6 @@ export function usePushRegistration() {
         }
         if (!settings.granted || controller.signal.aborted) return;
 
-        // Ambil token FCM native dari Google Play Services
         const devicePushToken = await Notifications.getDevicePushTokenAsync();
         if (controller.signal.aborted) return;
 
@@ -76,11 +72,11 @@ export function usePushRegistration() {
     return () => {
       controller.abort();
     };
-  }, [authToken]);
+  }, [authToken, isGo, notificationsEnabled]);
 
   // 3. Listener saat user mengetuk notifikasi (deep link ke novel / chapter)
   useEffect(() => {
-    if (isExpoGo) return;
+    if (isGo) return;
     let subscription: { remove: () => void } | undefined;
     let cancelled = false;
 
