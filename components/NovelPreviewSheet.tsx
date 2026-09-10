@@ -250,24 +250,24 @@ export default function NovelPreviewSheet({ visible, novel, onClose, onRead, onA
                   <Ionicons name="book-outline" size={10} color="#94a3b8" />
                   <Text style={styles.metaText}>{novel.total_chapters}</Text>
                 </View>
-                {novel.rating && novel.rating > 0 && (
+                {Number(novel.rating) > 0 ? (
                   <View style={[styles.metaChip, styles.ratingChip, { borderColor: colors.primary + '40', backgroundColor: colors.primaryMuted }]}>
                     <Ionicons name="star" size={10} color={colors.primary} />
-                    <Text style={[styles.metaText, { color: colors.primary }]}>{novel.rating.toFixed(1)}</Text>
+                    <Text style={[styles.metaText, { color: colors.primary }]}>{Number(novel.rating).toFixed(1)}</Text>
                   </View>
-                )}
+                ) : null}
               </View>
 
               {/* Genres */}
-              {novel.genres && novel.genres.length > 0 && (
+              {novel.genres && novel.genres.length > 0 ? (
                 <View style={styles.genreRow}>
-                  {novel.genres.slice(0, 3).map((g, i) => (
+                  {novel.genres.slice(0, 3).map((g: string, i: number) => (
                     <View key={i} style={[styles.genreChip, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + '30' }]}>
                       <Text style={[styles.genreText, { color: colors.primary }]}>{g}</Text>
                     </View>
                   ))}
                 </View>
-              )}
+              ) : null}
 
               {/* Extra Action Icons (Save & Share) */}
               <View style={styles.extraActionRow}>

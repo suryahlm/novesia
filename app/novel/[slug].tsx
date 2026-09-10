@@ -495,14 +495,14 @@ export default function NovelDetailScreen() {
 
               {/* Meta Badges Row */}
               <View style={styles.metaRow}>
-                {novel.rating && (
+                {Number(novel.rating) > 0 ? (
                   <View style={[styles.metaPill, { backgroundColor: colors.primaryMuted, borderColor: colors.primary + (isDark ? '50' : '35') }]}>
                     <Ionicons name="star" size={10} color={colors.primary} />
                     <Text style={[styles.metaPillText, { color: colors.primary }]}>
                       {typeof novel.rating === 'number' ? novel.rating.toFixed(1) : novel.rating}
                     </Text>
                   </View>
-                )}
+                ) : null}
 
                 <View
                   style={[
@@ -513,10 +513,10 @@ export default function NovelDetailScreen() {
                     },
                   ]}
                 >
-                  <Text style={[styles.metaPillText, { color: colors.textSecondary }]}>{novel.total_chapters} ch</Text>
+                  <Text style={[styles.metaPillText, { color: colors.textSecondary }]}>{novel.total_chapters ?? 0} ch</Text>
                 </View>
 
-                {novel.total_views !== undefined && (
+                {typeof novel.total_views === 'number' && novel.total_views > 0 ? (
                   <View
                     style={[
                       styles.metaPill,
@@ -529,7 +529,7 @@ export default function NovelDetailScreen() {
                     <Ionicons name="eye-outline" size={11} color={colors.textMuted} />
                     <Text style={[styles.metaPillText, { color: colors.textSecondary }]}>{formatViews(novel.total_views)}</Text>
                   </View>
-                )}
+                ) : null}
 
                 <View style={[styles.metaPill, {
                   backgroundColor: isComingSoon
@@ -566,7 +566,7 @@ export default function NovelDetailScreen() {
                   </Text>
                 </View>
 
-                {firstChapterNumber > 1 && (
+                {firstChapterNumber > 1 ? (
                   <View style={[styles.metaPill, {
                     backgroundColor: isDark ? 'rgba(217, 119, 6, 0.15)' : 'rgba(217, 119, 6, 0.12)',
                     borderColor: isDark ? 'rgba(217, 119, 6, 0.45)' : 'rgba(217, 119, 6, 0.35)',
@@ -576,7 +576,7 @@ export default function NovelDetailScreen() {
                       {lang === 'id' ? `Mulai Bab ${firstChapterNumber}` : `Starts at Ch. ${firstChapterNumber}`}
                     </Text>
                   </View>
-                )}
+                ) : null}
               </View>
 
               {/* Action Toolbar */}
@@ -642,11 +642,11 @@ export default function NovelDetailScreen() {
               </View>
 
               {/* Genres Inline */}
-              {realGenres.length > 0 && (
+              {realGenres.length > 0 ? (
                 <Text style={[styles.genreText, { color: colors.textMuted }]} numberOfLines={1}>
                   {realGenres.join('  •  ')}
                 </Text>
-              )}
+              ) : null}
             </View>
           </View>
         </View>
@@ -714,7 +714,7 @@ export default function NovelDetailScreen() {
             >
               {cleanedSynopsis}
             </Text>
-            {cleanedSynopsis.length > 180 && (
+            {cleanedSynopsis.length > 180 ? (
               <TouchableOpacity
                 onPress={() => setSynopsisExpanded(!synopsisExpanded)}
                 style={styles.expandBtn}
@@ -726,7 +726,7 @@ export default function NovelDetailScreen() {
                     : (lang === 'id' ? 'Baca Selengkapnya ▼' : 'Read More ▼')}
                 </Text>
               </TouchableOpacity>
-            )}
+            ) : null}
           </View>
         ) : null}
 
@@ -741,7 +741,7 @@ export default function NovelDetailScreen() {
               </View>
             </View>
 
-            {chapters.length > 20 && (
+            {chapters.length > 20 ? (
               <TouchableOpacity
                 onPress={() => {
                   if (expandedGroups.size === Math.ceil(chapters.length / 20)) {
@@ -758,7 +758,7 @@ export default function NovelDetailScreen() {
                   {expandedGroups.size === Math.ceil(chapters.length / 20) ? t.close_all : t.all_chapters}
                 </Text>
               </TouchableOpacity>
-            )}
+            ) : null}
           </View>
 
           {loadingChapters && chapters.length === 0 ? (
