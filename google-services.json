@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "49249228915-riia2v2oaamgua9vu5c3cu1sb5t0guge.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cc.novesia.app",
+            "certificate_hash": "22f38ae8ac5a4ec74456a3bceac68bf64c362554"
+          }
+        },
+        {
           "client_id": "49249228915-2cbah8llhdhf4sdh6tsvqft8j1q7ioc8.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

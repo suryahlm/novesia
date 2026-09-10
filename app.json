@@ -2,7 +2,7 @@
   "expo": {
     "name": "Novesia",
     "slug": "novesia-app",
-    "version": "1.1.4",
+    "version": "1.1.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "novesiaapp",
@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/images/adaptive-icon-foreground.png"
       },
       "package": "cc.novesia.app",
-      "versionCode": 14,
+      "versionCode": 15,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "INTERNET",
