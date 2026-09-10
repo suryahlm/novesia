@@ -766,7 +766,13 @@ export default function ProfileScreen() {
                 icon: 'book-outline' as const,
                 label: t.request_novel || (lang === 'en' ? 'Request Novel' : 'Permintaan Novel'),
                 badge: t.request_novel_badge || (lang === 'en' ? 'Send' : 'Kirim'),
-                onPress: () => setRequestModalVisible(true),
+                onPress: () => {
+                  if (!user) {
+                    setAuthModalVisible(true);
+                  } else {
+                    setRequestModalVisible(true);
+                  }
+                },
               },
               {
                 icon: 'cloud-outline' as const,
@@ -942,6 +948,10 @@ export default function ProfileScreen() {
       <NovelRequestModal
         visible={requestModalVisible}
         onClose={() => setRequestModalVisible(false)}
+        onOpenAuthModal={() => {
+          setRequestModalVisible(false);
+          setAuthModalVisible(true);
+        }}
       />
 
       <CustomDialog

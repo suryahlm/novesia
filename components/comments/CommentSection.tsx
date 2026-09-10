@@ -64,7 +64,6 @@ export function CommentSection({
   const [sort, setSort] = useState<'newest' | 'popular'>('newest');
 
   const [content, setContent] = useState<string>('');
-  const [guestName, setGuestName] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Dialog state
@@ -135,6 +134,10 @@ export function CommentSection({
 
   // Submit top-level comment
   const handlePostComment = async () => {
+    if (!user) {
+      onOpenAuthModal?.();
+      return;
+    }
     if (!content.trim() || isSubmitting) return;
     if (content.trim().length > 2000) {
       setDialogConfig({
@@ -158,7 +161,6 @@ export function CommentSection({
         chapterNumber,
         target,
         content: content.trim(),
-        userName: !user && guestName.trim() ? guestName.trim() : undefined,
       });
 
       if (newComment) {
@@ -181,6 +183,10 @@ export function CommentSection({
 
   // Reply to comment
   const handleReplyComment = async (parentId: string, replyContent: string): Promise<boolean> => {
+    if (!user) {
+      onOpenAuthModal?.();
+      return false;
+    }
     if (!replyContent.trim()) return false;
     try {
       const newReply = await sendComment({
@@ -191,7 +197,6 @@ export function CommentSection({
         target,
         parentId,
         content: replyContent.trim(),
-        userName: !user && guestName.trim() ? guestName.trim() : undefined,
       });
 
       if (newReply) {
@@ -227,6 +232,10 @@ export function CommentSection({
 
   // Like comment
   const handleLike = async (commentId: string) => {
+    if (!user) {
+      onOpenAuthModal?.();
+      return;
+    }
     await likeComment(commentId);
   };
 
@@ -349,112 +358,121 @@ export function CommentSection({
 
       {/* ═══ Input Form ═══ */}
       <View style={styles.inputArea}>
-        {/* User Status Bar */}
-        <View style={styles.statusBar}>
-          {user ? (
-            <View style={styles.userStatusRow}>
-              <Ionicons name="checkmark-circle" size={13} color="#10B981" />
-              <Text style={[styles.statusText, { color: textMutedColor }]}>
-                {lang === 'en' ? 'Commenting as' : 'Komentar sebagai'}{' '}
-                <Text style={{ fontWeight: '700', color: textColor }}>{user.name}</Text>
+        {user ? (
+          <>
+            {/* User Status Bar */}
+            <View style={styles.statusBar}>
+              <View style={styles.userStatusRow}>
+                <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+                <Text style={[styles.statusText, { color: textMutedColor }]}>
+                  {lang === 'en' ? 'Commenting as' : 'Komentar sebagai'}{' '}
+                  <Text style={{ fontWeight: '700', color: textColor }}>{user.name}</Text>
+                </Text>
+              </View>
+            </View>
+
+            {/* Comment Textarea */}
+            <View style={styles.textareaWrapper}>
+              <TextInput
+                value={content}
+                onChangeText={setContent}
+                placeholder={
+                  target === 'CHAPTER'
+                    ? lang === 'en'
+                      ? 'Share your thoughts on this chapter...'
+                      : 'Tulis tanggapanmu tentang bab ini...'
+                    : lang === 'en'
+                    ? 'Write your review or thoughts about this novel...'
+                    : 'Tulis ulasan, kesan, atau komentar tentang novel ini...'
+                }
+                placeholderTextColor={textMutedColor}
+                multiline
+                maxLength={2000}
+                style={[
+                  styles.textarea,
+                  {
+                    backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
+                    borderColor: cardBorder,
+                    color: textColor,
+                  },
+                ]}
+              />
+              <Text style={[styles.charCounter, { color: textMutedColor }]}>
+                {content.length}/2000
               </Text>
             </View>
-          ) : (
-            <View style={styles.guestStatusRow}>
-              <Text style={[styles.statusText, { color: textMutedColor }]}>
-                {lang === 'en' ? 'Guest mode' : 'Mode Tamu'}
-              </Text>
-              {onOpenAuthModal && (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={onOpenAuthModal}
-                  style={styles.signInLink}
-                  hitSlop={8}
-                >
-                  <Ionicons name="log-in-outline" size={13} color={goldColor} />
-                  <Text style={[styles.signInLinkText, { color: goldColor }]}>
-                    {lang === 'en' ? 'Sign in to sync' : 'Masuk akun'}
-                  </Text>
-                </TouchableOpacity>
-              )}
+
+            {/* Submit Button */}
+            <View style={styles.submitRow}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handlePostComment}
+                disabled={isSubmitting || !content.trim()}
+                style={[
+                  styles.submitBtn,
+                  { backgroundColor: goldColor },
+                  (!content.trim() || isSubmitting) && { opacity: 0.5 },
+                ]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#0D1117" />
+                ) : (
+                  <>
+                    <Ionicons name="send" size={13} color="#0D1117" />
+                    <Text style={styles.submitBtnText}>
+                      {lang === 'en' ? 'Post Comment' : 'Kirim Komentar'}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
-          )}
-        </View>
-
-        {/* Guest Name Input */}
-        {!user && (
-          <TextInput
-            value={guestName}
-            onChangeText={setGuestName}
-            placeholder={lang === 'en' ? 'Your name (Optional)' : 'Nama / Panggilan kamu (Opsional)'}
-            placeholderTextColor={textMutedColor}
-            maxLength={50}
+          </>
+        ) : (
+          /* Locked Card for Guests */
+          <View
             style={[
-              styles.nameInput,
+              styles.lockedCard,
               {
-                backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
-                borderColor: cardBorder,
-                color: textColor,
+                backgroundColor: isDark ? 'rgba(212,168,67,0.06)' : 'rgba(185,151,98,0.08)',
+                borderColor: isDark ? 'rgba(212,168,67,0.25)' : 'rgba(185,151,98,0.3)',
               },
-            ]}
-          />
-        )}
-
-        {/* Comment Textarea */}
-        <View style={styles.textareaWrapper}>
-          <TextInput
-            value={content}
-            onChangeText={setContent}
-            placeholder={
-              target === 'CHAPTER'
-                ? lang === 'en'
-                  ? 'Share your thoughts on this chapter...'
-                  : 'Tulis tanggapanmu tentang bab ini...'
-                : lang === 'en'
-                ? 'Write your review or thoughts about this novel...'
-                : 'Tulis ulasan, kesan, atau komentar tentang novel ini...'
-            }
-            placeholderTextColor={textMutedColor}
-            multiline
-            maxLength={2000}
-            style={[
-              styles.textarea,
-              {
-                backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
-                borderColor: cardBorder,
-                color: textColor,
-              },
-            ]}
-          />
-          <Text style={[styles.charCounter, { color: textMutedColor }]}>
-            {content.length}/2000
-          </Text>
-        </View>
-
-        {/* Submit Button */}
-        <View style={styles.submitRow}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={handlePostComment}
-            disabled={isSubmitting || !content.trim()}
-            style={[
-              styles.submitBtn,
-              { backgroundColor: goldColor },
-              (!content.trim() || isSubmitting) && { opacity: 0.5 },
             ]}
           >
-            {isSubmitting ? (
-              <ActivityIndicator size="small" color="#0D1117" />
-            ) : (
-              <>
-                <Ionicons name="send" size={13} color="#0D1117" />
-                <Text style={styles.submitBtnText}>
-                  {lang === 'en' ? 'Post Comment' : 'Kirim Komentar'}
+            <View style={styles.lockedHeader}>
+              <View
+                style={[
+                  styles.lockedIconBadge,
+                  { backgroundColor: isDark ? 'rgba(212,168,67,0.18)' : 'rgba(185,151,98,0.2)' },
+                ]}
+              >
+                <Ionicons name="lock-closed" size={16} color={goldColor} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.lockedTitle, { color: textColor }]}>
+                  {lang === 'en' ? 'Sign in to Comment' : 'Masuk untuk Berkomentar'}
                 </Text>
-              </>
+                <Text style={[styles.lockedDesc, { color: textMutedColor }]}>
+                  {lang === 'en'
+                    ? 'Only logged-in readers can write comments, reply to discussions, and like.'
+                    : 'Hanya pembaca yang telah masuk akun yang dapat menulis komentar, membalas diskusi, dan memberi like.'}
+                </Text>
+              </View>
+            </View>
+
+            {onOpenAuthModal && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={onOpenAuthModal}
+                style={[styles.lockedBtn, { backgroundColor: goldColor }]}
+              >
+                <Ionicons name="log-in-outline" size={15} color="#0D1117" />
+                <Text style={styles.lockedBtnText}>
+                  {lang === 'en' ? 'Sign In / Register' : 'Masuk / Daftar Akun'}
+                </Text>
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-        </View>
+          </View>
+        )}
       </View>
 
       {/* ═══ Comments List ═══ */}
@@ -496,6 +514,7 @@ export function CommentSection({
                 onDelete={handleDelete}
                 onReply={handleReplyComment}
                 themeOverride={themeOverride}
+                onOpenAuthModal={onOpenAuthModal}
               />
             ))}
           </View>
@@ -605,31 +624,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
   },
-  guestStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
   statusText: {
     fontSize: 11,
   },
-  signInLink: {
+  lockedCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    gap: 12,
+  },
+  lockedHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 12,
   },
-  signInLinkText: {
-    fontSize: 11,
+  lockedIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lockedTitle: {
+    fontSize: 13,
     fontWeight: '700',
   },
-  nameInput: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  lockedDesc: {
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  lockedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  lockedBtnText: {
+    color: '#0D1117',
     fontSize: 12,
-    marginBottom: 8,
+    fontWeight: '700',
   },
   textareaWrapper: {
     position: 'relative',

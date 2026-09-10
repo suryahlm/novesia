@@ -24,6 +24,7 @@ interface NovelRequestModalProps {
   initialTitle?: string;
   onClose: () => void;
   onSuccess?: () => void;
+  onOpenAuthModal?: () => void;
 }
 
 const LANGUAGE_OPTIONS = [
@@ -39,6 +40,7 @@ export function NovelRequestModal({
   initialTitle = '',
   onClose,
   onSuccess,
+  onOpenAuthModal,
 }: NovelRequestModalProps) {
   const { lang, t } = useLanguage();
   const { colors, isDark } = useTheme();
@@ -51,8 +53,6 @@ export function NovelRequestModal({
   const [selectedLang, setSelectedLang] = useState('China');
   const [sourceUrl, setSourceUrl] = useState('');
   const [notes, setNotes] = useState('');
-  const [guestName, setGuestName] = useState('');
-  const [guestEmail, setGuestEmail] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -71,12 +71,24 @@ export function NovelRequestModal({
       setSelectedLang('China');
       setSourceUrl('');
       setNotes('');
-      setGuestName('');
-      setGuestEmail('');
     }
   }, [visible, initialTitle]);
 
   const handleSubmit = async () => {
+    if (!user) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      setDialogConfig({
+        title: lang === 'en' ? 'Account Login Required' : 'Wajib Masuk Akun',
+        message:
+          lang === 'en'
+            ? 'Please sign in or create an account to submit a novel request.'
+            : 'Silakan masuk atau daftar akun terlebih dahulu untuk mengajukan permintaan novel.',
+        tone: 'warning',
+      });
+      setDialogVisible(true);
+      return;
+    }
+
     if (!title.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       setDialogConfig({
@@ -96,8 +108,6 @@ export function NovelRequestModal({
         language: selectedLang,
         sourceUrl: sourceUrl.trim() || undefined,
         notes: notes.trim() || undefined,
-        userName: !user && guestName.trim() ? guestName.trim() : undefined,
-        userEmail: !user && guestEmail.trim() ? guestEmail.trim() : undefined,
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -359,7 +369,7 @@ export function NovelRequestModal({
               />
             </View>
 
-            {/* Info User / Guest Fields */}
+            {/* Info User / Locked Notice */}
             {user ? (
               <View
                 style={[
@@ -379,49 +389,51 @@ export function NovelRequestModal({
                 </Text>
               </View>
             ) : (
-              <View style={styles.guestGroup}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
-                    {t.request_novel_guest_name || 'Nama Anda (Opsional)'}
-                  </Text>
-                  <TextInput
-                    value={guestName}
-                    onChangeText={setGuestName}
-                    placeholder="Nama Anda"
-                    placeholderTextColor={colors.textMuted}
-                    maxLength={50}
+              <View
+                style={[
+                  styles.lockedCard,
+                  {
+                    backgroundColor: isDark ? 'rgba(212,168,67,0.06)' : 'rgba(185,151,98,0.08)',
+                    borderColor: isDark ? 'rgba(212,168,67,0.25)' : 'rgba(185,151,98,0.3)',
+                  },
+                ]}
+              >
+                <View style={styles.lockedHeader}>
+                  <View
                     style={[
-                      styles.input,
-                      {
-                        backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.03)',
-                        borderColor: colors.border,
-                        color: colors.textPrimary,
-                      },
+                      styles.lockedIconBadge,
+                      { backgroundColor: isDark ? 'rgba(212,168,67,0.18)' : 'rgba(185,151,98,0.2)' },
                     ]}
-                  />
+                  >
+                    <Ionicons name="lock-closed" size={16} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>
+                      {lang === 'en' ? 'Account Login Required' : 'Wajib Masuk Akun'}
+                    </Text>
+                    <Text style={[styles.lockedDesc, { color: colors.textSecondary }]}>
+                      {lang === 'en'
+                        ? 'Novel requests are exclusively reserved for logged-in members to track curation status.'
+                        : 'Permintaan novel hanya dapat diajukan oleh pengguna yang telah masuk akun agar status kurasi dapat dipantau.'}
+                    </Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
-                    {t.request_novel_guest_email || 'Email / Kontak (Opsional)'}
-                  </Text>
-                  <TextInput
-                    value={guestEmail}
-                    onChangeText={setGuestEmail}
-                    placeholder="email@contoh.com"
-                    placeholderTextColor={colors.textMuted}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    maxLength={100}
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.03)',
-                        borderColor: colors.border,
-                        color: colors.textPrimary,
-                      },
-                    ]}
-                  />
-                </View>
+
+                {onOpenAuthModal && (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      onClose();
+                      onOpenAuthModal();
+                    }}
+                    style={[styles.lockedLoginBtn, { backgroundColor: colors.primary }]}
+                  >
+                    <Ionicons name="log-in-outline" size={15} color="#0D1117" />
+                    <Text style={styles.lockedLoginBtnText}>
+                      {lang === 'en' ? 'Sign In / Register' : 'Masuk / Daftar Akun'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
 
@@ -443,7 +455,18 @@ export function NovelRequestModal({
 
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={handleSubmit}
+                onPress={
+                  user
+                    ? handleSubmit
+                    : () => {
+                        if (onOpenAuthModal) {
+                          onClose();
+                          onOpenAuthModal();
+                        } else {
+                          handleSubmit();
+                        }
+                      }
+                }
                 disabled={submitting}
                 style={[
                   styles.submitBtn,
@@ -455,9 +478,13 @@ export function NovelRequestModal({
                   <ActivityIndicator size="small" color="#0D1117" />
                 ) : (
                   <>
-                    <Ionicons name="paper-plane" size={14} color="#0D1117" />
+                    <Ionicons name={user ? 'paper-plane' : 'log-in-outline'} size={14} color="#0D1117" />
                     <Text style={styles.submitBtnText}>
-                      {t.request_novel_submit || 'Kirim Permintaan'}
+                      {!user
+                        ? lang === 'en'
+                          ? 'Sign In to Submit'
+                          : 'Masuk untuk Mengirim'
+                        : t.request_novel_submit || 'Kirim Permintaan'}
                     </Text>
                   </>
                 )}
@@ -666,10 +693,48 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
   },
-  guestGroup: {
-    flexDirection: 'row',
-    gap: 10,
+  lockedCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    gap: 12,
     marginBottom: 16,
+  },
+  lockedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  lockedIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lockedTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  lockedDesc: {
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  lockedLoginBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  lockedLoginBtnText: {
+    color: '#0D1117',
+    fontSize: 12,
+    fontWeight: '700',
   },
   actionRow: {
     flexDirection: 'row',

@@ -24,6 +24,8 @@ import { SkeletonNovelGrid } from '../../components/SkeletonLoader';
 import { ViewModeToggle, GridViewMode } from '../../components/ViewModeToggle';
 import NovelPreviewSheet from '../../components/NovelPreviewSheet';
 import { NovelRequestModal } from '../../components/NovelRequestModal';
+import { AuthModal } from '../../components/AuthModal';
+import { useAuthStore } from '../../lib/useAuthStore';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
 import { apiGet } from '../../lib/apiClient';
@@ -128,10 +130,21 @@ export default function ExploreScreen() {
   const [isError, setIsError] = useState(false);
   const [previewNovel, setPreviewNovel] = useState<any | null>(null);
 
+  const user = useAuthStore((s) => s.user);
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [requestModalVisible, setRequestModalVisible] = useState(false);
   const [requestInitialTitle, setRequestInitialTitle] = useState('');
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+
+  const handleOpenRequestModal = (initialTitle: string = '') => {
+    if (!user) {
+      setAuthModalVisible(true);
+      return;
+    }
+    setRequestInitialTitle(initialTitle);
+    setRequestModalVisible(true);
+  };
 
   const isFetchingRef = useRef(false);
 
@@ -400,10 +413,7 @@ export default function ExploreScreen() {
 
           {/* Request Novel Button */}
           <Pressable
-            onPress={() => {
-              setRequestInitialTitle('');
-              setRequestModalVisible(true);
-            }}
+            onPress={() => handleOpenRequestModal('')}
             style={({ pressed }) => [
               styles.requestBtn,
               {
@@ -534,10 +544,7 @@ export default function ExploreScreen() {
                       </Pressable>
                     )}
                     <Pressable
-                      onPress={() => {
-                        setRequestInitialTitle('');
-                        setRequestModalVisible(true);
-                      }}
+                      onPress={() => handleOpenRequestModal('')}
                       style={[
                         styles.emptyResetBtn,
                         { backgroundColor: colors.surface, borderColor: colors.primary, marginTop: 0 },
@@ -634,10 +641,7 @@ export default function ExploreScreen() {
                       </Pressable>
                     )}
                     <Pressable
-                      onPress={() => {
-                        setRequestInitialTitle('');
-                        setRequestModalVisible(true);
-                      }}
+                      onPress={() => handleOpenRequestModal('')}
                       style={[
                         styles.emptyResetBtn,
                         { backgroundColor: colors.surface, borderColor: colors.primary, marginTop: 0 },
@@ -918,6 +922,16 @@ export default function ExploreScreen() {
         visible={requestModalVisible}
         initialTitle={requestInitialTitle}
         onClose={() => setRequestModalVisible(false)}
+        onOpenAuthModal={() => {
+          setRequestModalVisible(false);
+          setAuthModalVisible(true);
+        }}
+      />
+
+      {/* Auth Modal for Guests */}
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
       />
     </View>
   );

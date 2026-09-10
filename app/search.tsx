@@ -20,6 +20,8 @@ import { SearchEmptyRing } from '../components/SearchEmptyRing';
 import { SkeletonNovelGrid } from '../components/SkeletonLoader';
 import NovelPreviewSheet from '../components/NovelPreviewSheet';
 import { NovelRequestModal } from '../components/NovelRequestModal';
+import { AuthModal } from '../components/AuthModal';
+import { useAuthStore } from '../lib/useAuthStore';
 import { useTheme } from '../lib/ThemeProvider';
 import { useLanguage } from '../lib/i18n';
 import { apiGet } from '../lib/apiClient';
@@ -77,6 +79,8 @@ export default function SearchScreen() {
   const [data, setData] = useState<any[]>([]);
   const [previewNovel, setPreviewNovel] = useState<any | null>(null);
   const [requestModalVisible, setRequestModalVisible] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const recent = useRecentSearches();
 
@@ -330,7 +334,13 @@ export default function SearchScreen() {
                 : 'Coba gunakan kata kunci lain atau ajukan permintaan novel ini.'}
             </Text>
             <Pressable
-              onPress={() => setRequestModalVisible(true)}
+              onPress={() => {
+                if (!user) {
+                  setAuthModalVisible(true);
+                  return;
+                }
+                setRequestModalVisible(true);
+              }}
               style={({ pressed }) => [
                 {
                   flexDirection: 'row',
@@ -402,6 +412,15 @@ export default function SearchScreen() {
         visible={requestModalVisible}
         initialTitle={query.trim()}
         onClose={() => setRequestModalVisible(false)}
+        onOpenAuthModal={() => {
+          setRequestModalVisible(false);
+          setAuthModalVisible(true);
+        }}
+      />
+
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
       />
     </View>
   );

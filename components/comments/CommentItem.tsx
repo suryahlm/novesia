@@ -24,6 +24,7 @@ interface CommentItemProps {
   onDelete?: (commentId: string) => void;
   onReply?: (parentId: string, content: string) => Promise<boolean>;
   isReply?: boolean;
+  onOpenAuthModal?: () => void;
   themeOverride?: {
     cardBg?: string;
     cardBorder?: string;
@@ -41,6 +42,7 @@ export function CommentItem({
   onDelete,
   onReply,
   isReply = false,
+  onOpenAuthModal,
   themeOverride,
 }: CommentItemProps) {
   const { lang } = useLanguage();
@@ -81,6 +83,10 @@ export function CommentItem({
   const goldColor = themeOverride?.goldAccent || colors.primary;
 
   const handleLike = async () => {
+    if (!currentUserId) {
+      onOpenAuthModal?.();
+      return;
+    }
     if (isLiking || hasLiked) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setIsLiking(true);
@@ -97,6 +103,10 @@ export function CommentItem({
   };
 
   const handleSendReply = async () => {
+    if (!currentUserId) {
+      onOpenAuthModal?.();
+      return;
+    }
     if (!onReply || !replyText.trim() || isSubmittingReply) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setIsSubmittingReply(true);
@@ -218,7 +228,13 @@ export function CommentItem({
             {!isReply && onReply && (
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => setShowReplyBox((p) => !p)}
+                onPress={() => {
+                  if (!currentUserId) {
+                    onOpenAuthModal?.();
+                    return;
+                  }
+                  setShowReplyBox((p) => !p);
+                }}
                 style={styles.actionBtn}
                 hitSlop={8}
               >
@@ -316,6 +332,7 @@ export function CommentItem({
                   onLike={onLike}
                   onDelete={onDelete}
                   isReply={true}
+                  onOpenAuthModal={onOpenAuthModal}
                   themeOverride={themeOverride}
                 />
               ))}
