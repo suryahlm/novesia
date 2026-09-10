@@ -68,6 +68,7 @@ export function NovelRequestModal({
     message: string;
     tone?: 'gold' | 'danger' | 'success' | 'warning' | 'info';
     isSuccess?: boolean;
+    isAuth?: boolean;
   }>({ title: '', message: '' });
 
   useEffect(() => {
@@ -141,6 +142,7 @@ export function NovelRequestModal({
             ? 'Please sign in or create an account to submit a novel request.'
             : 'Silakan masuk atau daftar akun terlebih dahulu untuk mengajukan permintaan novel.',
         tone: 'warning',
+        isAuth: true,
       });
       setDialogVisible(true);
       return;
@@ -195,10 +197,15 @@ export function NovelRequestModal({
   };
 
   const handleDialogClose = () => {
+    const wasSuccess = dialogConfig.isSuccess;
+    const wasAuth = dialogConfig.isAuth;
     setDialogVisible(false);
-    if (dialogConfig.isSuccess) {
+    if (wasSuccess) {
       onSuccess?.();
       handleClose();
+    } else if (wasAuth) {
+      handleClose();
+      onOpenAuthModal?.();
     }
   };
 
@@ -641,7 +648,11 @@ export function NovelRequestModal({
                   onPress={handleDialogClose}
                   style={[styles.dialogBtn, { backgroundColor: colors.primary }]}
                 >
-                  <Text style={styles.dialogBtnText}>OK</Text>
+                  <Text style={styles.dialogBtnText}>
+                    {dialogConfig.isAuth
+                      ? (lang === 'en' ? 'Sign In / Register' : 'Masuk / Daftar Akun')
+                      : 'OK'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
