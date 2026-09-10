@@ -37,9 +37,14 @@ export const addHistory = async (item: Omit<HistoryItem, 'timestamp'>) => {
     const { token, user } = useAuthStore.getState();
     if (token && user) {
       apiPost('/api/me/history', {
+        novelId: item.novel_id,
         novel_id: item.novel_id,
+        chapterId: item.last_chapter_id,
         chapter_id: item.last_chapter_id,
+        chapterNumber: item.last_chapter,
         chapter_number: item.last_chapter,
+        chapterTitle: `Chapter ${item.last_chapter}`,
+        chapter_title: `Chapter ${item.last_chapter}`,
       }).catch(() => {
         // Non-blocking — gagal sync tidak apa-apa
       });

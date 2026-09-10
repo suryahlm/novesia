@@ -13,7 +13,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { apiPost } from '../../lib/apiClient';
+import { apiPost, apiDelete } from '../../lib/apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../lib/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -250,10 +250,12 @@ export default function NovelDetailScreen() {
       if (saved.includes(novel.id)) {
         saved = saved.filter((id) => id !== novel.id);
         setIsSaved(false);
+        apiDelete(`/api/me/bookmarks/${novel.id}`).catch(() => {});
       } else {
         saved.unshift(novel.id);
         setIsSaved(true);
         trackBookmarkAdded(novel.id);
+        apiPost('/api/me/bookmarks', { novelId: novel.id, novel_id: novel.id }).catch(() => {});
       }
       await AsyncStorage.setItem(LIBRARY_KEY, JSON.stringify(saved));
     } catch {

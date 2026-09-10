@@ -22,7 +22,7 @@ import { AuthModal } from '../../components/AuthModal';
 import { useAuthStore } from '../../lib/useAuthStore';
 import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
-import { apiGet } from '../../lib/apiClient';
+import { apiGet, apiPost, apiDelete } from '../../lib/apiClient';
 import { getHistory, clearHistory, HistoryItem } from '../../lib/history';
 
 const LIBRARY_KEY = 'novesia_library';
@@ -94,22 +94,39 @@ export default function LibraryScreen() {
     try {
       setBookmarkError(false);
       const lib = await AsyncStorage.getItem(LIBRARY_KEY);
-      const savedIds: string[] = lib ? JSON.parse(lib) : [];
+      const localIds: string[] = lib ? JSON.parse(lib) : [];
 
-      if (savedIds.length === 0) {
+      // Jika ada bookmark lokal, sinkronkan ke server secara otomatis
+      if (localIds.length > 0) {
+        apiPost('/api/me/bookmarks/sync', { novelIds: localIds }).catch(() => {});
+      }
+
+      // Ambil daftar bookmark resmi dari server
+      const serverRes = await apiGet<{ bookmarks?: any[] }>('/api/me/bookmarks').catch(() => null);
+      if (serverRes && Array.isArray(serverRes.bookmarks) && serverRes.bookmarks.length > 0) {
+        const serverNovels = serverRes.bookmarks.map((b) => b.novel).filter(Boolean) as SavedNovel[];
+        setBookmarks(serverNovels);
+        const serverIds = serverNovels.map((n) => n.id);
+        await AsyncStorage.setItem(LIBRARY_KEY, JSON.stringify(serverIds));
+        setBookmarkError(false);
+        return;
+      }
+
+      // Fallback: jika server bookmarks kosong atau gagal, gunakan localIds
+      if (localIds.length === 0) {
         setBookmarks([]);
         setBookmarkError(false);
         return;
       }
 
       const res = await apiGet<{ novels?: any[]; data?: any[] }>('/api/novels', {
-        ids: savedIds.join(','),
-        limit: savedIds.length,
+        ids: localIds.join(','),
+        limit: localIds.length,
       });
       const data = res.novels || res.data || (Array.isArray(res) ? res : []);
 
       const map = new Map((data || []).map((n: any) => [n.id, n]));
-      const ordered = savedIds.map((id) => map.get(id)).filter(Boolean) as SavedNovel[];
+      const ordered = localIds.map((id) => map.get(id)).filter(Boolean) as SavedNovel[];
       setBookmarks(ordered);
       setBookmarkError(false);
     } catch {
@@ -134,6 +151,7 @@ export default function LibraryScreen() {
 
   const removeBookmark = async (novelId: string) => {
     try {
+      apiDelete(`/api/me/bookmarks/${novelId}`).catch(() => {});
       const lib = await AsyncStorage.getItem(LIBRARY_KEY);
       let saved: string[] = lib ? JSON.parse(lib) : [];
       saved = saved.filter((id) => id !== novelId);
