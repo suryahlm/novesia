@@ -44,11 +44,7 @@ if [ -f "$PROJECT_DIR/google-services.json" ]; then
 fi
 
 echo ""
-echo "🧹 Membersihkan cache build native & .cxx..."
-rm -rf app/.cxx app/build build
-
-echo ""
-echo "⚙️ Menjalankan bundleRelease (Google Play App Bundle)..."
+echo "⚙️ Menjalankan build bundleRelease (Google Play App Bundle)..."
 ./gradlew bundleRelease --no-daemon
 
 # 5. Salin Hasil AAB ke Direktori Tujuan
