@@ -9,9 +9,12 @@ import {
   RefreshControl,
   ActivityIndicator,
   Linking,
+  Switch,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,6 +31,7 @@ import { useTheme } from '../../lib/ThemeProvider';
 import { useLanguage } from '../../lib/i18n';
 import { signOutUser, refreshUserProfile } from '../../lib/authService';
 import { getHistory, HistoryItem, clearHistory } from '../../lib/history';
+import { useNotificationSettingsStore } from '../../lib/useNotificationSettingsStore';
 import {
   getUserGamificationStats,
   syncGamificationWithServer,
@@ -52,6 +56,65 @@ export default function ProfileScreen() {
   const [themeSheetVisible, setThemeSheetVisible] = useState(false);
   const [langSheetVisible, setLangSheetVisible] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
+
+  // Notification Settings Store
+  const notificationsEnabled = useNotificationSettingsStore((s) => s.enabled);
+  const setNotificationsEnabled = useNotificationSettingsStore((s) => s.setEnabled);
+
+  const handleToggleNotifications = async (val?: boolean) => {
+    const nextVal = typeof val === 'boolean' ? val : !notificationsEnabled;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
+    if (nextVal) {
+      try {
+        const Notifications = await import('expo-notifications');
+        let settings = await Notifications.getPermissionsAsync();
+        if (!settings.granted && settings.canAskAgain) {
+          settings = await Notifications.requestPermissionsAsync();
+        }
+
+        if (!settings.granted && !settings.canAskAgain) {
+          showPopup({
+            title: t.notif_permission_title || 'Izin Diperlukan',
+            message:
+              t.notif_permission_msg ||
+              'Notifikasi dinonaktifkan pada pengaturan HP Anda. Silakan aktifkan izin notifikasi di Pengaturan HP untuk menerima pemberitahuan.',
+            icon: 'notifications-off-outline',
+            tone: 'warning',
+            confirmText: t.open_settings || 'Buka Pengaturan',
+            cancelText: t.cancel || 'Batal',
+            showCancel: true,
+            onConfirm: () => {
+              Linking.openSettings().catch(() => {});
+            },
+          });
+          return;
+        }
+      } catch {}
+
+      setNotificationsEnabled(true);
+      showPopup({
+        title: t.notif_enabled_title || 'Notifikasi Diaktifkan',
+        message:
+          t.notif_enabled_msg ||
+          'Anda akan menerima notifikasi saat ada bab baru dan update novel.',
+        icon: 'notifications-outline',
+        tone: 'gold',
+        showCancel: false,
+      });
+    } else {
+      setNotificationsEnabled(false);
+      showPopup({
+        title: t.notif_disabled_title || 'Notifikasi Dinonaktifkan',
+        message:
+          t.notif_disabled_msg ||
+          'Notifikasi untuk bab baru dan update novel telah dimatikan.',
+        icon: 'notifications-off-outline',
+        tone: 'warning',
+        showCancel: false,
+      });
+    }
+  };
 
   // Custom Dialog State
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -555,17 +618,15 @@ export default function ProfileScreen() {
                 onPress: () => router.push('/settings'),
               },
               {
-                icon: 'notifications-outline' as const,
+                icon: (notificationsEnabled ? 'notifications-outline' : 'notifications-off-outline') as keyof typeof Ionicons.glyphMap,
                 label: t.notifications_update,
-                badge: lang === 'en' ? 'Active' : 'Aktif',
-                onPress: () =>
-                  showPopup({
-                    title: t.notif_active_title,
-                    message: t.notif_active_msg,
-                    icon: 'notifications-outline',
-                    tone: 'gold',
-                    showCancel: false,
-                  }),
+                badge: notificationsEnabled
+                  ? (t.active || (lang === 'en' ? 'Active' : 'Aktif'))
+                  : (t.inactive || (lang === 'en' ? 'Off' : 'Nonaktif')),
+                isSwitch: true,
+                switchValue: notificationsEnabled,
+                onSwitchChange: (val: boolean) => handleToggleNotifications(val),
+                onPress: () => handleToggleNotifications(),
               },
             ].map((menu, i, arr) => (
               <Pressable
@@ -574,12 +635,18 @@ export default function ProfileScreen() {
                 style={({ pressed }) => [
                   styles.settingsRow,
                   {
-                    backgroundColor: pressed ? colors.surfaceElevated : 'transparent',
+                    backgroundColor:
+                      pressed && !('isSwitch' in menu && menu.isSwitch)
+                        ? colors.surfaceElevated
+                        : 'transparent',
                     borderBottomWidth: i !== arr.length - 1 ? 1 : 0,
                     borderBottomColor: colors.border,
                   },
                 ]}
-                accessibilityRole="button"
+                accessibilityRole={'isSwitch' in menu && menu.isSwitch ? 'switch' : 'button'}
+                accessibilityState={
+                  'isSwitch' in menu && menu.isSwitch ? { checked: menu.switchValue } : undefined
+                }
                 accessibilityLabel={menu.label}
               >
                 <View
@@ -613,23 +680,76 @@ export default function ProfileScreen() {
                   />
                 )}
 
-                {'badge' in menu && menu.badge && (
+                {'isSwitch' in menu && menu.isSwitch ? (
                   <View
-                    style={[
-                      styles.settingsBadge,
-                      {
-                        backgroundColor: colors.surfaceElevated,
-                        borderColor: colors.border,
-                      },
-                    ]}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginLeft: 'auto',
+                    }}
                   >
-                    <Text style={[styles.settingsBadgeText, { color: colors.textMuted }]}>
-                      {menu.badge}
-                    </Text>
-                  </View>
-                )}
+                    <View
+                      style={[
+                        styles.settingsBadge,
+                        {
+                          backgroundColor: menu.switchValue
+                            ? colors.primaryMuted || colors.primary + '22'
+                            : colors.surfaceElevated,
+                          borderColor: menu.switchValue ? colors.primary + '40' : colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.settingsBadgeText,
+                          {
+                            color: menu.switchValue ? colors.primary : colors.textMuted,
+                            fontWeight: menu.switchValue ? '700' : '500',
+                          },
+                        ]}
+                      >
+                        {menu.badge}
+                      </Text>
+                    </View>
 
-                <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
+                    <Switch
+                      value={menu.switchValue}
+                      onValueChange={menu.onSwitchChange}
+                      trackColor={{
+                        false: colors.surfaceElevated,
+                        true: colors.primary,
+                      }}
+                      thumbColor={
+                        Platform.OS === 'ios'
+                          ? undefined
+                          : menu.switchValue
+                          ? colors.textOnPrimary
+                          : colors.textMuted
+                      }
+                    />
+                  </View>
+                ) : (
+                  <>
+                    {'badge' in menu && menu.badge && (
+                      <View
+                        style={[
+                          styles.settingsBadge,
+                          {
+                            backgroundColor: colors.surfaceElevated,
+                            borderColor: colors.border,
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.settingsBadgeText, { color: colors.textMuted }]}>
+                          {menu.badge}
+                        </Text>
+                      </View>
+                    )}
+
+                    <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
+                  </>
+                )}
               </Pressable>
             ))}
           </View>

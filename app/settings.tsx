@@ -15,8 +15,11 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
+import * as Haptics from 'expo-haptics';
+
 import { useLanguage } from '../lib/i18n';
 import { useTheme } from '../lib/ThemeProvider';
+import { useNotificationSettingsStore } from '../lib/useNotificationSettingsStore';
 import { GradientBackground } from '../components/GradientBackground';
 import { LanguageSheet } from '../components/LanguageSheet';
 import { CustomDialog } from '../components/CustomDialog';
@@ -98,7 +101,8 @@ export default function SettingsScreen() {
   const { lang, t } = useLanguage();
   const { colors, isDark } = useTheme();
 
-  const [notifications, setNotifications] = useState(true);
+  const notifications = useNotificationSettingsStore((s) => s.enabled);
+  const setNotifications = useNotificationSettingsStore((s) => s.setEnabled);
   const [langSheetVisible, setLangSheetVisible] = useState(false);
   const [updateDialogVisible, setUpdateDialogVisible] = useState(false);
   const [textSize, setTextSize] = useState(18);
@@ -194,11 +198,14 @@ export default function SettingsScreen() {
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <SettingRow
                 colors={colors}
-                icon="notifications-outline"
+                icon={notifications ? 'notifications-outline' : 'notifications-off-outline'}
                 label={t.notifications}
                 isSwitch
                 switchValue={notifications}
-                onSwitchChange={setNotifications}
+                onSwitchChange={(val) => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  setNotifications(val);
+                }}
               />
             </View>
           </View>

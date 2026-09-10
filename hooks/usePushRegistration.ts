@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 
 import { registerPushToken } from '../lib/pushService';
 import { useAuthStore } from '../lib/useAuthStore';
+import { useNotificationSettingsStore } from '../lib/useNotificationSettingsStore';
 
 // expo-notifications memanggil native module langsung saat di-import.
 // Gunakan dynamic import agar tidak memicu error di Expo Go tanpa native build.
@@ -17,6 +18,7 @@ const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreCl
  */
 export function usePushRegistration() {
   const authToken = useAuthStore((s) => s.token);
+  const notificationsEnabled = useNotificationSettingsStore((s) => s.enabled);
   const router = useRouter();
 
   // 1. Setup handler & notification channel (khusus Android)
@@ -25,12 +27,12 @@ export function usePushRegistration() {
 
     import('expo-notifications').then((Notifications) => {
       // Izinkan banner notifikasi melayang di atas layar (heads-up)
-      // meskipun aplikasi sedang aktif dibuka (foreground)
+      // jika fitur notifikasi diaktifkan pengguna
       Notifications.setNotificationHandler({
         handleNotification: async () => ({
-          shouldShowBanner: true,
-          shouldShowList: true,
-          shouldPlaySound: true,
+          shouldShowBanner: notificationsEnabled,
+          shouldShowList: notificationsEnabled,
+          shouldPlaySound: notificationsEnabled,
           shouldSetBadge: false,
         }),
       });
@@ -41,12 +43,12 @@ export function usePushRegistration() {
         sound: 'default',
       });
     }).catch(() => {});
-  }, []);
+  }, [notificationsEnabled]);
 
   // 2. Minta izin & daftarkan FCM device token ke server
-  // Dijalankan ulang setiap kali authToken berubah (login / logout)
+  // Dijalankan ulang setiap kali authToken atau status notifikasi berubah
   useEffect(() => {
-    if (Platform.OS !== 'android' || isExpoGo) return;
+    if (Platform.OS !== 'android' || isExpoGo || !notificationsEnabled) return;
     const controller = new AbortController();
 
     (async () => {

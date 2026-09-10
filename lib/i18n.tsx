@@ -70,6 +70,15 @@ const translations = {
     logout_success_msg: 'You have signed out of your account.',
     notif_active_title: 'Notifications Active',
     notif_active_msg: 'Notifications for latest chapter updates are automatically enabled.',
+    notif_enabled_title: 'Notifications Enabled',
+    notif_enabled_msg: 'You will receive notifications for new chapters and updates.',
+    notif_disabled_title: 'Notifications Disabled',
+    notif_disabled_msg: 'Notifications for new chapters and updates have been turned off.',
+    notif_permission_title: 'Permission Required',
+    notif_permission_msg: 'Notifications are disabled in your device settings. Please enable notifications in system settings to receive updates.',
+    open_settings: 'Open Settings',
+    active: 'Active',
+    inactive: 'Off',
     about_dialog_desc: 'Official translated novel platform with premium Dark Luxury visual experience.',
 
     // Language Sheet
@@ -269,6 +278,15 @@ const translations = {
     logout_success_msg: 'Anda telah keluar dari akun Anda.',
     notif_active_title: 'Notifikasi Aktif',
     notif_active_msg: 'Notifikasi untuk update chapter terbaru telah diaktifkan secara otomatis.',
+    notif_enabled_title: 'Notifikasi Diaktifkan',
+    notif_enabled_msg: 'Anda akan menerima notifikasi saat ada bab baru dan update novel.',
+    notif_disabled_title: 'Notifikasi Dinonaktifkan',
+    notif_disabled_msg: 'Notifikasi untuk bab baru dan update novel telah dimatikan.',
+    notif_permission_title: 'Izin Diperlukan',
+    notif_permission_msg: 'Notifikasi dinonaktifkan pada pengaturan HP Anda. Silakan aktifkan izin notifikasi di Pengaturan HP untuk menerima pemberitahuan.',
+    open_settings: 'Buka Pengaturan',
+    active: 'Aktif',
+    inactive: 'Nonaktif',
     about_dialog_desc: 'Platform baca novel terjemahan resmi dengan pengalaman visual premium Dark Luxury.',
 
     // Language Sheet
