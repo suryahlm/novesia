@@ -636,24 +636,53 @@ export default function ReadChapterScreen() {
 
       {/* Language Info Banner — hanya tampil jika bab TIDAK terkunci */}
       {!isLocked && language === 'id' && !hasTranslation && (
-        <View style={[styles.langBanner, { backgroundColor: currentTheme.badgeBg, borderBottomColor: currentTheme.goldAccent + '40' }]}>
-          <Text style={[styles.langBannerText, { color: currentTheme.goldAccent, flex: 1 }]}>
-            🇮🇩 {language === 'id' ? 'Terjemahan belum tersedia — menampilkan versi original Inggris' : 'Translation not available — showing English'}
-          </Text>
+        <View
+          style={[
+            styles.langBanner,
+            {
+              backgroundColor: currentTheme.goldAccent + '12',
+              borderBottomColor: currentTheme.goldAccent + '25',
+            },
+          ]}
+        >
+          <View style={styles.langBannerLeft}>
+            <View
+              style={[
+                styles.langBannerIconBadge,
+                { backgroundColor: currentTheme.goldAccent + '22' },
+              ]}
+            >
+              <Ionicons name="language" size={13} color={currentTheme.goldAccent} />
+            </View>
+            <View style={styles.langBannerTextCol}>
+              <Text
+                style={[styles.langBannerTitle, { color: currentTheme.text }]}
+                numberOfLines={1}
+              >
+                Terjemahan ID belum tersedia
+              </Text>
+              <Text
+                style={[styles.langBannerSub, { color: currentTheme.textMuted }]}
+                numberOfLines={1}
+              >
+                Menampilkan versi original bahasa Inggris
+              </Text>
+            </View>
+          </View>
+
           <TouchableOpacity
             onPress={promptTranslationRequest}
             activeOpacity={0.8}
-            style={{
-              backgroundColor: currentTheme.goldAccent,
-              paddingHorizontal: 9,
-              paddingVertical: 4.5,
-              borderRadius: 7,
-              marginLeft: 8,
-            }}
+            style={[
+              styles.langBannerBtn,
+              {
+                backgroundColor: currentTheme.goldAccent,
+                shadowColor: currentTheme.goldAccent,
+              },
+            ]}
           >
-            <Text style={{ fontSize: 11, fontWeight: '800', color: '#000' }}>
-              Request
-            </Text>
+            <Ionicons name="sparkles" size={11} color="#000" style={{ marginRight: 4 }} />
+            <Text style={styles.langBannerBtnText}>Request</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -1401,13 +1430,57 @@ const styles = StyleSheet.create({
 
   // Language info banner
   langBanner: {
-    backgroundColor: 'rgba(212,168,67,0.12)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(212,168,67,0.25)',
   },
-  langBannerText: { fontSize: 11.5, color: '#d4a843', textAlign: 'center', fontWeight: '500' },
+  langBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  langBannerIconBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 9,
+  },
+  langBannerTextCol: {
+    flex: 1,
+  },
+  langBannerTitle: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  langBannerSub: {
+    fontSize: 10,
+    marginTop: 0.5,
+  },
+  langBannerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 11,
+    paddingVertical: 5.5,
+    borderRadius: 14,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  langBannerBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#000',
+    letterSpacing: 0.2,
+  },
 
   // No content state
   noContentContainer: {
