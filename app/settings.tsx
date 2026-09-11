@@ -23,6 +23,7 @@ import { useNotificationSettingsStore } from '../lib/useNotificationSettingsStor
 import { GradientBackground } from '../components/GradientBackground';
 import { LanguageSheet } from '../components/LanguageSheet';
 import { CustomDialog } from '../components/CustomDialog';
+import { useInAppUpdate } from '../hooks/useInAppUpdate';
 
 const SETTINGS_KEY = 'novesia_reading_settings';
 
@@ -105,7 +106,36 @@ export default function SettingsScreen() {
   const setNotifications = useNotificationSettingsStore((s) => s.setEnabled);
   const [langSheetVisible, setLangSheetVisible] = useState(false);
   const [updateDialogVisible, setUpdateDialogVisible] = useState(false);
+  const [updateDialogMessage, setUpdateDialogMessage] = useState('');
+  const [updateDialogIcon, setUpdateDialogIcon] = useState<'cloud-done-outline' | 'alert-circle-outline'>('cloud-done-outline');
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [textSize, setTextSize] = useState(18);
+
+  const inAppUpdate = useInAppUpdate();
+
+  const handleCheckUpdate = async () => {
+    if (isCheckingUpdate) return;
+    setIsCheckingUpdate(true);
+    try {
+      const result = await inAppUpdate.checkNow(true);
+      if (result) {
+        // Update ditemukan — prompt update global akan otomatis muncul
+        setUpdateDialogVisible(false);
+      } else {
+        const curVer = Constants.expoConfig?.version ?? '1.1.8';
+        setUpdateDialogIcon('cloud-done-outline');
+        setUpdateDialogMessage(`${t.app_is_up_to_date} (v${curVer})`);
+        setUpdateDialogVisible(true);
+      }
+    } catch {
+      const curVer = Constants.expoConfig?.version ?? '1.1.8';
+      setUpdateDialogIcon('cloud-done-outline');
+      setUpdateDialogMessage(`${t.app_is_up_to_date} (v${curVer})`);
+      setUpdateDialogVisible(true);
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -361,8 +391,12 @@ export default function SettingsScreen() {
                 colors={colors}
                 icon="cloud-download-outline"
                 label={t.check_updates}
-                value={`v${Constants.expoConfig?.version ?? '1.1.5'}`}
-                onPress={() => setUpdateDialogVisible(true)}
+                value={
+                  isCheckingUpdate
+                    ? (lang === 'id' ? 'Memeriksa...' : 'Checking...')
+                    : `v${Constants.expoConfig?.version ?? '1.1.8'}`
+                }
+                onPress={handleCheckUpdate}
               />
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <SettingRow
@@ -382,7 +416,7 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={[styles.footerText, { color: colors.textMuted }]}>
-            {`Novesia App v${Constants.expoConfig?.version ?? '1.1.5'} Build ${Constants.expoConfig?.android?.versionCode ?? 15}`}
+            {`Novesia App v${Constants.expoConfig?.version ?? '1.1.8'} Build ${Constants.expoConfig?.android?.versionCode ?? 18}`}
           </Text>
           <View style={{ height: 40 }} />
         </ScrollView>
@@ -399,8 +433,8 @@ export default function SettingsScreen() {
         visible={updateDialogVisible}
         onClose={() => setUpdateDialogVisible(false)}
         title={t.check_updates}
-        message={`${t.app_is_up_to_date} (v${Constants.expoConfig?.version ?? '1.1.5'})`}
-        icon="cloud-done-outline"
+        message={updateDialogMessage || `${t.app_is_up_to_date} (v${Constants.expoConfig?.version ?? '1.1.8'})`}
+        icon={updateDialogIcon}
         tone="gold"
         showCancel={false}
       />

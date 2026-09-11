@@ -180,14 +180,32 @@ export function UpdatePrompt({
             {shown.mandatory ? 'Update Wajib Tersedia' : 'Versi Baru Tersedia'}
           </Text>
 
-          {/* Deskripsi */}
+          {/* Version Badge Pill */}
+          <View
+            style={[
+              styles.versionPill,
+              {
+                backgroundColor: colors.primaryMuted || colors.primary + '18',
+                borderColor: colors.primary + '35',
+              },
+            ]}
+          >
+            <Ionicons name="sparkles" size={12} color={colors.primary} />
+            <Text style={[styles.versionPillText, { color: colors.primary }]}>
+              {shown.storeVersion.startsWith('v') ? shown.storeVersion : `v${shown.storeVersion}`}
+            </Text>
+          </View>
+
+          {/* Deskripsi & Changelog */}
           <Text
             style={[
               styles.description,
               { color: colors.textSecondary },
             ]}
           >
-            {shown.mandatory
+            {shown.changelog
+              ? shown.changelog
+              : shown.mandatory
               ? 'Versi Novesia yang kamu gunakan sudah tidak didukung. Perbarui sekarang untuk melanjutkan membaca.'
               : 'Ada pembaruan Novesia di Google Play Store — peningkatan performa, perbaikan bug, dan fitur terbaru.'}
           </Text>
@@ -198,13 +216,13 @@ export function UpdatePrompt({
               style={[
                 styles.badgeContainer,
                 {
-                  backgroundColor: colors.primaryMuted || colors.primary + '18',
-                  borderColor: colors.primary + '35',
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
                 },
               ]}
             >
-              <Ionicons name="time-outline" size={13} color={colors.primary} />
-              <Text style={[styles.badgeText, { color: colors.primary }]}>
+              <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+              <Text style={[styles.badgeText, { color: colors.textMuted }]}>
                 Tertunda {shown.daysSinceRelease} hari
               </Text>
             </View>
@@ -330,7 +348,21 @@ const styles = StyleSheet.create({
     fontSize: 19,
     letterSpacing: -0.3,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+  },
+  versionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  versionPillText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 12,
   },
   description: {
     fontFamily: 'Poppins-Regular',

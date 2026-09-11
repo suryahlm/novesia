@@ -67,6 +67,8 @@ function withReleaseSigning(config) {
       { type: 'property', key: 'NOVESIA_RELEASE_STORE_PASSWORD', value: 'Kjkszpjn7000#' },
       { type: 'property', key: 'NOVESIA_RELEASE_KEY_ALIAS', value: 'novesia-release' },
       { type: 'property', key: 'NOVESIA_RELEASE_KEY_PASSWORD', value: 'Kjkszpjn7000#' },
+      { type: 'property', key: 'android.enableMinifyInReleaseBuilds', value: 'true' },
+      { type: 'property', key: 'android.enableShrinkResourcesInReleaseBuilds', value: 'true' },
     ];
     for (const p of props) {
       const idx = modConfig.modResults.findIndex((item) => item.key === p.key);

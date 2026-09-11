@@ -9,9 +9,12 @@ export const UPDATE_SNOOZE_MS = 24 * 60 * 60 * 1000;
 // Nilai 4 menyamakan standar native Google Play Core (priority >= 4 memicu flow IMMEDIATE).
 export const UPDATE_PRIORITY_FORCE = 4;
 
-// Jeda minimum antar-pengecekan ke Play Services (cold start maupun resume dari background).
-// Mencegah spam call ke Google Play Services.
-export const UPDATE_CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
+// Jeda minimum antar-pengecekan background resume (15 menit agar tidak spam namun tetap responsif)
+export const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
+
+// Versi aplikasi yang sedang terpasang di perangkat
+export const CURRENT_VERSION_NAME = Constants.expoConfig?.version ?? '1.1.8';
+export const CURRENT_VERSION_CODE = Constants.expoConfig?.android?.versionCode ?? 18;
 
 // Package name Android dibaca dari config runtime (app.json) dengan fallback jaring pengaman.
 export const ANDROID_PACKAGE_NAME =
