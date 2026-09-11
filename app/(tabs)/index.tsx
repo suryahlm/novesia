@@ -415,7 +415,7 @@ export default function HomeScreen() {
               </View>
 
               <FlatList
-                data={continueReading.filter((h) => novels.some((n) => n.id === h.novel_id))}
+                data={continueReading}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(item) => item.novel_id}
