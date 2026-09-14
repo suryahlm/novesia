@@ -122,13 +122,13 @@ export default function SettingsScreen() {
         // Update ditemukan — prompt update global akan otomatis muncul
         setUpdateDialogVisible(false);
       } else {
-        const curVer = Constants.expoConfig?.version ?? '1.1.8';
+        const curVer = Constants.expoConfig?.version ?? '1.1.9';
         setUpdateDialogIcon('cloud-done-outline');
         setUpdateDialogMessage(`${t.app_is_up_to_date} (v${curVer})`);
         setUpdateDialogVisible(true);
       }
     } catch {
-      const curVer = Constants.expoConfig?.version ?? '1.1.8';
+      const curVer = Constants.expoConfig?.version ?? '1.1.9';
       setUpdateDialogIcon('cloud-done-outline');
       setUpdateDialogMessage(`${t.app_is_up_to_date} (v${curVer})`);
       setUpdateDialogVisible(true);
@@ -394,7 +394,7 @@ export default function SettingsScreen() {
                 value={
                   isCheckingUpdate
                     ? (lang === 'id' ? 'Memeriksa...' : 'Checking...')
-                    : `v${Constants.expoConfig?.version ?? '1.1.8'}`
+                    : `v${Constants.expoConfig?.version ?? '1.1.9'}`
                 }
                 onPress={handleCheckUpdate}
               />
@@ -416,7 +416,7 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={[styles.footerText, { color: colors.textMuted }]}>
-            {`Novesia App v${Constants.expoConfig?.version ?? '1.1.8'} Build ${Constants.expoConfig?.android?.versionCode ?? 18}`}
+            {`Novesia App v${Constants.expoConfig?.version ?? '1.1.9'} Build ${Constants.expoConfig?.android?.versionCode ?? 19}`}
           </Text>
           <View style={{ height: 40 }} />
         </ScrollView>
@@ -433,7 +433,7 @@ export default function SettingsScreen() {
         visible={updateDialogVisible}
         onClose={() => setUpdateDialogVisible(false)}
         title={t.check_updates}
-        message={updateDialogMessage || `${t.app_is_up_to_date} (v${Constants.expoConfig?.version ?? '1.1.8'})`}
+        message={updateDialogMessage || `${t.app_is_up_to_date} (v${Constants.expoConfig?.version ?? '1.1.9'})`}
         icon={updateDialogIcon}
         tone="gold"
         showCancel={false}

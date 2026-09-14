@@ -32,13 +32,13 @@ const DEFAULT_CONFIG: AppConfig = {
   ad_interstitial_enabled: true,
   telegram_link: 'https://t.me/novesiaforum',
   support_email: 'support@novesia.cc',
-  app_version: '1.1.7',
-  app_version_code: 17,
+  app_version: '1.1.9',
+  app_version_code: 19,
   min_supported_version_code: 15,
   force_update_enabled: false,
   play_store_url: 'https://play.google.com/store/apps/details?id=cc.novesia.app',
   update_changelog:
-    'Peningkatan stabilitas aplikasi, performa membaca novel lebih lancar, serta penambahan notifikasi rilis bab terbaru secara realtime.',
+    'Sinkronisasi riwayat membaca lintas perangkat, optimasi ukuran aplikasi lebih ringan, dan performa lebih cepat.',
 };
 
 const CACHE_KEY = 'novesia_app_config';
