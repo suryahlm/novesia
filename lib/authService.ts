@@ -245,7 +245,7 @@ export async function deleteUserAccount(): Promise<{ success: boolean; error: st
     await apiPost('/api/me/delete');
     await signOutUser();
     return { success: true, error: null };
-  } catch (err: any) {
+  } catch {
     // Tetap logout walau API gagal
     await signOutUser();
     return { success: true, error: null };

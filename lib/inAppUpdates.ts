@@ -13,8 +13,8 @@ export const UPDATE_PRIORITY_FORCE = 4;
 export const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 
 // Versi aplikasi yang sedang terpasang di perangkat
-export const CURRENT_VERSION_NAME = Constants.expoConfig?.version ?? '1.1.9';
-export const CURRENT_VERSION_CODE = Constants.expoConfig?.android?.versionCode ?? 19;
+export const CURRENT_VERSION_NAME = Constants.expoConfig?.version ?? '1.2.0';
+export const CURRENT_VERSION_CODE = Constants.expoConfig?.android?.versionCode ?? 20;
 
 // Package name Android dibaca dari config runtime (app.json) dengan fallback jaring pengaman.
 export const ANDROID_PACKAGE_NAME =

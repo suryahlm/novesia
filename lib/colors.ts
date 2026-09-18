@@ -1,3 +1,5 @@
+import { ACCENT_REGISTRY } from './accents';
+
 export const gold = {
   50: '#FDF4D9',
   100: '#F8E095',
@@ -54,8 +56,6 @@ export interface ColorScheme {
   danger: string;
   info: string;
 }
-
-import { ACCENT_REGISTRY } from './accents';
 
 const peridot = ACCENT_REGISTRY.peridot;
 

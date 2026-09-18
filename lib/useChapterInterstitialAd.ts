@@ -80,7 +80,7 @@ export function useChapterInterstitialAd() {
             if (cancelledRef.current) return;
 
             const interstitial = InterstitialAd.createForAdRequest(CHAPTER_INTERSTITIAL_AD_UNIT_ID);
-            const unsubscribers: Array<() => void> = [];
+            const unsubscribers: (() => void)[] = [];
             const cleanup = () => {
               unsubscribers.forEach((unsubscribe) => unsubscribe());
               cleanupAdRef.current = null;

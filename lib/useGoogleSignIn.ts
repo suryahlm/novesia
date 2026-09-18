@@ -76,7 +76,7 @@ export function useGoogleSignIn() {
 
     setLoading(true);
     try {
-      const { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } = await import(
+      const { GoogleSignin, isSuccessResponse } = await import(
         '@react-native-google-signin/google-signin'
       );
 

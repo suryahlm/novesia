@@ -148,7 +148,7 @@ export async function fetchThreadNewPosts(
       timeoutMs: 15000,
     });
     return Array.isArray(data) ? data : [];
-  } catch (e) {
+  } catch {
     // Silent fail on background poll to avoid alert dialogs on slow ping
     return [];
   }

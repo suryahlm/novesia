@@ -53,7 +53,7 @@ function PopularGridCardBase({ novel, width, onPress, onLongPress, rank }: Popul
   const height = Math.round(coverWidth * 1.3);
   const handlePress = useCallback(() => {
     if (novel?.nu_slug) onPress(novel.nu_slug);
-  }, [onPress, novel?.nu_slug]);
+  }, [onPress, novel.nu_slug]);
 
   const isComingSoon =
     novel.status === 'draft' ||
